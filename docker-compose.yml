@@ -1,0 +1,101 @@
+version: '3.8'
+
+services:
+  will:
+    build: ./src/will/inst
+    ports: ["5002:5000"]
+    volumes:
+      - ./src/will/inst:/app
+      - ./src/will/inst/data:/app/data
+      - ./src/will/inst/logs:/app/logs
+    environment:
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+      - ELASTICSEARCH_HOST=elasticsearch
+      - ELASTICSEARCH_PORT=9200
+    depends_on:
+      - mongodb
+      - elasticsearch
+    networks:
+      - autocura_network
+
+  mongodb:
+    image: mongo:latest
+    ports: ["27017:27017"]
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - autocura_network
+
+  elasticsearch:
+    image: elasticsearch:7.17.0
+    ports: ["9200:9200"]
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - autocura_network
+
+  kibana:
+    image: kibana:7.17.0
+    ports: ["5601:5601"]
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    networks:
+      - autocura_network
+
+  portal:
+    build: ./src/portal
+    ports: ["8000:8000"]
+    volumes:
+      - ./src/portal:/app
+    environment:
+      - WILL_URL=http://will:5000
+    depends_on:
+      - will
+    networks:
+      - autocura_network
+
+  observabilidade:
+    build: 
+      context: ./src/observabilidade
+      dockerfile: Dockerfile.observabilidade
+    ports: ["5001:5000"]
+    volumes:
+      - ./src/observabilidade:/app
+      - ./src/observabilidade/logs:/app/logs
+    environment:
+      - MONITORAMENTO_URL=http://will:5000
+      - DIAGNOSTICO_URL=http://will:5000
+      - GERADOR_URL=http://will:5000
+      - GRAFANA_URL=http://grafana:3000
+      - KIBANA_URL=http://kibana:5601
+    depends_on:
+      - will
+      - kibana
+    networks:
+      - autocura_network
+
+  grafana:
+    image: grafana/grafana:latest
+    ports: ["3000:3000"]
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    networks:
+      - autocura_network
+
+volumes:
+  mongodb_data:
+  elasticsearch_data:
+  grafana_data:
+
+networks:
+  autocura_network:
+    driver: bridge 

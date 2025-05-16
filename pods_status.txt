@@ -1,0 +1,15 @@
+autocura             elasticsearch-0                                  1/1   Running            0             16m
+autocura             fluentd-vv9hb                                    1/1   Running            0             16m
+autocura             kibana-6f59998685-87fjs                          1/1   Running            0             16m
+autocura             portal-65b77d656b-7nwgd                          0/1   ImagePullBackOff   0             59m
+default              prometheus-operator-598b676f8d-ptcp6             1/1   Running            0             16m
+default              will-74bfc47dd7-77lds                            0/1   ImagePullBackOff   0             60m
+kube-system          coredns-668d6bf9bc-66hq2                         1/1   Running            1 (17m ago)   61m
+kube-system          coredns-668d6bf9bc-s4mw9                         1/1   Running            1 (17m ago)   61m
+kube-system          etcd-autocura-control-plane                      1/1   Running            0             17m
+kube-system          kindnet-wp4dd                                    1/1   Running            1 (17m ago)   61m
+kube-system          kube-apiserver-autocura-control-plane            1/1   Running            0             17m
+kube-system          kube-controller-manager-autocura-control-plane   1/1   Running            1 (17m ago)   61m
+kube-system          kube-proxy-pdbvm                                 1/1   Running            1 (17m ago)   61m
+kube-system          kube-scheduler-autocura-control-plane            1/1   Running            1 (17m ago)   61m
+local-path-storage   local-path-provisioner-7dc846544d-wqv89          1/1   Running            2 (16m ago)   61m

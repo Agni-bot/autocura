@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: executor-acoes
+  namespace: autocura
+  labels:
+    app: executor-acoes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: executor-acoes
+  template:
+    metadata:
+      labels:
+        app: executor-acoes
+    spec:
+      serviceAccountName: executor-acoes-sa
+      containers:
+      - name: executor-acoes
+        image: ${REGISTRY}/executor-acoes:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+        - name: LOG_LEVEL
+          value: "INFO"
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: executor-acoes
+  namespace: autocura
+spec:
+  selector:
+    app: executor-acoes
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: executor-acoes-sa
+  namespace: autocura
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: executor-acoes-role
+  namespace: autocura
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "configmaps"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "statefulsets", "daemonsets"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: executor-acoes-rolebinding
+  namespace: autocura
+subjects:
+- kind: ServiceAccount
+  name: executor-acoes-sa
+  namespace: autocura
+roleRef:
+  kind: Role
+  name: executor-acoes-role
+  apiGroup: rbac.authorization.k8s.io 

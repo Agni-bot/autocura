@@ -1,0 +1,825 @@
+[INFO] Iniciando script de inicialização do Sistema de Autocura Cognitiva
+.\scripts\00-start_all.cmd : O sistema não pode encontrar o caminho especificado.
+No linha:1 caractere:1
++ .\scripts\00-start_all.cmd 2>&1 | Tee-Object -FilePath .\logs\startup ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (O sistema não p...o especificado.:String) [], RemoteExce 
+   ption
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[INFO] Logs serão salvos em: ..\logs\startup_20250503_ 927.log
+O sistema não pode encontrar o caminho especificado.
+[INFO] Verificando pré-requisitos...
+O sistema não pode encontrar o caminho especificado.
+[INFO] Versão do Docker: Docker version 28.1.1, build 4eba377
+O sistema não pode encontrar o caminho especificado.
+[INFO] Versão do kubectl: Kustomize Version: v5.6.0
+O sistema não pode encontrar o caminho especificado.
+[INFO] Configurando ambiente...
+O sistema não pode encontrar o caminho especificado.
+[INFO] Registry local já está rodando
+O sistema não pode encontrar o caminho especificado.
+=== Configurando ambiente Kubernetes local com kind ===
+kind v0.27.0 go1.23.6 windows/amd64
+Client Version: v1.33.0
+Kustomize Version: v5.6.0
+  TCP    0.0.0.0:30000          0.0.0.0:0              LISTENING       3952
+  TCP    [::]:30000             [::]:0                 LISTENING       3952
+  TCP    [::1]:30000            [::]:0                 LISTENING       22112
+  TCP    0.0.0.0:30001          0.0.0.0:0              LISTENING       3952
+  TCP    [::]:30001             [::]:0                 LISTENING       3952
+  TCP    [::1]:30001            [::]:0                 LISTENING       22112
+Cluster 'autocura' já existe. Excluindo...
+Deleting cluster "autocura" ...
+Deleted nodes: ["autocura-control-plane"]
+Registro local já está em execução.
+Criando cluster kind 'autocura'...
+Creating cluster "autocura" ...
+ • Ensuring node image (kindest/node:v1.32.2) 🖼  ...
+ ✓ Ensuring node image (kindest/node:v1.32.2) 🖼
+ • Preparing nodes 📦   ...
+ ✓ Preparing nodes 📦 
+ • Writing configuration 📜  ...
+ ✓ Writing configuration 📜
+ • Starting control-plane 🕹️  ...
+ ✓ Starting control-plane 🕹️
+ • Installing CNI 🔌  ...
+ ✓ Installing CNI 🔌
+ • Installing StorageClass 💾  ...
+ ✓ Installing StorageClass 💾
+Set kubectl context to "kind-autocura"
+You can now use your cluster with:
+
+kubectl cluster-info --context kind-autocura
+
+Have a nice day! 👋
+Cluster kind 'autocura' criado com sucesso
+Kubernetes control plane is running at https://127.0.0.1:54977
+CoreDNS is running at https://127.0.0.1:54977/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+
+To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
+=== Ambiente Kubernetes local configurado com sucesso ===
+Agora você pode executar 'build.cmd' para construir as imagens e
+em seguida 'kubectl apply -k kubernetes\environments\development' para implantar o sistema. 
+namespace/autocura created
+[INFO] Iniciando build e push de imagens...
+[INFO] Buildando imagem do monitoramento...
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 599B done
+#1 DONE 0.0s
+
+#2 [auth] library/python:pull token for registry-1.docker.io
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/python:3.11-slim
+#3 DONE 1.2s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 149B done
+#5 DONE 0.0s
+
+#6 [1/6] FROM docker.io/library/python:3.11-slim@sha256:75a17dd6f00b277975715fc094c4a1570d512708de6bb4
+c5dc130814813ebfe4
+#6 resolve docker.io/library/python:3.11-slim@sha256:75a17dd6f00b277975715fc094c4a1570d512708de6bb4c5d
+c130814813ebfe4 0.0s done
+#6 DONE 0.0s
+
+#7 [5/6] RUN pip install --no-cache-dir --upgrade pip &&     pip install --no-cache-dir -r 
+requirements.txt
+#7 CACHED
+
+#8 [3/6] RUN apt-get update && apt-get install -y     gcc     python3-dev     && rm -rf 
+/var/lib/apt/lists/*
+#8 CACHED
+
+#9 [2/6] WORKDIR /app
+#9 CACHED
+
+#10 [4/6] COPY requirements.txt .
+#10 CACHED
+
+#11 [6/6] COPY . .
+#11 CACHED
+
+#12 exporting to image
+#12 exporting layers done
+#12 exporting manifest sha256:3ba4f3f449de27cdfa1b4bea616b8d02e196ac48d0c99ae3e3424724af9a25e5 done
+#12 exporting config sha256:3af7a7891713744037f1c2cd4a93fcf7897470ea4c2a4e893ef68f4a8a85e1e2 done
+#12 exporting attestation manifest 
+sha256:267b4085e796e7c22b31e3ee7ac8c1fdd6fd3ff705797b45ca4502cda9bf9a6f 0.0s done
+#12 exporting manifest list sha256:6762fb702f4492ad26ccc77b42ea655d5deaa0327c0d2eec065cdf3664bf59d6 
+done
+#12 naming to localhost:5000/autocura/monitoramento:latest done
+#12 unpacking to localhost:5000/autocura/monitoramento:latest done
+#12 DONE 0.1s
+
+View build details: 
+docker-desktop://dashboard/build/desktop-linux/desktop-linux/i5j6qsgzqz9797gt5vnd1qw90
+The push refers to repository [localhost:5000/autocura/monitoramento]
+7eeb6065fbc1: Waiting
+254e724d7786: Waiting
+4f0d72d33225: Waiting
+b1f20e0292eb: Waiting
+e53ce365d59d: Waiting
+579a05621d7c: Waiting
+ea224d81ab20: Waiting
+6a43df29d30c: Waiting
+a18f083b23a9: Waiting
+c27bfeead89f: Waiting
+7eeb6065fbc1: Waiting
+254e724d7786: Waiting
+e53ce365d59d: Waiting
+579a05621d7c: Waiting
+ea224d81ab20: Waiting
+6a43df29d30c: Waiting
+a18f083b23a9: Waiting
+c27bfeead89f: Waiting
+4f0d72d33225: Waiting
+b1f20e0292eb: Waiting
+7eeb6065fbc1: Waiting
+254e724d7786: Waiting
+e53ce365d59d: Waiting
+579a05621d7c: Waiting
+ea224d81ab20: Waiting
+6a43df29d30c: Waiting
+a18f083b23a9: Waiting
+c27bfeead89f: Waiting
+4f0d72d33225: Waiting
+b1f20e0292eb: Waiting
+579a05621d7c: Waiting
+ea224d81ab20: Waiting
+6a43df29d30c: Waiting
+a18f083b23a9: Waiting
+c27bfeead89f: Waiting
+4f0d72d33225: Waiting
+b1f20e0292eb: Waiting
+e53ce365d59d: Waiting
+7eeb6065fbc1: Waiting
+254e724d7786: Waiting
+7eeb6065fbc1: Waiting
+254e724d7786: Waiting
+ea224d81ab20: Waiting
+6a43df29d30c: Waiting
+a18f083b23a9: Waiting
+c27bfeead89f: Waiting
+4f0d72d33225: Waiting
+b1f20e0292eb: Waiting
+e53ce365d59d: Waiting
+579a05621d7c: Waiting
+7eeb6065fbc1: Waiting
+254e724d7786: Waiting
+c27bfeead89f: Waiting
+4f0d72d33225: Waiting
+b1f20e0292eb: Waiting
+e53ce365d59d: Waiting
+579a05621d7c: Waiting
+ea224d81ab20: Waiting
+6a43df29d30c: Waiting
+a18f083b23a9: Waiting
+4f0d72d33225: Pushed
+b1f20e0292eb: Layer already exists
+e53ce365d59d: Layer already exists
+579a05621d7c: Layer already exists
+ea224d81ab20: Layer already exists
+6a43df29d30c: Layer already exists
+a18f083b23a9: Layer already exists
+c27bfeead89f: Layer already exists
+7eeb6065fbc1: Layer already exists
+254e724d7786: Layer already exists
+latest: digest: sha256:6762fb702f4492ad26ccc77b42ea655d5deaa0327c0d2eec065cdf3664bf59d6 size: 856
+[INFO] Buildando imagem do diagnostico...
+O sistema não pode encontrar o caminho especificado.
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 603B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:3.11-slim
+#2 DONE 0.2s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 transferring context: 145B done
+#4 DONE 0.0s
+
+#5 [1/6] FROM docker.io/library/python:3.11-slim@sha256:75a17dd6f00b277975715fc094c4a1570d512708de6bb4
+c5dc130814813ebfe4
+#5 resolve docker.io/library/python:3.11-slim@sha256:75a17dd6f00b277975715fc094c4a1570d512708de6bb4c5d
+c130814813ebfe4 0.0s done
+#5 DONE 0.0s
+
+#6 [3/6] RUN apt-get update && apt-get install -y     gcc     python3-dev     && rm -rf 
+/var/lib/apt/lists/*
+#6 CACHED
+
+#7 [2/6] WORKDIR /app
+#7 CACHED
+
+#8 [5/6] RUN pip install --upgrade pip &&     pip install --no-cache-dir -r requirements.txt
+#8 CACHED
+
+#9 [4/6] COPY requirements.txt .
+#9 CACHED
+
+#10 [6/6] COPY . .
+#10 CACHED
+
+#11 exporting to image
+#11 exporting layers done
+#11 exporting manifest sha256:26a05236963ed6087274f4118a3b5c8dd278bf68b3f8eb75e80d1a15e90eac2f done
+#11 exporting config sha256:f55afbc6fb50c52d7a0a1aced9bf9b3de040c36931015c3c5798d9b417b90102 done
+#11 exporting attestation manifest 
+sha256:d36135510bbea64be8eb762de5d2ae6847823f9899ca1de109944705c13c8b09 0.0s done
+#11 exporting manifest list sha256:279a4bca1f7463f21ff1efe066f438879c796742e25dcfbe664b991341f0cec5 
+done
+#11 naming to localhost:5000/autocura/diagnostico:latest done
+#11 unpacking to localhost:5000/autocura/diagnostico:latest done
+#11 DONE 0.1s
+
+View build details: 
+docker-desktop://dashboard/build/desktop-linux/desktop-linux/i9mzv7azffch2nmrjwtrmqj6m
+The push refers to repository [localhost:5000/autocura/diagnostico]
+c27bfeead89f: Waiting
+5242210d8583: Waiting
+a18f083b23a9: Waiting
+3fcb2372904e: Waiting
+a569db10927c: Waiting
+579a05621d7c: Waiting
+fb741ca13a1f: Waiting
+254e724d7786: Waiting
+7eeb6065fbc1: Waiting
+e53ce365d59d: Waiting
+579a05621d7c: Waiting
+fb741ca13a1f: Waiting
+254e724d7786: Waiting
+7eeb6065fbc1: Waiting
+e53ce365d59d: Waiting
+c27bfeead89f: Waiting
+5242210d8583: Waiting
+a18f083b23a9: Waiting
+3fcb2372904e: Waiting
+a569db10927c: Waiting
+3fcb2372904e: Waiting
+a569db10927c: Waiting
+c27bfeead89f: Waiting
+5242210d8583: Waiting
+a18f083b23a9: Waiting
+7eeb6065fbc1: Waiting
+e53ce365d59d: Waiting
+579a05621d7c: Waiting
+fb741ca13a1f: Waiting
+254e724d7786: Waiting
+c27bfeead89f: Waiting
+5242210d8583: Waiting
+a18f083b23a9: Waiting
+3fcb2372904e: Waiting
+a569db10927c: Waiting
+579a05621d7c: Waiting
+fb741ca13a1f: Waiting
+254e724d7786: Waiting
+7eeb6065fbc1: Waiting
+e53ce365d59d: Waiting
+fb741ca13a1f: Waiting
+254e724d7786: Waiting
+7eeb6065fbc1: Waiting
+e53ce365d59d: Waiting
+579a05621d7c: Waiting
+5242210d8583: Waiting
+a18f083b23a9: Waiting
+3fcb2372904e: Waiting
+a569db10927c: Waiting
+c27bfeead89f: Waiting
+a18f083b23a9: Waiting
+3fcb2372904e: Waiting
+a569db10927c: Waiting
+c27bfeead89f: Waiting
+5242210d8583: Waiting
+254e724d7786: Waiting
+7eeb6065fbc1: Waiting
+e53ce365d59d: Waiting
+579a05621d7c: Waiting
+fb741ca13a1f: Waiting
+fb741ca13a1f: Pushed
+254e724d7786: Layer already exists
+7eeb6065fbc1: Layer already exists
+e53ce365d59d: Layer already exists
+579a05621d7c: Layer already exists
+5242210d8583: Layer already exists
+a18f083b23a9: Layer already exists
+3fcb2372904e: Layer already exists
+a569db10927c: Layer already exists
+c27bfeead89f: Layer already exists
+latest: digest: sha256:279a4bca1f7463f21ff1efe066f438879c796742e25dcfbe664b991341f0cec5 size: 856
+[INFO] Buildando imagem do gerador...
+O sistema não pode encontrar o caminho especificado.
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 754B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:3.9-slim
+#2 DONE 0.2s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 transferring context: 149B done
+#4 DONE 0.0s
+
+#5 [1/6] FROM docker.io/library/python:3.9-slim@sha256:bef8d69306a7905f55cd523f5604de1dde45bbf745ba896
+dbb89f6d15c727170
+#5 resolve docker.io/library/python:3.9-slim@sha256:bef8d69306a7905f55cd523f5604de1dde45bbf745ba896dbb
+89f6d15c727170 0.0s done
+#5 DONE 0.0s
+
+#6 [5/6] RUN pip install --no-cache-dir -r requirements.txt
+#6 CACHED
+
+#7 [4/6] COPY requirements.txt .
+#7 CACHED
+
+#8 [2/6] WORKDIR /app
+#8 CACHED
+
+#9 [3/6] RUN apt-get update && apt-get install -y     build-essential     && rm -rf 
+/var/lib/apt/lists/*
+#9 CACHED
+
+#10 [6/6] COPY . .
+#10 CACHED
+
+#11 exporting to image
+#11 exporting layers done
+#11 exporting manifest sha256:e7988e2d61bbb5df36a34eaa98e95487a3600094e00cbd91de0674e2919ceea1 done
+#11 exporting config sha256:71df85bacf9848430c52be3107c0e9676c9cce8068c95a722f6b5aa3cd1bfb53 done
+#11 exporting attestation manifest 
+sha256:6824e8b6b33ed27cb0925f6a8cee9af13000c141b5d8d2ea62b59151d403a983 0.0s done
+#11 exporting manifest list sha256:9f28c881a2172710a5831a4ce3374ef6da40dd2574b481fa39e89abd5f710001 
+done
+#11 naming to localhost:5000/autocura/gerador:latest done
+#11 unpacking to localhost:5000/autocura/gerador:latest done
+#11 DONE 0.1s
+
+View build details: 
+docker-desktop://dashboard/build/desktop-linux/desktop-linux/k5w08brtxswxbnpif293dbsma
+The push refers to repository [localhost:5000/autocura/gerador]
+d691b80d5159: Waiting
+84b1a677eccc: Waiting
+02b23855945b: Waiting
+254e724d7786: Waiting
+5bd28b7fecfd: Waiting
+de3bd4ffb6dc: Waiting
+56d511e8126c: Waiting
+1f108c34cc55: Waiting
+fb95b45635cb: Waiting
+696d8df75880: Waiting
+d691b80d5159: Waiting
+84b1a677eccc: Waiting
+02b23855945b: Waiting
+254e724d7786: Waiting
+5bd28b7fecfd: Waiting
+de3bd4ffb6dc: Waiting
+56d511e8126c: Waiting
+1f108c34cc55: Waiting
+fb95b45635cb: Waiting
+696d8df75880: Waiting
+d691b80d5159: Waiting
+84b1a677eccc: Waiting
+02b23855945b: Waiting
+254e724d7786: Waiting
+56d511e8126c: Waiting
+1f108c34cc55: Waiting
+fb95b45635cb: Waiting
+696d8df75880: Waiting
+5bd28b7fecfd: Waiting
+de3bd4ffb6dc: Waiting
+d691b80d5159: Waiting
+84b1a677eccc: Waiting
+02b23855945b: Waiting
+254e724d7786: Waiting
+56d511e8126c: Waiting
+1f108c34cc55: Waiting
+fb95b45635cb: Waiting
+696d8df75880: Waiting
+5bd28b7fecfd: Waiting
+de3bd4ffb6dc: Waiting
+56d511e8126c: Waiting
+1f108c34cc55: Waiting
+fb95b45635cb: Waiting
+696d8df75880: Waiting
+5bd28b7fecfd: Waiting
+de3bd4ffb6dc: Waiting
+d691b80d5159: Waiting
+84b1a677eccc: Waiting
+02b23855945b: Waiting
+254e724d7786: Waiting
+d691b80d5159: Waiting
+84b1a677eccc: Waiting
+02b23855945b: Waiting
+254e724d7786: Waiting
+de3bd4ffb6dc: Waiting
+56d511e8126c: Waiting
+1f108c34cc55: Waiting
+fb95b45635cb: Waiting
+696d8df75880: Waiting
+5bd28b7fecfd: Waiting
+02b23855945b: Layer already exists
+254e724d7786: Layer already exists
+d691b80d5159: Layer already exists
+84b1a677eccc: Layer already exists
+fb95b45635cb: Layer already exists
+696d8df75880: Layer already exists
+5bd28b7fecfd: Layer already exists
+de3bd4ffb6dc: Layer already exists
+56d511e8126c: Pushed
+1f108c34cc55: Layer already exists
+latest: digest: sha256:9f28c881a2172710a5831a4ce3374ef6da40dd2574b481fa39e89abd5f710001 size: 856
+[INFO] Buildando imagem do observabilidade...
+O sistema não pode encontrar o caminho especificado.
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 582B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:3.9-slim
+#2 DONE 0.2s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 transferring context: 307B done
+#4 DONE 0.0s
+
+#5 [1/6] FROM docker.io/library/python:3.9-slim@sha256:bef8d69306a7905f55cd523f5604de1dde45bbf745ba896
+dbb89f6d15c727170
+#5 resolve docker.io/library/python:3.9-slim@sha256:bef8d69306a7905f55cd523f5604de1dde45bbf745ba896dbb
+89f6d15c727170 0.0s done
+#5 DONE 0.0s
+
+#6 [3/6] RUN mkdir -p /app/visualizacoes &&     mkdir -p /app/logs &&     mkdir -p /app/templates &&  
+   chmod 777 /app/visualizacoes &&     chmod 777 /app/logs &&     chmod 777 /app/templates
+#6 CACHED
+
+#7 [5/6] RUN pip install --no-cache-dir -r requirements.txt
+#7 CACHED
+
+#8 [2/6] WORKDIR /app
+#8 CACHED
+
+#9 [4/6] COPY requirements.txt .
+#9 CACHED
+
+#10 [6/6] COPY . .
+#10 CACHED
+
+#11 exporting to image
+#11 exporting layers done
+#11 exporting manifest sha256:e706bc805e2eb01d72cb25dbc73390b115aefdffa36b188abccc7df50dd598ee done
+#11 exporting config sha256:5339c8f8dbf96612e1eae6db2fdd6e2eb1a0860e3ee8cb06e6894eb54f01d7c0 done
+#11 exporting attestation manifest 
+sha256:205c21d84494b74284deba64b572dafdc506d0666c50fb8eccaacf0ef78e28ae 0.0s done
+#11 exporting manifest list sha256:2ebf93929bd6b5c2051f53214705bca1510f116128320be0a64296bda75dc02d 
+done
+#11 naming to localhost:5000/autocura/observabilidade:latest done
+#11 unpacking to localhost:5000/autocura/observabilidade:latest done
+#11 DONE 0.1s
+
+View build details: 
+docker-desktop://dashboard/build/desktop-linux/desktop-linux/szm4cedw2motdiburubsxsbq0
+The push refers to repository [localhost:5000/autocura/observabilidade]
+930578943623: Waiting
+bfcbeef40921: Waiting
+5bd28b7fecfd: Waiting
+7b6dc5fde67a: Waiting
+10363ef2e39c: Waiting
+fb95b45635cb: Waiting
+f9f4331212d3: Waiting
+d691b80d5159: Waiting
+84b1a677eccc: Waiting
+254e724d7786: Waiting
+84b1a677eccc: Waiting
+254e724d7786: Waiting
+7b6dc5fde67a: Waiting
+10363ef2e39c: Waiting
+fb95b45635cb: Waiting
+f9f4331212d3: Waiting
+d691b80d5159: Waiting
+5bd28b7fecfd: Waiting
+930578943623: Waiting
+bfcbeef40921: Waiting
+f9f4331212d3: Waiting
+d691b80d5159: Waiting
+84b1a677eccc: Waiting
+254e724d7786: Waiting
+7b6dc5fde67a: Waiting
+10363ef2e39c: Waiting
+fb95b45635cb: Waiting
+930578943623: Waiting
+bfcbeef40921: Waiting
+5bd28b7fecfd: Waiting
+930578943623: Waiting
+bfcbeef40921: Waiting
+5bd28b7fecfd: Waiting
+f9f4331212d3: Waiting
+d691b80d5159: Waiting
+84b1a677eccc: Waiting
+254e724d7786: Waiting
+7b6dc5fde67a: Waiting
+10363ef2e39c: Waiting
+fb95b45635cb: Waiting
+930578943623: Waiting
+bfcbeef40921: Waiting
+5bd28b7fecfd: Waiting
+254e724d7786: Waiting
+7b6dc5fde67a: Waiting
+10363ef2e39c: Waiting
+fb95b45635cb: Waiting
+f9f4331212d3: Waiting
+d691b80d5159: Waiting
+84b1a677eccc: Waiting
+930578943623: Waiting
+bfcbeef40921: Waiting
+5bd28b7fecfd: Waiting
+f9f4331212d3: Waiting
+d691b80d5159: Waiting
+84b1a677eccc: Waiting
+254e724d7786: Waiting
+7b6dc5fde67a: Waiting
+10363ef2e39c: Waiting
+fb95b45635cb: Waiting
+7b6dc5fde67a: Layer already exists
+10363ef2e39c: Layer already exists
+fb95b45635cb: Layer already exists
+f9f4331212d3: Pushed
+d691b80d5159: Layer already exists
+84b1a677eccc: Layer already exists
+254e724d7786: Layer already exists
+930578943623: Layer already exists
+bfcbeef40921: Layer already exists
+5bd28b7fecfd: Layer already exists
+latest: digest: sha256:2ebf93929bd6b5c2051f53214705bca1510f116128320be0a64296bda75dc02d size: 856
+[INFO] Buildando imagem do portal...
+O sistema não pode encontrar o caminho especificado.
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 591B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:3.11-slim
+#2 DONE 0.2s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 transferring context: 1.07kB done
+#4 DONE 0.0s
+
+#5 [1/6] FROM docker.io/library/python:3.11-slim@sha256:75a17dd6f00b277975715fc094c4a1570d512708de6bb4
+c5dc130814813ebfe4
+#5 resolve docker.io/library/python:3.11-slim@sha256:75a17dd6f00b277975715fc094c4a1570d512708de6bb4c5d
+c130814813ebfe4 0.0s done
+#5 DONE 0.0s
+
+#6 [4/6] COPY requirements.txt .
+#6 CACHED
+
+#7 [3/6] RUN apt-get update && apt-get install -y     gcc     python3-dev     && rm -rf 
+/var/lib/apt/lists/*
+#7 CACHED
+
+#8 [5/6] RUN pip install --no-cache-dir --upgrade pip &&     pip install --no-cache-dir -r 
+requirements.txt
+#8 CACHED
+
+#9 [2/6] WORKDIR /app
+#9 CACHED
+
+#10 [6/6] COPY . .
+#10 CACHED
+
+#11 exporting to image
+#11 exporting layers done
+#11 exporting manifest sha256:ba1a8171adff39071857803c0de9f5c8ab67c7917ccb1a65fc679d98ce8b561f done
+#11 exporting config sha256:333c68bc4c73c79163099cae77a82094a3054102184e3d57b2e2e07c30753133 done
+#11 exporting attestation manifest 
+sha256:19936ed0eb35e123e4088b7b9c62beb35ac5262125d11a9c09c4cc684a23e70a 0.0s done
+#11 exporting manifest list sha256:3c5ebe56287013104982417d12b639b1c8fa5bca3518b1b5f89ec9638a621068 
+done
+#11 naming to localhost:5000/autocura/portal:latest done
+#11 unpacking to localhost:5000/autocura/portal:latest done
+#11 DONE 0.1s
+
+View build details: 
+docker-desktop://dashboard/build/desktop-linux/desktop-linux/2j67tc0x6otjohae6w6kye3y3
+The push refers to repository [localhost:5000/autocura/portal]
+2f78bb8d5178: Waiting
+7eeb6065fbc1: Waiting
+254e724d7786: Waiting
+c27bfeead89f: Waiting
+a18f083b23a9: Waiting
+579a05621d7c: Waiting
+daf1b0894961: Waiting
+e53ce365d59d: Waiting
+e465239bc163: Waiting
+7826512bd69c: Waiting
+e465239bc163: Waiting
+7826512bd69c: Waiting
+579a05621d7c: Waiting
+daf1b0894961: Waiting
+e53ce365d59d: Waiting
+c27bfeead89f: Waiting
+a18f083b23a9: Waiting
+2f78bb8d5178: Waiting
+7eeb6065fbc1: Waiting
+254e724d7786: Waiting
+c27bfeead89f: Waiting
+a18f083b23a9: Waiting
+2f78bb8d5178: Waiting
+7eeb6065fbc1: Waiting
+254e724d7786: Waiting
+e465239bc163: Waiting
+7826512bd69c: Waiting
+579a05621d7c: Waiting
+daf1b0894961: Waiting
+e53ce365d59d: Waiting
+e53ce365d59d: Waiting
+e465239bc163: Waiting
+7826512bd69c: Waiting
+579a05621d7c: Waiting
+daf1b0894961: Waiting
+254e724d7786: Waiting
+c27bfeead89f: Waiting
+a18f083b23a9: Waiting
+2f78bb8d5178: Waiting
+7eeb6065fbc1: Waiting
+254e724d7786: Waiting
+c27bfeead89f: Waiting
+a18f083b23a9: Waiting
+2f78bb8d5178: Waiting
+7eeb6065fbc1: Waiting
+e53ce365d59d: Waiting
+e465239bc163: Waiting
+7826512bd69c: Waiting
+579a05621d7c: Waiting
+daf1b0894961: Waiting
+daf1b0894961: Waiting
+e53ce365d59d: Waiting
+e465239bc163: Waiting
+7826512bd69c: Waiting
+579a05621d7c: Waiting
+7eeb6065fbc1: Waiting
+254e724d7786: Waiting
+c27bfeead89f: Waiting
+a18f083b23a9: Waiting
+2f78bb8d5178: Waiting
+c27bfeead89f: Layer already exists
+a18f083b23a9: Layer already exists
+2f78bb8d5178: Layer already exists
+7eeb6065fbc1: Layer already exists
+254e724d7786: Layer already exists
+e465239bc163: Pushed
+7826512bd69c: Layer already exists
+579a05621d7c: Layer already exists
+daf1b0894961: Layer already exists
+e53ce365d59d: Layer already exists
+latest: digest: sha256:3c5ebe56287013104982417d12b639b1c8fa5bca3518b1b5f89ec9638a621068 size: 856
+[INFO] Aplicando recursos Kubernetes...
+[INFO] Limpando deployments antigos...
+No resources found
+[INFO] Aplicando CRDs...
+customresourcedefinition.apiextensions.k8s.io/healings.healing.autocura.io created
+customresourcedefinition.apiextensions.k8s.io/rollbacks.rollback.autocura.io created
+[INFO] Aplicando recursos base...
+namespace/autocura configured
+serviceaccount/autocura-sa created
+role.rbac.authorization.k8s.io/autocura-role created
+rolebinding.rbac.authorization.k8s.io/autocura-rolebinding created
+configmap/autocura-config created
+secret/autocura-secrets created
+[INFO] Aplicando recursos de monitoramento...
+error: accumulating resources: accumulation err='accumulating resources from 'prometheus/': 
+'C:\Users\i.A\Desktop\autocura\kubernetes\monitoring\prometheus' must resolve to a file': 
+recursed accumulation of path 
+'C:\Users\i.A\Desktop\autocura\kubernetes\monitoring\prometheus': accumulating resources: 
+accumulation err='accumulating resources from 'rolebinding.yaml': evalsymlink failure on 
+'C:\Users\i.A\Desktop\autocura\kubernetes\monitoring\prometheus\rolebinding.yaml' : 
+CreateFile C:\Users\i.A\Desktop\autocura\kubernetes\monitoring\prometheus\rolebinding.yaml: 
+The system cannot find the file specified.': must build at directory: not a valid directory: 
+evalsymlink failure on 
+'C:\Users\i.A\Desktop\autocura\kubernetes\monitoring\prometheus\rolebinding.yaml' : 
+CreateFile C:\Users\i.A\Desktop\autocura\kubernetes\monitoring\prometheus\rolebinding.yaml: 
+The system cannot find the file specified.
+[INFO] Aplicando recursos de armazenamento...
+persistentvolume/autocura-pv created
+persistentvolumeclaim/data-pvc created
+persistentvolumeclaim/models-pvc created
+persistentvolumeclaim/templates-pvc created
+persistentvolumeclaim/visualizacoes-pvc created
+[INFO] Aplicando recursos de componentes...
+error: accumulating resources: accumulation err='accumulating resources from 'diagnostico/': 
+'C:\Users\i.A\Desktop\autocura\kubernetes\components\diagnostico' must resolve to a file': 
+recursed accumulation of path 
+'C:\Users\i.A\Desktop\autocura\kubernetes\components\diagnostico': accumulating resources: 
+accumulation err='accumulating resources from 'role.yaml': evalsymlink failure on 
+'C:\Users\i.A\Desktop\autocura\kubernetes\components\diagnostico\role.yaml' : CreateFile 
+C:\Users\i.A\Desktop\autocura\kubernetes\components\diagnostico\role.yaml: The system 
+cannot find the file specified.': must build at directory: not a valid directory: evalsymlink failure 
+on 'C:\Users\i.A\Desktop\autocura\kubernetes\components\diagnostico\role.yaml' : CreateFile 
+C:\Users\i.A\Desktop\autocura\kubernetes\components\diagnostico\role.yaml: The system 
+cannot find the file specified.
+[INFO] Aplicando recursos de operadores...
+error: accumulating resources: accumulation err='accumulating resources from 'rollback-operator/': 
+'C:\Users\i.A\Desktop\autocura\kubernetes\operators\rollback-operator' must resolve to a 
+file': recursed accumulation of path 
+'C:\Users\i.A\Desktop\autocura\kubernetes\operators\rollback-operator': accumulating 
+resources: accumulation err='accumulating resources from 'service.yaml': evalsymlink failure on 
+'C:\Users\i.A\Desktop\autocura\kubernetes\operators\rollback-operator\service.yaml' : 
+CreateFile 
+C:\Users\i.A\Desktop\autocura\kubernetes\operators\rollback-operator\service.yaml: The 
+system cannot find the file specified.': must build at directory: not a valid directory: evalsymlink 
+failure on 
+'C:\Users\i.A\Desktop\autocura\kubernetes\operators\rollback-operator\service.yaml' : 
+CreateFile 
+C:\Users\i.A\Desktop\autocura\kubernetes\operators\rollback-operator\service.yaml: The 
+system cannot find the file specified.
+[INFO] Verificando status final...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 1 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 2 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 3 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 4 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 5 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 6 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 7 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 8 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 9 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 10 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 11 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 12 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 13 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 14 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 15 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 16 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 17 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 18 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 19 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 20 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 21 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 22 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 23 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 24 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 25 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 26 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 27 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 28 de 3)...
+No resources found in autocura namespace.
+[INFO] Aguardando pods ficarem prontos (tentativa 29 de 3)...
+No resources found in autocura namespace.
+[ERRO] Falha ao verificar status dos pods
+[ERRO] Falha na verificação do status final

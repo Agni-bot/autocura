@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: will
+  namespace: autocura
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: will
+  template:
+    metadata:
+      labels:
+        app: will
+    spec:
+      containers:
+      - name: will
+        image: will:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5000
+        env:
+        - name: NEWS_API_KEY
+          value: "your-news-api-key"
+        - name: GEMINI_API_KEY
+          value: "your-gemini-api-key"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: will
+  namespace: autocura
+spec:
+  selector:
+    app: will
+  ports:
+  - port: 5000
+    targetPort: 5000
+  type: ClusterIP 

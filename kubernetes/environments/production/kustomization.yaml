@@ -1,0 +1,81 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+<<<<<<< HEAD
+
+namespace: autocura
+
+=======
+namespace: autocura
+>>>>>>> origin/main
+resources:
+- ../../base
+- ../../components/observabilidade
+- ../../components/monitoramento
+- ../../components/diagnostico
+- ../../components/gerador
+<<<<<<< HEAD
+
+patchesStrategicMerge:
+- deployment-patch.yaml
+- service-patch.yaml
+- ingress-patch.yaml
+
+labels:
+- pairs:
+    app.kubernetes.io/name: autocura
+    app.kubernetes.io/part-of: autocura
+    app.kubernetes.io/environment: production
+
+commonAnnotations:
+  description: "Configurações do ambiente de produção do Sistema de Autocura Cognitiva"
+
+configMapGenerator:
+- name: environment-config
+  literals:
+  - ENV=production
+  - DEBUG=false
+  - LOG_LEVEL=WARN
+
+# Configuração de imagens com nomes completos para acesso externo
+images:
+- name: autocura/monitoramento
+  newName: localhost:5000/autocura/monitoramento
+  newTag: stable
+- name: autocura/diagnostico
+  newName: localhost:5000/autocura/diagnostico
+  newTag: stable
+- name: autocura/gerador
+  newName: localhost:5000/autocura/gerador
+  newTag: stable
+- name: autocura/observabilidade
+  newName: localhost:5000/autocura/observabilidade
+  newTag: stable
+=======
+labels:
+- pairs:
+    app.kubernetes.io/environment: production
+    app.kubernetes.io/name: autocura
+    app.kubernetes.io/part-of: autocura
+commonAnnotations:
+  description: Configurações do ambiente de produção do Sistema de Autocura Cognitiva
+configMapGenerator:
+- literals:
+  - ENV=production
+  - DEBUG=false
+  - LOG_LEVEL=WARN
+  name: environment-config
+# Configuração de imagens com nomes completos para acesso externo
+images:
+- name: registry.registry.svc.cluster.local:5000/autocura/monitoramento
+  newTag: stable
+- name: registry.registry.svc.cluster.local:5000/autocura/diagnostico
+  newTag: stable
+- name: registry.registry.svc.cluster.local:5000/autocura/gerador
+  newTag: stable
+- name: registry.registry.svc.cluster.local:5000/autocura/observabilidade
+  newTag: stable
+patches:
+- patch: deployment-patch.yaml
+- patch: service-patch.yaml
+- patch: ingress-patch.yaml
+>>>>>>> origin/main

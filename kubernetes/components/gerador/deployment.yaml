@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gerador
+  namespace: autocura
+  labels:
+    app: gerador
+    component: autocura
+    app.kubernetes.io/component: gerador
+    app.kubernetes.io/part-of: autocura
+    app.kubernetes.io/managed-by: kustomize
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gerador
+      app.kubernetes.io/component: gerador
+      app.kubernetes.io/part-of: autocura
+      app.kubernetes.io/managed-by: kustomize
+  template:
+    metadata:
+      labels:
+        app: gerador
+        app.kubernetes.io/component: gerador
+        app.kubernetes.io/part-of: autocura
+        app.kubernetes.io/managed-by: kustomize
+    spec:
+      serviceAccountName: autocura-sa
+      containers:
+      - name: gerador
+<<<<<<< HEAD
+        image: localhost:5000/autocura/gerador:latest
+        imagePullPolicy: Always
+=======
+        image: localhost:5000/gerador:latest
+        imagePullPolicy: IfNotPresent
+>>>>>>> origin/main
+        ports:
+        - containerPort: 8080
+          name: http
+        resources:
+          limits:
+            cpu: 1500m
+            memory: 1.5Gi
+          requests:
+            cpu: 750m
+            memory: 768Mi
+        env:
+        - name: DIAGNOSTICO_URL
+          value: "http://diagnostico:8080"
+        - name: CONFIG_MAP
+          value: gerador-config
+        - name: LOG_LEVEL
+          value: INFO
+<<<<<<< HEAD
+=======
+        - name: GEMINI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: autocura-secrets
+              key: gemini_api_key
+        - name: GEMINI_API_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: autocura-config
+              key: gemini_api_endpoint
+        - name: WILL_URL
+          value: "http://will:5000"
+>>>>>>> origin/main
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config
+        - name: templates-volume
+          mountPath: /app/templates
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 45
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      volumes:
+      - name: config-volume
+        configMap:
+          name: gerador-config
+      - name: templates-volume
+        persistentVolumeClaim:
+          claimName: autocura-models

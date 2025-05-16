@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Visualização Holográfica{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <h1>Visualização Holográfica</h1>
+    {% if visualization %}
+        <pre>{{ visualization | tojson(indent=2) }}</pre>
+    {% else %}
+        <div class="alert alert-warning">Dados de visualização não disponíveis.</div>
+    {% endif %}
+    <!-- Aqui será exibida a visualização 3D/4D do sistema -->
+</div>
+{% endblock %} 

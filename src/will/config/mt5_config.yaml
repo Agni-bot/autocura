@@ -1,0 +1,55 @@
+# Configurações do MetaTrader 5
+mt5:
+  # Configurações de conexão
+  server: "FBS-Demo"  # Servidor demo FBS
+  login: 101202061  # Número da conta demo
+  password: "A2GdZ/i5"  # Senha da conta demo
+  path: "C:/Program Files/FBS MetaTrader 5/terminal64.exe"  # Caminho correto do terminal
+
+  # Configurações de trading
+  trading:
+    default_volume: 0.1  # Volume padrão em lotes
+    max_volume: 1.0  # Volume máximo em lotes
+    min_volume: 0.01  # Volume mínimo em lotes
+    max_spread: 50  # Spread máximo em pontos
+    max_slippage: 20  # Slippage máximo em pontos
+    default_magic: 234000  # Número mágico padrão para ordens
+
+  # Configurações de timeframes
+  timeframes:
+    - M1
+    - M5
+    - M15
+    - M30
+    - H1
+    - H4
+    - D1
+    - W1
+    - MN1
+
+  # Pares de moedas disponíveis
+  symbols:
+    major:
+      - EURUSD
+      - GBPUSD
+      - USDJPY
+      - USDCHF
+      - AUDUSD
+      - USDCAD
+      - NZDUSD
+    minor:
+      - EURGBP
+      - EURJPY
+      - GBPJPY
+      - EURAUD
+      - EURCAD
+      - EURCHF
+      - GBPCHF
+
+  # Configurações de logging
+  logging:
+    level: INFO
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    file: "logs/mt5.log"
+    max_size: 10485760  # 10MB
+    backup_count: 5 

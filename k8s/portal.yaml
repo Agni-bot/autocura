@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portal
+  namespace: autocura
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: portal
+  template:
+    metadata:
+      labels:
+        app: portal
+    spec:
+      containers:
+      - name: portal
+        image: portal:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        env:
+        - name: WILL_API_URL
+          value: "http://will.autocura.svc.cluster.local:5000"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: portal
+  namespace: autocura
+spec:
+  selector:
+    app: portal
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP 

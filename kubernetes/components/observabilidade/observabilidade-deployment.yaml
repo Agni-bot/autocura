@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: observabilidade
+  namespace: autocura
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: observabilidade
+  template:
+    metadata:
+      labels:
+        app: observabilidade
+    spec:
+      containers:
+        - name: observabilidade
+          image: localhost:32000/observabilidade:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: LOG_LEVEL
+              value: "INFO"
+            - name: MONITORAMENTO_URL
+              value: "http://monitoramento:8080"
+            - name: DIAGNOSTICO_URL
+              value: "http://diagnostico:8080"
+            - name: GERADOR_URL
+              value: "http://gerador:8080"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: observabilidade
+  namespace: autocura
+spec:
+  selector:
+    app: observabilidade
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080 

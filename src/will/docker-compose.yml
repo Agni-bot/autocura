@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  will_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: will_system_api_enh
+    ports:
+      - "5000:5000"
+    volumes:
+      # Mount a volume for logs if you want to persist them outside the container
+      # - ./logs:/app/logs # Assuming logs are written to /app/logs inside the container
+      # Mount a volume for configs if needed, e.g., for API keys if not using ENV vars
+      # - ./configs:/app/configs
+    environment:
+      # It's better to manage sensitive data like API keys using Docker secrets or .env files
+      # For demonstration, you could pass it here, but it's not recommended for production.
+      # GEMINI_API_KEY: "YOUR_GEMINI_API_KEY_HERE"
+      FLASK_ENV: "production" # Set to 'development' for debug mode if needed, but Dockerfile uses Gunicorn
+    restart: unless-stopped
+    # healthcheck: # Optional: Add a healthcheck for the API
+    #   test: ["CMD", "curl", "--fail", "http://localhost:5000/api/will/status"] # Adjust endpoint as needed
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+
+# Example of a network if you have multiple services communicating
+# networks:
+#   will_network:
+#     driver: bridge
+
+# Example of volumes if you need persistent storage for other components
+# volumes:
+#   will_data:
+

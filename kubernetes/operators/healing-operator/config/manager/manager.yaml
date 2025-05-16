@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: healing-operator-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healing-operator-controller-manager
+  namespace: healing-operator-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      serviceAccountName: healing-operator-controller-manager
+      containers:
+      - command:
+        - /manager
+        args:
+        - --leader-elect
+<<<<<<< HEAD
+        image: localhost:5000/autocura/healing-operator:dev
+=======
+        image: registry.registry.svc.cluster.local:5000/autocura/healing-operator:dev
+>>>>>>> origin/main
+        name: manager
+        resources:
+          limits:
+            cpu: 100m
+            memory: 30Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+      terminationGracePeriodSeconds: 10 

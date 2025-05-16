@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: executor-acoes
+  namespace: autocura
+  labels:
+    app: executor-acoes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: executor-acoes
+  template:
+    metadata:
+      labels:
+        app: executor-acoes
+    spec:
+      containers:
+      - name: executor-acoes
+        image: localhost:5000/executor-acoes:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        env:
+        - name: LOG_LEVEL
+          value: INFO
+        - name: LOG_FILE
+          value: /app/logs/executor.log
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 20
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+      volumes:
+      - name: logs
+        emptyDir: {} 

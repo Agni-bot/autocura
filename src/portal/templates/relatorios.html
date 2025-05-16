@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Relatórios do Sistema{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <h1>Relatórios do Sistema</h1>
+    {% if relatorios %}
+        <pre>{{ relatorios | tojson(indent=2) }}</pre>
+    {% else %}
+        <div class="alert alert-warning">Relatórios não disponíveis.</div>
+    {% endif %}
+    <!-- Aqui serão exibidas opções de geração/exportação de relatórios -->
+</div>
+{% endblock %} 

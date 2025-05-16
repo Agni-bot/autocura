@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gerador-config
+  namespace: autocura
+data:
+  config.yaml: |
+    log_level: INFO
+    templates_path: /app/templates
+    api_timeout: 30
+    max_retries: 3
