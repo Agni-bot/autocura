@@ -16,7 +16,7 @@ BASE_INSTALL_DIR="/opt/meuapp"
 # Para este exemplo, será /opt/meuapp/src
 DOWNLOAD_DIR="${BASE_INSTALL_DIR}/src"
 # APP_CONFIG_SOURCE_DIR é onde os templates de config estão no "pacote" simulado
-APP_CONFIG_SOURCE_DIR="/mnt/c/Users/filip/OneDrive/Área de Trabalho/I.A/home/ubuntu/v3/app_package_placeholders/config"
+APP_CONFIG_SOURCE_DIR="/mnt/c/Users/filip/OneDrive/Área de Trabalho/autocura/app_package_placeholders/config"
 APP_CONFIG_TARGET_SUBDIR="config" # Subdiretório dentro de DOWNLOAD_DIR para os configs
 
 # Usuário e grupo da aplicação (para definir propriedade dos arquivos)
