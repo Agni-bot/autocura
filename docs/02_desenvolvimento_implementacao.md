@@ -36,11 +36,23 @@
 - Documentação
 - Versionamento
 
-### 3.2 Desenvolvimento de Features
-- Análise de requisitos
-- Design
-- Implementação
-- Testes
+### 3.2 Scripts de Automação
+- Validação de Ambiente (01_validar_ambiente.sh)
+- Instalação de Dependências (02_instalar_dependencias.sh)
+- Configuração de Usuários (03_configurar_usuarios_grupos.sh)
+- Criação de Diretórios (04_criar_diretorios.sh)
+- Download de Artefatos (05_baixar_artefatos_aplicacao.sh)
+- Configuração da Aplicação (06_configurar_aplicacao.sh)
+- Inicialização de Serviços (07_inicializar_servicos.sh)
+- Validação Pós-Instalação (08_validacao_pos_instalacao.sh)
+- Limpeza de Instalação (09_limpeza_instalacao.sh)
+- Inicialização do Frontend (10_iniciar_frontend.sh)
+
+### 3.3 Scripts de Suporte
+- Build (build.sh, build.cmd, build-images.ps1)
+- Setup Kubernetes (setup-kind.sh, setup-kind2.sh, setup-kind.cmd)
+- Inicialização do Portal (iniciar_portal.ps1)
+- Testes (run_test.bat)
 
 ## 4. Qualidade e Testes
 

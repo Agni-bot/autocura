@@ -1,78 +1,56 @@
-// Função para carregar métricas
-async function carregarMetricas() {
-    try {
-        const response = await fetch('/api/metricas');
-        const metricas = await response.json();
-        
-        const container = document.getElementById('metricas-container');
-        container.innerHTML = `
-            <div class="metric-item">
-                <h5>Throughput</h5>
-                <p class="metric-value">${metricas.throughput} ops/s</p>
-            </div>
-            <div class="metric-item">
-                <h5>Taxa de Erro</h5>
-                <p class="metric-value">${metricas.taxa_erro}%</p>
-            </div>
-            <div class="metric-item">
-                <h5>Latência</h5>
-                <p class="metric-value">${metricas.latencia} ms</p>
-            </div>
-        `;
-    } catch (error) {
-        console.error('Erro ao carregar métricas:', error);
-    }
+// Função para atualizar os dados do dashboard
+function atualizarDashboard() {
+    fetch('/api/observabilidade/dashboard')
+        .then(response => response.json())
+        .then(data => {
+            // Atualizar cards
+            document.getElementById('status-sistema').textContent = data.status_sistema;
+            document.getElementById('acoes-pendentes').textContent = data.acoes_pendentes;
+            document.getElementById('alertas-ativos').textContent = data.alertas_ativos;
+            document.getElementById('metricas-performance').textContent = data.metricas_performance;
+
+            // Atualizar gráficos
+            atualizarGraficoMetricas(data.metricas);
+            atualizarGraficoAlertas(data.alertas);
+
+            // Atualizar tabela de ações
+            const tbody = document.getElementById('acoes-recentes');
+            tbody.innerHTML = '';
+            
+            data.acoes_recentes.forEach(acao => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${acao.id}</td>
+                    <td>${acao.tipo}</td>
+                    <td>${acao.descricao}</td>
+                    <td><span class="badge badge-${acao.status === 'Concluído' ? 'success' : 'warning'}">${acao.status}</span></td>
+                    <td>${acao.data}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        })
+        .catch(error => {
+            console.error('Erro ao atualizar dashboard:', error);
+            alert('Erro ao carregar dados do dashboard. Por favor, tente novamente.');
+        });
 }
 
-// Função para carregar alertas
-async function carregarAlertas() {
-    try {
-        const response = await fetch('/api/alertas');
-        const alertas = await response.json();
-        
-        const container = document.getElementById('alertas-container');
-        container.innerHTML = alertas.map(alerta => `
-            <div class="alert ${alerta.severidade}">
-                <h6>${alerta.titulo}</h6>
-                <p>${alerta.descricao}</p>
-                <small>${new Date(alerta.timestamp).toLocaleString()}</small>
-            </div>
-        `).join('');
-    } catch (error) {
-        console.error('Erro ao carregar alertas:', error);
+// Função para atualizar o gráfico de métricas
+function atualizarGraficoMetricas(dados) {
+    const ctx = document.getElementById('grafico-metricas').getContext('2d');
+    
+    if (window.metricasChart) {
+        window.metricasChart.destroy();
     }
-}
 
-// Função para carregar ações
-async function carregarAcoes() {
-    try {
-        const response = await fetch('/api/acoes');
-        const acoes = await response.json();
-        
-        const container = document.getElementById('acoes-container');
-        container.innerHTML = acoes.map(acao => `
-            <div class="acao-item">
-                <h6>${acao.tipo}</h6>
-                <p>${acao.descricao}</p>
-                <small>Prioridade: ${acao.prioridade}</small>
-            </div>
-        `).join('');
-    } catch (error) {
-        console.error('Erro ao carregar ações:', error);
-    }
-}
-
-// Função para inicializar o gráfico
-function inicializarGrafico() {
-    const ctx = document.getElementById('performance-chart').getContext('2d');
-    new Chart(ctx, {
+    window.metricasChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: [],
+            labels: dados.labels,
             datasets: [{
-                label: 'Throughput',
-                data: [],
-                borderColor: 'rgb(75, 192, 192)',
+                label: 'Performance',
+                data: dados.valores,
+                borderColor: '#4e73df',
                 tension: 0.1
             }]
         },
@@ -83,18 +61,33 @@ function inicializarGrafico() {
     });
 }
 
-// Função para atualizar o dashboard
-async function atualizarDashboard() {
-    await carregarMetricas();
-    await carregarAlertas();
-    await carregarAcoes();
+// Função para atualizar o gráfico de alertas
+function atualizarGraficoAlertas(dados) {
+    const ctx = document.getElementById('grafico-alertas').getContext('2d');
+    
+    if (window.alertasChart) {
+        window.alertasChart.destroy();
+    }
+
+    window.alertasChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: dados.labels,
+            datasets: [{
+                label: 'Alertas',
+                data: dados.valores,
+                backgroundColor: '#f6c23e'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
 }
 
-// Inicialização
-document.addEventListener('DOMContentLoaded', () => {
-    inicializarGrafico();
-    atualizarDashboard();
-    
-    // Atualizar a cada 30 segundos
-    setInterval(atualizarDashboard, 30000);
-}); 
+// Atualizar dashboard a cada 30 segundos
+setInterval(atualizarDashboard, 30000);
+
+// Atualizar dashboard ao carregar a página
+document.addEventListener('DOMContentLoaded', atualizarDashboard); 
