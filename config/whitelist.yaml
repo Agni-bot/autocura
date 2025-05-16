@@ -1,0 +1,26 @@
+news_sources:
+  allowed_domains:
+    - "reuters.com"
+    - "bloomberg.com"
+    - "gov.uk"
+    - "data.worldbank.org"
+    - "news.google.com" # Exemplo adicional
+    # Adicionar aqui os domínios das APIs oficiais, se aplicável, para consistência
+    # Exemplo: se api.example-events.com é uma fonte direta de notícias
+    - "api.example-events.com"
+    - "gdeltproject.org"
+    - "newsapi.org"
+    - "api.imf.org"
+    # Adicionar domínios de OpenWeatherMap e NOAA se eles fornecerem artigos/fontes diretas
+
+# Poderia haver outras categorias de whitelist, se necessário
+# finance_data_providers:
+#   allowed_domains:
+#     - "data.imf.org"
+#     - "databank.worldbank.org"
+
+# climate_data_providers:
+#   allowed_domains:
+#     - "openweathermap.org"
+#     - "noaa.gov"
+

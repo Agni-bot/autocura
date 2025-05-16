@@ -1,0 +1,4 @@
+Flask>=2.0.0
+requests>=2.25.0
+MetaTrader5>=5.0.0 # Adicionar condicionalmente ou garantir que o ambiente de build lide com isso
+# Adicione outras dependências específicas do módulo de finanças aqui

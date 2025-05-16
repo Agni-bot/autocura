@@ -11,7 +11,7 @@ resources:
 - operators/rollback-operator
 - storage
 
-labels:
+commonLabels:
   app.kubernetes.io/part-of: autocura
   app.kubernetes.io/managed-by: kustomize
 

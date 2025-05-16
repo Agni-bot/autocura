@@ -1,0 +1,23 @@
+[Unit]
+Description=MeuApp Service
+After=network.target
+
+[Service]
+User=meuappuser
+Group=meuappgroup
+
+WorkingDirectory=/opt/meuapp/src
+ExecStart=/opt/meuapp/bin/meuapp_executable # Ajuste o caminho para o executável real
+
+Restart=always
+RestartSec=3
+
+# Configurações de ambiente (opcional)
+# Environment="CONFIG_FILE=/etc/meuapp/meuapp.conf"
+
+# Limites de recursos (opcional)
+# LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+

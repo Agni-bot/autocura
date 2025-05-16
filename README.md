@@ -1,6 +1,5 @@
 # Sistema de Autocura Cognitiva
 
-<<<<<<< HEAD
 Este repositório contém o Sistema de Autocura Cognitiva, uma solução avançada para manutenção autônoma de sistemas de Inteligência Artificial.
 
 ## Visão Geral
@@ -22,8 +21,8 @@ Siga estas etapas para configurar e executar o Sistema de Autocura Cognitiva em 
 ### 1. Clone o repositório
 
 ```bash
-git clone https://github.com/seu-usuario/autocura.git
-cd autocura
+git clone https://github.com/seu-usuario/autocura-cognitiva.git
+cd autocura-cognitiva
 ```
 
 ### 2. Configure o ambiente Kubernetes local
@@ -76,10 +75,10 @@ Verifique se todos os componentes foram implantados corretamente:
 
 ```bash
 # Verifique os pods
-kubectl get pods -n autocura-dev
+kubectl get pods -n autocura-cognitiva-dev
 
 # Verifique os serviços
-kubectl get services -n autocura-dev
+kubectl get services -n autocura-cognitiva-dev
 ```
 
 ### 6. Acesse o painel de observabilidade
@@ -88,7 +87,7 @@ O painel de observabilidade está disponível através do serviço de observabil
 
 ```bash
 # Encaminhe a porta do serviço de observabilidade
-kubectl port-forward -n autocura-dev svc/observabilidade 8080:8080
+kubectl port-forward -n autocura-cognitiva-dev svc/observabilidade 8080:8080
 ```
 
 Acesse o painel em seu navegador: http://localhost:8080
@@ -96,11 +95,11 @@ Acesse o painel em seu navegador: http://localhost:8080
 ## Estrutura do Projeto
 
 ```
-autocura/
+autocura_cognitiva/
 ├── src/                      # Código-fonte dos componentes
 │   ├── monitoramento/        # Módulo de Monitoramento Multidimensional
 │   ├── diagnostico/          # Módulo de Diagnóstico Neural
-│   ├── gerador/        # Gerador de Ações Emergentes
+│   ├── gerador_acoes/        # Gerador de Ações Emergentes
 │   ├── observabilidade/      # Interface de Observabilidade 4D
 │   └── integracao/           # Módulos de integração
 ├── kubernetes/               # Configurações de implantação
@@ -127,7 +126,7 @@ Se você encontrar erros de ImagePullBackOff:
 
 2. Verifique se as imagens foram construídas e enviadas corretamente:
    ```bash
-   docker images | grep autocura
+   docker images | grep autocura-cognitiva
    ```
 
 3. Verifique se o cluster kind está configurado para acessar o registro local:
@@ -155,167 +154,3 @@ Para mais informações, consulte os documentos na pasta `docs/`:
 ## Licença
 
 Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para detalhes.
-=======
-## Sumário
-- [Visão Geral](#visão-geral)
-- [Arquitetura do Sistema](#arquitetura-do-sistema)
-- [Requisitos](#requisitos)
-- [Configuração e Execução](#configuração-e-execução)
-- [Monitoramento](#monitoramento)
-- [Desenvolvimento](#desenvolvimento)
-- [Estrutura do Projeto](#estrutura-do-projeto)
-- [Módulo Will - Detalhes](#módulo-will---detalhes)
-- [Contribuição](#contribuição)
-- [Licença](#licença)
-
-## Visão Geral
-O Sistema de Autocura Cognitiva é uma plataforma modular para automação, monitoramento e autocura de sistemas de IA, com foco inicial em operações no mercado Forex. O sistema é composto por múltiplos módulos (Will, Portal, Observabilidade, Monitoramento, Diagnóstico, Gerador) orquestrados via Kubernetes.
-
-## Arquitetura do Sistema
-- **Will API**: Serviço principal de trading e decisão
-- **Portal**: Interface web para monitoramento e controle
-- **Observabilidade**: Dashboard central e visualização 4D
-- **Monitoramento**: Coleta e análise de métricas
-- **Diagnóstico**: Análise neural e detecção de anomalias
-- **Gerador**: Geração de ações corretivas e automações
-- **MongoDB**: Armazenamento de dados
-- **Elasticsearch**: Armazenamento e análise de logs
-- **Kibana**: Visualização de métricas e logs
-
-## Requisitos
-- Docker e Docker Compose
-- Python 3.11+
-- Kubernetes (KIND recomendado para desenvolvimento local)
-- Chaves de API:
-  - News API
-  - Gemini API
-  - Binance API
-
-## Configuração e Execução
-1. Clone o repositório:
-   ```bash
-   git clone [URL_DO_REPOSITORIO]
-   cd autocura
-   ```
-2. Configure as variáveis de ambiente:
-   ```bash
-   cp src/will/inst/.env.example src/will/inst/.env
-   # Edite o arquivo .env com suas chaves de API
-   ```
-3. Build, tag e push das imagens para o registry local:
-   ```bash
-   docker build -t portal:latest ./src/portal
-   docker tag portal:latest localhost:5000/portal:latest
-   docker push localhost:5000/portal:latest
-   # Repita para todos os módulos
-   ```
-4. Aplique os manifests do Kubernetes:
-   ```bash
-   kubectl apply -k kubernetes/components
-   ```
-5. Acesse os serviços:
-   - Portal: http://localhost:8080
-   - Will API: http://localhost:5000
-   - Kibana: http://localhost:5601
-
-## Monitoramento
-O sistema inclui monitoramento completo via Observabilidade e Kibana:
-- Métricas de trading
-- Performance do modelo
-- Saúde do sistema
-- Métricas de risco
-
-## Desenvolvimento
-Para desenvolvimento local de qualquer módulo:
-1. Instale as dependências:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. Execute os testes:
-   ```bash
-   pytest
-   ```
-3. Execute o servidor de desenvolvimento:
-   ```bash
-   python <arquivo_principal>.py
-   # ou flask run / uvicorn ...
-   ```
-
-## Estrutura do Projeto
-```
-src/
-├── will/
-│   └── inst/
-│       ├── app.py
-│       ├── ...
-├── portal/
-├── observabilidade/
-├── monitoramento/
-├── diagnostico/
-├── gerador/
-kubernetes/
-├── components/
-├── operators/
-...
-```
-
-## Módulo Will - Detalhes
-
-### Visão Geral
-O Will é o módulo de trading algorítmico do sistema, focado em decisões de negociação no mercado Forex, integrando modelos de IA e a API Gemini 2.5 Pro.
-
-### Arquitetura Interna
-- **core_ai/**: Modelos de IA (Temporal, Probabilístico, Evolutivo, Simulação, Sincronizador)
-- **data_interface/**: Integração com feeds de mercado e saída de decisões
-- **gemini_integration/**: Integração com a API Gemini
-- **processing_engine/**: Lógica central de decisão
-- **security_protocols/**: Criptografia, anonimização, scripts de segurança
-- **training_orchestrator/**: Treinamento contínuo dos modelos
-- **tests/**: Scripts de teste
-- **configs/**: Arquivos de configuração
-
-### Execução e Testes
-- Instale as dependências:
-  ```bash
-  pip install -r requirements.txt
-  ```
-- Configure a chave da API Gemini via variável de ambiente `GEMINI_API_KEY` ou arquivo de configuração.
-- Execute os testes:
-  ```bash
-  docker build --no-cache -t will:latest -f src/will/inst/Dockerfile .
-  docker run --rm -w /app will:latest python -m pytest tests/test_will_api.py -v
-  ```
-- Execute a aplicação:
-  ```bash
-  docker run --rm -p 5000:5000 will:latest
-  # ou via Kubernetes, após push para o registry local
-  ```
-- Endpoints principais:
-  - `/api/will/status`: Status do sistema
-  - `/api/will/decision`: Decisão de trading
-
-### Estado Atual dos Testes
-- **test_status_endpoint**: ✅ PASSED
-- **test_decision_endpoint**: ✅ PASSED
-- **test_decision_endpoint_invalid_input**: ✅ PASSED
-- **test_decision_endpoint_invalid_json**: ✅ PASSED
-
-### Próximos Passos
-- Implementar validação para o campo `asset`
-- Adicionar mais testes
-- Melhorar a documentação e exemplos de uso
-
-### Documentação Adicional
-- `documentacao_tecnica_will.md`: Visão geral da arquitetura
-- `arquitetura_detalhada_will.md`: Detalhes da arquitetura
-
-## Contribuição
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
-
-## Licença
-Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
->>>>>>> origin/main

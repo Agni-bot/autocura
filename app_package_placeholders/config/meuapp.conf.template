@@ -1,0 +1,24 @@
+# Placeholder: meuapp.conf.template
+# Este é um arquivo de configuração template para MeuApp.
+# Substitua os placeholders pelos valores desejados.
+
+# Configurações Gerais
+app_name = MeuApp
+app_version = 1.0
+log_level = INFO # DEBUG, INFO, WARNING, ERROR
+
+# Configurações de Rede
+listen_address = 0.0.0.0
+listen_port = {{API_PORT}} # Exemplo de placeholder
+
+# Configurações de Banco de Dados
+db_host = {{DB_HOST}} # Exemplo de placeholder
+db_port = 5432
+db_user = meuapp_user
+db_password = "supersecretpassword"
+db_name = meuapp_db
+
+# Outras Configurações
+feature_x_enabled = true
+max_connections = 100
+

@@ -1,0 +1,50 @@
+[Unit]
+Description=MeuApp Service Principal
+Documentation=https://example.com/docs/meuapp
+After=network.target auditd.service
+
+[Service]
+Type=simple
+User=meuappuser
+Group=meuappgroup
+
+# Caminho para o diretório de trabalho da aplicação
+WorkingDirectory=/opt/meuapp/src
+
+# Comando para iniciar a aplicação
+# Certifique-se que /opt/meuapp/bin/meuapp_executable.sh seja executável (chmod +x)
+ExecStart=/opt/meuapp/bin/meuapp_executable.sh
+
+# Comando para recarregar a configuração (se suportado pela aplicação)
+# ExecReload=/bin/kill -HUP $MAINPID
+
+# Comando para parar a aplicação
+# ExecStop=/opt/meuapp/bin/shutdown_script.sh
+
+# Reiniciar o serviço em caso de falha
+Restart=on-failure
+RestartSec=5s
+
+# Arquivo de PID (se a aplicação criar um)
+# PIDFile=/run/meuapp/meuapp.pid
+
+# Variáveis de ambiente para a aplicação
+Environment="APP_ENV=production"
+Environment="CONFIG_PATH=/etc/meuapp/meuapp.conf"
+
+# Limites de recursos (ajuste conforme necessário)
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Segurança
+# PrivateTmp=true
+# ProtectSystem=full
+# ProtectHome=true
+# NoNewPrivileges=true
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+

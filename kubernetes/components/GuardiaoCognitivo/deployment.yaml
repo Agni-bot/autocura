@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guardiao-cognitivo
+  labels:
+    app: autocura # Corrigido de autocur para autocura, conforme padrão do projeto
+    component: guardiao-cognitivo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      component: guardiao-cognitivo
+  template:
+    metadata:
+      labels:
+        component: guardiao-cognitivo
+    spec:
+      containers:
+        - name: guardiao-cognitivo
+          image: seu-registry/guardiao-cognitivo:v1.0 # Manter placeholder para registry
+          envFrom:
+            - configMapRef:
+                name: guardiao-cognitivo-config
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests: # Adicionado requests para boas práticas
+              cpu: "250m"
+              memory: "256Mi"
+          ports:
+            - containerPort: 8081 # Alterado para 8081 conforme o Dockerfile e código do guardiao_cognitivo.py
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8081 # Alterado para 8081
+            initialDelaySeconds: 15 # Adicionado initialDelaySeconds
+            periodSeconds: 20 # Adicionado periodSeconds
+          readinessProbe: # Adicionado readinessProbe para boas práticas
+            httpGet:
+              path: /health
+              port: 8081 # Alterado para 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10

@@ -1,99 +1,3 @@
-<<<<<<< HEAD
-import time
-import logging
-from monitoramento import MonitoramentoMultidimensional
-from diagnostico import RedeNeuralDiagnostico
-from gerador import GeradorAcoes
-
-class SistemaAutocuraCognitiva:
-    def __init__(self):
-        self.logger = logging.getLogger(__name__)
-        self.monitor = MonitoramentoMultidimensional()
-        self.diagnostico = RedeNeuralDiagnostico()
-        self.gerador = GeradorAcoes()
-        
-    def executar_ciclo(self):
-        """Executa um ciclo completo de monitoramento, diagnóstico e geração de ações"""
-        try:
-            # 1. Monitoramento
-            self.logger.info("Iniciando coleta de métricas...")
-            metricas = self.monitor.coletar_metricas()
-            
-            # 2. Diagnóstico
-            self.logger.info("Realizando diagnóstico...")
-            resultado_diagnostico = self.diagnostico.gerar_diagnostico(metricas)
-            
-            # 3. Geração de Ações
-            self.logger.info("Gerando ações...")
-            acoes = self.gerador.gerar_acoes(resultado_diagnostico, metricas)
-            acoes_priorizadas = self.gerador.priorizar_acoes(acoes)
-            
-            # 4. Exibição de Resultados
-            self._exibir_resultados(metricas, resultado_diagnostico, acoes_priorizadas)
-            
-            return True
-            
-        except Exception as e:
-            self.logger.error(f"Erro durante o ciclo de autocura: {str(e)}")
-            return False
-    
-    def _exibir_resultados(self, metricas, diagnostico, acoes):
-        """Exibe os resultados do ciclo de forma organizada"""
-        print("\n" + "="*50)
-        print("RESULTADOS DO CICLO DE AUTOCURA COGNITIVA")
-        print("="*50)
-        
-        print("\nMÉTRICAS COLETADAS:")
-        print(f"Throughput: {metricas.throughput:.2f} ops/s")
-        print(f"Taxa de Erro: {metricas.taxa_erro:.2f}%")
-        print(f"Latência: {metricas.latencia:.2f} ms")
-        print("Uso de Recursos:")
-        for recurso, valor in metricas.uso_recursos.items():
-            print(f"  - {recurso}: {valor:.2f}%")
-        
-        print("\nDIAGNÓSTICO:")
-        print(f"Anomalia Detectada: {diagnostico.anomalia_detectada}")
-        print(f"Tipo de Anomalia: {diagnostico.tipo_anomalia}")
-        print(f"Nível de Gravidade: {diagnostico.nivel_gravidade:.2f}")
-        print("\nRecomendações do Diagnóstico:")
-        for rec in diagnostico.recomendacoes:
-            print(f"  - {rec}")
-        
-        print("\nAÇÕES PRIORIZADAS:")
-        for acao in acoes:
-            print(f"\nTipo: {acao.tipo.upper()}")
-            print(f"Descrição: {acao.descricao}")
-            print(f"Prioridade: {acao.prioridade}")
-            print(f"Tempo Estimado: {acao.tempo_estimado}")
-            print(f"Recursos Necessários: {', '.join(acao.recursos_necessarios)}")
-        
-        print("\n" + "="*50)
-
-def main():
-    # Configuração do logging
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
-    
-    # Inicialização do sistema
-    sistema = SistemaAutocuraCognitiva()
-    
-    # Simulação de ciclos contínuos
-    while True:
-        try:
-            sistema.executar_ciclo()
-            time.sleep(5)  # Intervalo entre ciclos
-        except KeyboardInterrupt:
-            print("\nSistema encerrado pelo usuário")
-            break
-        except Exception as e:
-            logging.error(f"Erro fatal: {str(e)}")
-            break
-
-if __name__ == "__main__":
-    main() 
-=======
 """
 Sistema de Autocura Cognitiva - Arquivo Principal
 
@@ -111,6 +15,10 @@ from fastapi.staticfiles import StaticFiles
 import uvicorn
 import logging
 from datetime import datetime
+import argparse
+import json
+import os
+import re
 
 # Importação dos módulos principais do sistema
 from monitoramento import Monitoramento  # Coleta dados multidimensionais
@@ -139,6 +47,84 @@ gerador = GeradorAcoes()         # Responsável pela geração de ações
 
 # Integração da interface de ações necessárias
 app.include_router(acao_router)
+
+# Função utilitária de dry-run (baseada no main2.py)
+PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+MAPPING_FILE = os.path.join(PROJECT_ROOT, "../directory_mapping.json")
+DRY_RUN_REPORT_FILE = os.path.join(PROJECT_ROOT, "../dry_run_report.md")
+RELEVANT_EXTENSIONS = [
+    ".py", ".go", ".md", ".txt", ".yaml", ".yml", ".json", ".sh", ".cmd", 
+    "Dockerfile", ".tf", ".hcl", ".js", ".html", ".css"
+]
+IGNORE_FILES = ["generate_mapping.py", "dry_run_script.py", "directory_mapping.json", "dry_run_report.md"]
+IGNORE_DIRS = [".git", ".pytest_cache", "__pycache__", "venv", "node_modules", "build", "dist"]
+
+def is_binary_string(bytes_content):
+    textchars = bytearray({7,8,9,10,12,13,27} | set(range(0x20, 0x100)) - {0x7f})
+    return bool(bytes_content.translate(None, textchars))
+
+def generate_dry_run_report():
+    report_content = "# Relatório de Dry-Run - Refatoração de Nomes de Diretório\n\n"
+    report_content += "Este relatório simula as alterações que seriam feitas nos nomes dos diretórios e nas referências a esses diretórios em arquivos do projeto. **Nenhuma alteração real foi aplicada.**\n\n"
+    try:
+        with open(MAPPING_FILE, "r") as f:
+            path_mappings = json.load(f)
+    except FileNotFoundError:
+        report_content += "**ERRO: Arquivo de mapeamento `directory_mapping.json` não encontrado.**\n"
+        with open(DRY_RUN_REPORT_FILE, "w") as f_report:
+            f_report.write(report_content)
+        print(f"Relatório de dry-run (com erro) salvo em {DRY_RUN_REPORT_FILE}")
+        return False
+    changed_mappings = [m for m in path_mappings if m["original_full_path"] != m["new_full_path"]]
+    if not changed_mappings:
+        report_content += "Nenhuma alteração de nome de diretório foi mapeada. Nenhuma referência seria alterada.\n"
+        with open(DRY_RUN_REPORT_FILE, "w") as f_report:
+            f_report.write(report_content)
+        print(f"Relatório de dry-run salvo em {DRY_RUN_REPORT_FILE}")
+        return True
+    report_content += "## Mapeamento de Diretórios a Serem Renomeados:\n\n"
+    for mapping_item in changed_mappings:
+        report_content += f"- **Original**: `{mapping_item['original_full_path']}`\n"
+        report_content += f"  - **Novo (Simulado)**: `{mapping_item['new_full_path']}`\n"
+        report_content += f"  - **Tipo de Transformação**: {mapping_item['transformation_type']}\n\n"
+    report_content += "## Arquivos que Seriam Afetados por Atualizações de Referência:\n\n"
+    for root, dirs, files in os.walk(PROJECT_ROOT, topdown=True):
+        dirs[:] = [d for d in dirs if d not in IGNORE_DIRS]
+        for file_name in files:
+            if file_name in IGNORE_FILES:
+                continue
+            file_path = os.path.join(root, file_name)
+            file_ext = os.path.splitext(file_name)[1]
+            base_name_no_ext = os.path.splitext(file_name)[0]
+            if not (file_ext.lower() in RELEVANT_EXTENSIONS or base_name_no_ext in RELEVANT_EXTENSIONS or file_ext == ""):
+                continue
+            try:
+                with open(file_path, "rb") as f_bin_check:
+                    if is_binary_string(f_bin_check.read(1024)):
+                        continue
+                with open(file_path, "r", encoding="utf-8", errors="ignore") as f_content:
+                    lines = f_content.readlines()
+            except Exception as e:
+                continue
+            for i, line_content in enumerate(lines):
+                for mapping_item in changed_mappings:
+                    original_path_str = mapping_item["original_full_path"].replace(PROJECT_ROOT + "/", "")
+                    new_path_str = mapping_item["new_full_path"].replace(PROJECT_ROOT + "/", "")
+                    original_basename = os.path.basename(mapping_item["original_full_path"])
+                    new_basename = os.path.basename(mapping_item["new_full_path"])
+                    search_patterns = [
+                        re.escape(mapping_item["original_full_path"]),
+                        re.escape(original_path_str),
+                        re.escape(original_basename)
+                    ]
+                    for pattern in search_patterns:
+                        if re.search(pattern, line_content):
+                            report_content += f"- Arquivo: `{file_path}` (linha {i+1})\n"
+                            report_content += f"  - Ocorrência: `{line_content.strip()}`\n"
+    with open(DRY_RUN_REPORT_FILE, "w") as f_report:
+        f_report.write(report_content)
+    print(f"Relatório de dry-run salvo em {DRY_RUN_REPORT_FILE}")
+    return True
 
 @app.get("/")
 async def home(request: Request):
@@ -188,19 +174,30 @@ async def iniciar_ciclo_autocura():
             "diagnostico": resultado_diagnostico
         }
     
-        except Exception as e:
+    except Exception as e:
         logger.error(f"Erro no ciclo de autocura: {str(e)}")
         return {
             "success": False,
             "message": f"Erro no ciclo de autocura: {str(e)}"
         }
 
+@app.post("/api/dry-run")
+async def dry_run_endpoint():
+    try:
+        result = generate_dry_run_report()
+        if result:
+            return {"success": True, "message": "Relatório de dry-run gerado com sucesso."}
+        else:
+            return {"success": False, "message": "Erro ao gerar relatório de dry-run."}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
 if __name__ == "__main__":
-    # Inicia o servidor FastAPI
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True
-    ) 
->>>>>>> origin/main
+    parser = argparse.ArgumentParser(description="Sistema de Autocura Cognitiva")
+    parser.add_argument("--dry-run", action="store_true", help="Executa o utilitário de dry-run de renomeação de diretórios")
+    args = parser.parse_args()
+    if args.dry_run:
+        generate_dry_run_report()
+    else:
+        # Inicia o servidor FastAPI normalmente
+        uvicorn.run(app, host="0.0.0.0", port=8000)

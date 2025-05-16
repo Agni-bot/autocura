@@ -1,0 +1,41 @@
+# Padrões de Nomenclatura para Diretórios do Projeto Autocura
+
+Este arquivo define as convenções de nomenclatura a serem seguidas para nomes de diretórios dentro deste projeto. O objetivo é manter a consistência, legibilidade e evitar problemas de compatibilidade entre diferentes sistemas operacionais e ferramentas.
+
+## Regras Gerais
+
+1.  **Idioma**: Preferencialmente, utilize termos em inglês para nomes de diretórios, a menos que o contexto do projeto exija explicitamente o português (ex: nomes de módulos de negócio muito específicos).
+2.  **Clareza**: Os nomes devem ser descritivos e autoexplicativos, refletindo o conteúdo ou propósito do diretório.
+3.  **Evitar Abreviações Excessivas**: Use abreviações com moderação e apenas quando forem amplamente conhecidas e compreendidas no contexto do projeto.
+4.  **Caracteres Permitidos**: Utilize apenas caracteres alfanuméricos (a-z, A-Z, 0-9). Evite espaços e caracteres especiais, exceto quando especificado abaixo para transformação.
+5.  **Case Sensitivity**: Embora alguns sistemas de arquivos sejam case-insensitive (como o padrão do Windows e macOS), o Linux é case-sensitive. Para evitar conflitos e garantir consistência em ambientes de desenvolvimento e CI/CD, trate os nomes como se fossem case-sensitive e siga as regras de capitalização estritamente.
+
+## Regras de Transformação para Caracteres Especiais
+
+Estas regras são aplicadas automaticamente por scripts de refatoração e devem ser seguidas manualmente ao criar novos diretórios. Um hook de pré-commit ajudará a reforçar essas regras.
+
+### 1. Underscore (`_`)
+   - **Transformação**: Remover o underscore e aplicar `camelCase`.
+   - **Exemplo**: `minha_pasta_de_utilitarios` se torna `minhaPastaDeUtilitarios`.
+   - **Justificativa**: `camelCase` é um padrão comum em muitas linguagens de programação (JavaScript, Java) para variáveis e nomes de funções, e pode ser aplicado consistentemente a diretórios para uma aparência uniforme.
+
+### 2. Hífen (`-`)
+   - **Transformação**: Remover o hífen e aplicar `PascalCase` (também conhecido como UpperCamelCase).
+   - **Exemplo**: `meu-modulo-principal` se torna `MeuModuloPrincipal`.
+   - **Justificativa**: `PascalCase` é frequentemente usado para nomes de classes e componentes (React, Vue), e também para diretórios que representam módulos ou componentes maiores. A distinção visual do `camelCase` pode ajudar a diferenciar tipos de diretórios se desejado.
+
+## Exceções Notáveis
+
+- **Diretórios Ocultos**: Nomes de diretórios que começam com um ponto (`.`) (ex: `.git`, `.vscode`, `.idea`) são geralmente usados por ferramentas e sistemas e devem ser mantidos como estão.
+- **Diretórios de Build/Dependência**: Nomes como `node_modules`, `__pycache__`, `target`, `build`, `dist` são padronizados por ecossistemas específicos e devem ser mantidos.
+- **Nomes Específicos de Python**: Diretórios como `__init__.py` (embora seja um arquivo, o princípio se aplica a nomes especiais) devem ser mantidos conforme a convenção da linguagem.
+
+## Ferramentas de Suporte
+
+- **Hook Git Pré-Commit**: Um hook de pré-commit está configurado em `.git/hooks/pre-commit` para verificar automaticamente os nomes dos diretórios que estão sendo adicionados ou modificados. Ele impedirá o commit se encontrar nomes de diretórios contendo `_` ou `-`, orientando o desenvolvedor a aplicar as correções.
+- **Scripts de Refatoração**: Scripts foram utilizados para aplicar essas convenções em toda a base de código existente. Consulte os logs de refatoração para o histórico de mudanças.
+
+## Manutenção
+
+Este documento deve ser revisado e atualizado conforme necessário, caso as convenções de nomenclatura do projeto evoluam.
+

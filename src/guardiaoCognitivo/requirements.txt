@@ -1,0 +1,5 @@
+Flask==2.1.2
+numpy==1.22.3
+requests==2.27.1
+kubernetes==29.0.0 # Adicionada biblioteca Kubernetes
+Werkzeug~=2.1.0 # Fixa versão compatível com Flask 2.1.2
