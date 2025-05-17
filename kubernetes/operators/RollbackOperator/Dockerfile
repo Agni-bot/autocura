@@ -1,4 +1,4 @@
-FROM golang:1.18-alpine AS builder
+FROM golang:1.18 as builder
 
 WORKDIR /workspace
 
@@ -6,24 +6,15 @@ WORKDIR /workspace
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Listar arquivos no diretório atual
-RUN ls -la
-
-# Copiar todo o código-fonte para o caminho esperado pelo Go
-RUN mkdir -p /go/src/autocura && \
-    cp -r . /go/src/autocura/RollbackOperator && \
-    ls -la /go/src/autocura/RollbackOperator
-
-WORKDIR /go/src/autocura/RollbackOperator
+# Copiar o código-fonte
+COPY . .
 
 # Compilar
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o /workspace/rollback-operator .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
 
-# Imagem final
-FROM alpine:3.16
-
+FROM gcr.io/distroless/static:nonroot
 WORKDIR /
-COPY --from=builder /workspace/rollback-operator .
+COPY --from=builder /workspace/manager .
 USER 65532:65532
 
-ENTRYPOINT ["/rollback-operator"]
+ENTRYPOINT ["/manager"]

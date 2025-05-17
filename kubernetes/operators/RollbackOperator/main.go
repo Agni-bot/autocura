@@ -11,8 +11,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	rollbackv1 "autocura/RollbackOperator/api/v1"
-	"autocura/RollbackOperator/controllers"
+	rollbackv1 "RollbackOperator/Api/V1"
+	"RollbackOperator/Controllers"
 )
 
 var (
@@ -44,7 +44,7 @@ func main() {
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
-		Metrics:                ctrl.Metrics{BindAddress: metricsAddr},
+		MetricsBindAddress:     metricsAddr,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "rollback-operator.autocura.io",
@@ -54,7 +54,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.RollbackReconciler{
+	if err = (&Controllers.RollbackReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {

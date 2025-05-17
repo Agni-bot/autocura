@@ -1,4 +1,4 @@
-module autocura/RollbackOperator
+module RollbackOperator
 
 go 1.18
 
