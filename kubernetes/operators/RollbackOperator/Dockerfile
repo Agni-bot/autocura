@@ -6,6 +6,9 @@ WORKDIR /workspace
 COPY go.mod go.sum ./
 RUN go mod download
 
+# Listar arquivos no diretório atual
+RUN ls -la
+
 # Copiar todo o código-fonte para o caminho esperado pelo Go
 RUN mkdir -p /go/src/autocura && \
     cp -r . /go/src/autocura/RollbackOperator && \
