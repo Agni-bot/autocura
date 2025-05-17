@@ -6,16 +6,14 @@ WORKDIR /workspace
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copiar todo o código-fonte
-COPY . .
+# Copiar todo o código-fonte para o caminho esperado pelo Go
+RUN mkdir -p /go/src/autocura && \
+    cp -r . /go/src/autocura/RollbackOperator
 
-# Configurar o módulo Go
-ENV GO111MODULE=on
-ENV GOPATH=/go
-ENV PATH=$PATH:$GOPATH/bin
+WORKDIR /go/src/autocura/RollbackOperator
 
 # Compilar
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=readonly -a -o rollback-operator main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=readonly -a -o /workspace/rollback-operator main.go
 
 # Imagem final
 FROM alpine:3.16
