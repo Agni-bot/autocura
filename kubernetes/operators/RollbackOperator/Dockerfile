@@ -8,8 +8,7 @@ RUN go mod download
 
 # Copiar todo o código-fonte para o caminho esperado pelo Go
 RUN mkdir -p /go/src/autocura && \
-    cp -r . /go/src/autocura/RollbackOperator && \
-    cp -r api controllers /go/src/autocura/RollbackOperator/
+    cp -r . /go/src/autocura/RollbackOperator
 
 WORKDIR /go/src/autocura/RollbackOperator
 
