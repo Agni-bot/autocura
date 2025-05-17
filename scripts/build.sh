@@ -104,7 +104,7 @@ fi
 echo "Construindo imagens dos componentes principais..."
 build_and_load "monitoramento" "src/monitoramento"
 build_and_load "diagnostico" "src/diagnostico"
-build_and_load "gerador-acoes" "src/geradorAcoes"
+build_and_load "gerador-acoes" "src/GeradorAcoes"
 build_and_load "observabilidade" "src/observabilidade"
 
 # Construir imagens dos operadores
