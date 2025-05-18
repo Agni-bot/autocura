@@ -1,0 +1,47 @@
+groups:
+- name: diagnostico
+  rules:
+  - alert: HighRequestLatency
+    expr: rate(http_request_duration_seconds_sum[5m]) / rate(http_request_duration_seconds_count[5m]) > 0.5
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Alta latência nas requisições"
+      description: "O serviço de diagnóstico está com latência acima de 500ms por requisição"
+
+  - alert: HighErrorRate
+    expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Alta taxa de erros"
+      description: "O serviço de diagnóstico está retornando mais de 5% de erros"
+
+  - alert: ServiceDown
+    expr: up == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Serviço indisponível"
+      description: "O serviço de diagnóstico está fora do ar"
+
+  - alert: HighCPUUsage
+    expr: rate(process_cpu_seconds_total[5m]) * 100 > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Alto uso de CPU"
+      description: "O serviço de diagnóstico está usando mais de 80% de CPU"
+
+  - alert: HighMemoryUsage
+    expr: process_resident_memory_bytes / 1024 / 1024 > 1024
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Alto uso de memória"
+      description: "O serviço de diagnóstico está usando mais de 1GB de memória" 

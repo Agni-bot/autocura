@@ -22,13 +22,8 @@ spec:
       serviceAccountName: autocura-sa
       containers:
       - name: observabilidade
-<<<<<<< HEAD
         image: localhost:5000/autocura/observabilidade:latest
         imagePullPolicy: Always
-=======
-        image: localhost:5000/observabilidade:latest
-        imagePullPolicy: IfNotPresent
->>>>>>> origin/main
         ports:
         - containerPort: 8080
           name: http
@@ -41,19 +36,11 @@ spec:
             memory: 512Mi
         env:
         - name: MONITORAMENTO_URL
-<<<<<<< HEAD
-          value: "http://monitoramento:8080"
+          value: "http://monitoramento:8081"
         - name: DIAGNOSTICO_URL
           value: "http://diagnostico:8080"
-        - name: gerador_URL
-          value: "http://gerador:8080"
-=======
-          value: "http://will:5000"
-        - name: DIAGNOSTICO_URL
-          value: "http://will:5000"
         - name: GERADOR_URL
-          value: "http://will:5000"
->>>>>>> origin/main
+          value: "http://gerador:8080"
         - name: CONFIG_MAP
           value: observabilidade-config
         - name: LOG_LEVEL

@@ -1,0 +1,72 @@
+{
+    "tipos_acoes": {
+        "reiniciar_servico": {
+            "descricao": "Reinicia um serviço específico",
+            "parametros": ["nome_servico"],
+            "timeout": 300,
+            "retry_attempts": 3
+        },
+        "limpar_cache": {
+            "descricao": "Limpa o cache do sistema",
+            "parametros": ["tipo_cache"],
+            "timeout": 60,
+            "retry_attempts": 2
+        },
+        "atualizar_configuracao": {
+            "descricao": "Atualiza configurações do sistema",
+            "parametros": ["arquivo_config", "novos_valores"],
+            "timeout": 120,
+            "retry_attempts": 2
+        },
+        "verificar_integridade": {
+            "descricao": "Verifica a integridade dos dados",
+            "parametros": ["tipo_verificacao"],
+            "timeout": 600,
+            "retry_attempts": 1
+        },
+        "otimizar_recursos": {
+            "descricao": "Otimiza o uso de recursos do sistema",
+            "parametros": ["tipo_recurso"],
+            "timeout": 180,
+            "retry_attempts": 2
+        }
+    },
+    "prioridades": {
+        "critica": {
+            "descricao": "Ação crítica que deve ser executada imediatamente",
+            "timeout": 60,
+            "notificacao": true
+        },
+        "alta": {
+            "descricao": "Ação de alta prioridade",
+            "timeout": 300,
+            "notificacao": true
+        },
+        "media": {
+            "descricao": "Ação de prioridade média",
+            "timeout": 600,
+            "notificacao": false
+        },
+        "baixa": {
+            "descricao": "Ação de baixa prioridade",
+            "timeout": 1800,
+            "notificacao": false
+        }
+    },
+    "configuracoes_gerais": {
+        "max_acoes_concorrentes": 5,
+        "intervalo_verificacao": 60,
+        "diretorio_logs": "logs",
+        "nivel_log": "INFO",
+        "notificacoes": {
+            "email": {
+                "habilitado": true,
+                "destinatarios": ["admin@exemplo.com"]
+            },
+            "slack": {
+                "habilitado": true,
+                "webhook_url": "https://hooks.slack.com/services/xxx/yyy/zzz"
+            }
+        }
+    }
+} 

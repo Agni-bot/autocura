@@ -14,10 +14,7 @@ spec:
       labels:
         app: fluentd
     spec:
-      serviceAccount: fluentd
-      tolerations:
-      - key: node-role.kubernetes.io/master
-        effect: NoSchedule
+      serviceAccountName: fluentd
       containers:
       - name: fluentd
         image: fluent/fluentd-kubernetes-daemonset:v1.16-debian-elasticsearch7-1
@@ -28,11 +25,8 @@ spec:
             value: "9200"
           - name: FLUENT_ELASTICSEARCH_SCHEME
             value: "http"
-<<<<<<< HEAD
-=======
           - name: FLUENTD_SYSTEMD_CONF
             value: "disable"
->>>>>>> origin/main
         resources:
           limits:
             memory: 200Mi
@@ -45,7 +39,7 @@ spec:
         - name: varlibdockercontainers
           mountPath: /var/lib/docker/containers
           readOnly: true
-        - name: config
+        - name: fluentd-config
           mountPath: /fluentd/etc
       terminationGracePeriodSeconds: 30
       volumes:
@@ -55,7 +49,7 @@ spec:
       - name: varlibdockercontainers
         hostPath:
           path: /var/lib/docker/containers
-      - name: config
+      - name: fluentd-config
         configMap:
           name: fluentd-config
 ---
@@ -74,22 +68,16 @@ data:
       read_from_head true
       <parse>
         @type json
-<<<<<<< HEAD
-        time_format %Y-%m-%dT%H:%M:%S.%NZ
-=======
         time_key time
         time_type string
         time_format %Y-%m-%dT%H:%M:%S.%NZ
         keep_time_key true
->>>>>>> origin/main
       </parse>
     </source>
 
     <filter kubernetes.**>
       @type kubernetes_metadata
       @id filter_kube_metadata
-<<<<<<< HEAD
-=======
       bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
       ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
       verify_ssl true
@@ -108,7 +96,6 @@ data:
         message ${record["log"]}
       </record>
       remove_keys time,stream,docker,kubernetes
->>>>>>> origin/main
     </filter>
 
     <match kubernetes.**>
@@ -119,11 +106,6 @@ data:
       logstash_prefix fluentd
       logstash_dateformat %Y%m%d
       include_tag_key true
-<<<<<<< HEAD
-      type_name access_log
-      tag_key @log_name
-      flush_interval 1s
-=======
       type_name fluentd
       tag_key @log_name
       <buffer>
@@ -139,7 +121,6 @@ data:
         queue_limit_length 8
         overflow_action block
       </buffer>
->>>>>>> origin/main
     </match>
 ---
 apiVersion: v1

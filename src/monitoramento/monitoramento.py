@@ -1,37 +1,18 @@
-<<<<<<< HEAD
-# Módulo de Monitoramento Multidimensional
-
-import time
-import threading
-import numpy as np
-import pandas as pd
-from typing import Dict, List, Any, Tuple, Optional, Callable
-from dataclasses import dataclass, field
-from collections import deque
-import logging
-import json
-from datetime import datetime
-from fastapi import FastAPI
-import random
-
-# Configuração do FastAPI
-app = FastAPI(title="Monitoramento Multidimensional")
-=======
 """
-Módulo de Monitoramento Multidimensional
+Módulo de Monitoramento
 
-Este módulo é responsável por coletar e analisar métricas em múltiplas dimensões do sistema.
+Este módulo é responsável por coletar e analisar métricas do sistema.
 Ele integra:
-1. Coleta de métricas de diferentes fontes
-2. Análise de tendências e padrões
-3. Detecção de anomalias
-4. Geração de alertas
+1. Coleta de métricas
+2. Análise estatística
+3. Geração de alertas
+4. Armazenamento de dados
 
 O módulo utiliza:
-- Prometheus para métricas de sistema
-- Elasticsearch para logs
-- Grafana para visualização
-- AlertManager para notificações
+- Flask para API REST
+- Pandas para análise
+- Threading para coleta assíncrona
+- Logging para rastreamento
 """
 
 import numpy as np
@@ -51,8 +32,9 @@ import uuid
 from enum import Enum, auto
 import requests
 import os
+import psutil
+import subprocess
 from functools import wraps
->>>>>>> origin/main
 
 # Configuração de logging
 logging.basicConfig(
@@ -60,19 +42,8 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
-logger = logging.getLogger("MonitoramentoMultidimensional")
+logger = logging.getLogger("Monitoramento")
 
-<<<<<<< HEAD
-# Estruturas de dados para métricas
-@dataclass
-class MetricaDimensional:
-    """
-    Estrutura de dados para métricas multidimensionais com contexto temporal e espacial.
-    
-    Como cristais de dados que capturam a essência do sistema,
-    cada métrica é um prisma que refrata a realidade operacional
-    em dimensões que transcendem o óbvio.
-=======
 class Config:
     """
     Configurações do sistema carregadas do ConfigMap.
@@ -125,7 +96,6 @@ class MetricaDimensional:
         unidade: Unidade de medida
         tags: Tags adicionais
         metadados: Metadados extras
->>>>>>> origin/main
     """
     id: str
     nome: str
@@ -135,13 +105,6 @@ class MetricaDimensional:
     unidade: str
     tags: Dict[str, str] = field(default_factory=dict)
     metadados: Dict[str, Any] = field(default_factory=dict)
-<<<<<<< HEAD
-    contexto: Dict[str, Any] = field(default_factory=dict)
-    confianca: float = 1.0
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Converte a métrica para formato de dicionário."""
-=======
     
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -150,7 +113,6 @@ class MetricaDimensional:
         Returns:
             dict: Representação em dicionário
         """
->>>>>>> origin/main
         return {
             "id": self.id,
             "nome": self.nome,
@@ -159,1160 +121,317 @@ class MetricaDimensional:
             "dimensao": self.dimensao,
             "unidade": self.unidade,
             "tags": self.tags,
-<<<<<<< HEAD
-            "metadados": self.metadados,
-            "contexto": self.contexto,
-            "confianca": self.confianca
-=======
             "metadados": self.metadados
->>>>>>> origin/main
         }
-    
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'MetricaDimensional':
-<<<<<<< HEAD
-        """Cria uma instância de métrica a partir de um dicionário."""
-=======
-        """
-        Cria uma instância de métrica a partir de um dicionário.
-        
-        Args:
-            data: Dicionário com dados da métrica
-            
-        Returns:
-            MetricaDimensional: Instância criada
-        """
->>>>>>> origin/main
-        return cls(
-            id=data["id"],
-            nome=data["nome"],
-            valor=data["valor"],
-            timestamp=data["timestamp"],
-            dimensao=data["dimensao"],
-            unidade=data["unidade"],
-            tags=data.get("tags", {}),
-<<<<<<< HEAD
-            metadados=data.get("metadados", {}),
-            contexto=data.get("contexto", {}),
-            confianca=data.get("confianca", 1.0)
-        )
-
-# Armazenamento de métricas em memória
-metricas_store: List[MetricaDimensional] = []
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy", "timestamp": time.time()}
-
-@app.get("/ready")
-async def ready_check():
-    return {"status": "ready", "timestamp": time.time()}
-
-@app.get("/api/metricas")
-async def get_metricas():
-    # Se não houver métricas, gerar algumas de exemplo
-    if not metricas_store:
-        metricas_store.extend([
-            MetricaDimensional(
-                id=f"metric_{i}",
-                nome=nome,
-                valor=random.uniform(0, 100),
-                timestamp=time.time(),
-                dimensao=dim,
-                unidade=unidade,
-                tags={"ambiente": "producao"},
-                metadados={"fonte": "simulador"}
-            )
-            for i, (nome, dim, unidade) in enumerate([
-                ("cpu_usage", "recursos", "percentual"),
-                ("memory_usage", "recursos", "percentual"),
-                ("latency", "performance", "ms"),
-                ("throughput", "performance", "rps"),
-                ("error_rate", "qualidade", "percentual")
-            ])
-        ])
-    
-    return [metric.__dict__ for metric in metricas_store]
-
-@app.get("/api/metricas/{metrica_id}")
-async def get_metrica(metrica_id: str):
-    for metrica in metricas_store:
-        if metrica.id == metrica_id:
-            return metrica.__dict__
-    return {"error": "Métrica não encontrada"}, 404
-
-class ColetorBase:
-    """
-    Classe base para todos os coletores de métricas.
-    
-    Como sentinelas silenciosas que observam o fluxo do tempo,
-    os coletores capturam sinais sutis nas correntes de dados,
-    testemunhas imparciais do comportamento do sistema.
-    """
-    def __init__(self, nome: str, intervalo: float = 1.0):
-        self.nome = nome
-        self.intervalo = intervalo
-        self.ativo = False
-        self.thread = None
-        self.callbacks = []
-        logger.info(f"Coletor {self.nome} inicializado com intervalo de {self.intervalo}s")
-    
-    def iniciar(self):
-        """Inicia a coleta de métricas em uma thread separada."""
-        if self.ativo:
-            logger.warning(f"Coletor {self.nome} já está ativo")
-            return
-        
-        self.ativo = True
-        self.thread = threading.Thread(target=self._loop_coleta, daemon=True)
-        self.thread.start()
-        logger.info(f"Coletor {self.nome} iniciado")
-    
-    def parar(self):
-        """Para a coleta de métricas."""
-        self.ativo = False
-        if self.thread:
-            self.thread.join(timeout=2*self.intervalo)
-        logger.info(f"Coletor {self.nome} parado")
-    
-    def registrar_callback(self, callback):
-        """Registra uma função de callback para receber métricas coletadas."""
-        self.callbacks.append(callback)
-        logger.debug(f"Callback registrado para coletor {self.nome}")
-    
-    def _loop_coleta(self):
-        """Loop principal de coleta que executa em uma thread separada."""
-        while self.ativo:
-            try:
-                metricas = self.coletar()
-                for metrica in metricas:
-                    for callback in self.callbacks:
-                        callback(metrica)
-            except Exception as e:
-                logger.error(f"Erro na coleta de {self.nome}: {str(e)}")
-            
-            time.sleep(self.intervalo)
-    
-    def coletar(self) -> List[MetricaDimensional]:
-        """
-        Método abstrato para coleta de métricas.
-        Deve ser implementado pelas subclasses.
-        """
-        raise NotImplementedError("Subclasses devem implementar o método coletar()")
-
-
-class ColetorThroughput(ColetorBase):
-    """
-    Coletor especializado em métricas de throughput operacional.
-    
-    Como um contador de batimentos cardíacos do sistema,
-    mede o pulso das operações, o ritmo vital
-    que sustenta o fluxo de processamento.
-    """
-    def __init__(self, nome: str, intervalo: float = 1.0, janela_media: int = 10):
-        super().__init__(nome, intervalo)
-        self.janela_media = janela_media
-        self.historico = deque(maxlen=janela_media)
-        self.contador = 0
-        self.ultimo_timestamp = time.time()
-    
-    def registrar_operacao(self, quantidade: int = 1, contexto: Dict[str, Any] = None):
-        """Registra a ocorrência de operações para cálculo de throughput."""
-        self.contador += quantidade
-    
-    def coletar(self) -> List[MetricaDimensional]:
-        """Coleta métricas de throughput baseadas no contador de operações."""
-        agora = time.time()
-        delta_t = agora - self.ultimo_timestamp
-        
-        if delta_t > 0:
-            taxa = self.contador / delta_t
-            self.historico.append(taxa)
-            media_movel = sum(self.historico) / len(self.historico)
-            
-            # Reset para próxima janela
-            self.contador = 0
-            self.ultimo_timestamp = agora
-            
-            # Criação das métricas
-            metrica_instantanea = MetricaDimensional(
-                id=f"{self.nome}_instantaneo",
-                nome=f"{self.nome}_instantaneo",
-                valor=taxa,
-                timestamp=agora,
-                dimensao="throughput",
-                unidade="ops/s"
-            )
-            
-            metrica_media = MetricaDimensional(
-                id=f"{self.nome}_media_movel",
-                nome=f"{self.nome}_media_movel",
-                valor=media_movel,
-                timestamp=agora,
-                dimensao="throughput",
-                unidade="ops/s"
-            )
-            
-            return [metrica_instantanea, metrica_media]
-        
-        return []
-
-
-class ColetorErros(ColetorBase):
-    """
-    Coletor especializado em métricas de erros contextuais.
-    
-    Como um arqueólogo de falhas que escava nas camadas do tempo,
-    cataloga os vestígios de exceções e anomalias,
-    preservando o contexto em que ocorreram.
-    """
-    def __init__(self, nome: str, intervalo: float = 1.0, categorias: List[str] = None):
-        super().__init__(nome, intervalo)
-        self.categorias = categorias or ["geral"]
-        self.contadores = {cat: 0 for cat in self.categorias}
-        self.contextos = {cat: [] for cat in self.categorias}
-        self.lock = threading.Lock()
-    
-    def registrar_erro(self, categoria: str = "geral", contexto: Dict[str, Any] = None):
-        """Registra a ocorrência de um erro com seu contexto."""
-        with self.lock:
-            if categoria not in self.contadores:
-                self.contadores[categoria] = 0
-                self.contextos[categoria] = []
-            
-            self.contadores[categoria] += 1
-            if contexto:
-                self.contextos[categoria].append(contexto)
-    
-    def coletar(self) -> List[MetricaDimensional]:
-        """Coleta métricas de erros baseadas nos contadores por categoria."""
-        metricas = []
-        agora = time.time()
-        
-        with self.lock:
-            for categoria, contador in self.contadores.items():
-                # Contexto agregado para esta categoria
-                contexto_agregado = {
-                    "categoria": categoria,
-                    "exemplos": self.contextos[categoria][-5:] if self.contextos[categoria] else []
-                }
-                
-                metrica = MetricaDimensional(
-                    id=f"{self.nome}_{categoria}",
-                    nome=f"{self.nome}_{categoria}",
-                    valor=contador,
-                    timestamp=agora,
-                    dimensao="erros",
-                    unidade="contagem"
-                )
-                
-                metricas.append(metrica)
-                
-                # Reset dos contadores após coleta
-                self.contadores[categoria] = 0
-                self.contextos[categoria] = []
-        
-        return metricas
-
-
-class ColetorLatencia(ColetorBase):
-    """
-    Coletor especializado em métricas de latência cognitiva.
-    
-    Como um cronometrista do pensamento artificial,
-    mede os intervalos entre estímulo e resposta,
-    o tempo de viagem das ideias através do labirinto neural.
-    """
-    def __init__(self, nome: str, intervalo: float = 1.0, percentis: List[float] = None):
-        super().__init__(nome, intervalo)
-        self.percentis = percentis or [50, 90, 95, 99]
-        self.medicoes = []
-        self.lock = threading.Lock()
-    
-    def registrar_latencia(self, valor: float, contexto: Dict[str, Any] = None):
-        """Registra uma medição de latência com seu contexto."""
-        with self.lock:
-            self.medicoes.append((valor, contexto or {}))
-    
-    def coletar(self) -> List[MetricaDimensional]:
-        """Coleta métricas de latência baseadas nas medições registradas."""
-        metricas = []
-        agora = time.time()
-        
-        with self.lock:
-            if not self.medicoes:
-                return []
-            
-            # Extrai valores de latência
-            valores = [m[0] for m in self.medicoes]
-            contextos = [m[1] for m in self.medicoes]
-            
-            # Calcula estatísticas
-            media = np.mean(valores)
-            mediana = np.median(valores)
-            percentis_calc = np.percentile(valores, self.percentis)
-            
-            # Cria métricas para média e mediana
-            metrica_media = MetricaDimensional(
-                id=f"{self.nome}_media",
-                nome=f"{self.nome}_media",
-                valor=media,
-                timestamp=agora,
-                dimensao="latencia",
-                unidade="ms"
-            )
-            
-            metrica_mediana = MetricaDimensional(
-                id=f"{self.nome}_mediana",
-                nome=f"{self.nome}_mediana",
-                valor=mediana,
-                timestamp=agora,
-                dimensao="latencia",
-                unidade="ms"
-            )
-            
-            metricas.extend([metrica_media, metrica_mediana])
-            
-            # Cria métricas para percentis
-            for i, p in enumerate(self.percentis):
-                metrica_percentil = MetricaDimensional(
-                    id=f"{self.nome}_p{p}",
-                    nome=f"{self.nome}_p{p}",
-                    valor=percentis_calc[i],
-                    timestamp=agora,
-                    dimensao="latencia",
-                    unidade="ms"
-                )
-                metricas.append(metrica_percentil)
-            
-            # Reset das medições após coleta
-            self.medicoes = []
-        
-        return metricas
-
-
-class ColetorRecursosFractais(ColetorBase):
-    """
-    Coletor especializado em métricas de consumo de recursos fractais.
-    
-    Como um cartógrafo de paisagens computacionais,
-    mapeia o terreno multidimensional dos recursos,
-    revelando padrões auto-similares em diferentes escalas.
-    """
-    def __init__(self, nome: str, intervalo: float = 1.0, dimensoes: List[str] = None):
-        super().__init__(nome, intervalo)
-        self.dimensoes = dimensoes or ["cpu", "memoria", "io", "rede"]
-        self.leituras = {dim: [] for dim in self.dimensoes}
-        self.escalas = [0.1, 1.0, 10.0]  # Escalas de tempo para análise fractal
-    
-    def registrar_consumo(self, dimensao: str, valor: float, escala: float = 1.0, contexto: Dict[str, Any] = None):
-        """Registra uma medição de consumo de recurso com escala e contexto."""
-        if dimensao in self.dimensoes:
-            self.leituras[dimensao].append((valor, escala, contexto or {}))
-    
-    def _calcular_dimensao_fractal(self, valores: List[float]) -> float:
-        """
-        Calcula uma aproximação da dimensão fractal usando o método box-counting.
-        Esta é uma implementação simplificada para demonstração.
-        """
-        if len(valores) < 10:
-            return 1.0  # Valor padrão para poucas amostras
-        
-        # Normaliza valores
-        valores_norm = np.array(valores) / max(valores)
-        
-        # Calcula dimensão fractal aproximada
-        steps = min(5, len(valores) // 2)
-        counts = []
-        scales = []
-        
-        for step in range(1, steps + 1):
-            box_size = 1.0 / step
-            boxes = np.ceil(valores_norm / box_size)
-            unique_boxes = len(np.unique(boxes))
-            counts.append(unique_boxes)
-            scales.append(box_size)
-        
-        if len(counts) < 2:
-            return 1.0
-        
-        # Regressão log-log
-        log_counts = np.log(counts)
-        log_scales = np.log(scales)
-        
-        # Calcula inclinação (dimensão fractal)
-        slope, _ = np.polyfit(log_scales, log_counts, 1)
-        return abs(slope)
-    
-    def coletar(self) -> List[MetricaDimensional]:
-        """Coleta métricas de consumo de recursos com análise fractal."""
-        metricas = []
-        agora = time.time()
-        
-        for dimensao in self.dimensoes:
-            if not self.leituras[dimensao]:
-                continue
-            
-            # Extrai valores por escala
-            por_escala = {}
-            for valor, escala, _ in self.leituras[dimensao]:
-                if escala not in por_escala:
-                    por_escala[escala] = []
-                por_escala[escala].append(valor)
-            
-            # Calcula métricas por escala
-            for escala, valores in por_escala.items():
-                media = np.mean(valores)
-                variacao = np.std(valores) if len(valores) > 1 else 0
-                
-                metrica = MetricaDimensional(
-                    id=f"{self.nome}_{dimensao}_escala_{escala}",
-                    nome=f"{self.nome}_{dimensao}_escala_{escala}",
-                    valor=media,
-                    timestamp=agora,
-                    dimensao="recursos",
-                    unidade="percentual"
-                )
-                metricas.append(metrica)
-            
-            # Calcula dimensão fractal se houver dados suficientes
-            todos_valores = [v for v, _, _ in self.leituras[dimensao]]
-            if len(todos_valores) >= 10:
-                dim_fractal = self._calcular_dimensao_fractal(todos_valores)
-                
-                metrica_fractal = MetricaDimensional(
-                    id=f"{self.nome}_{dimensao}_dimensao_fractal",
-                    nome=f"{self.nome}_{dimensao}_dimensao_fractal",
-                    valor=dim_fractal,
-                    timestamp=agora,
-                    dimensao="fractal",
-                    unidade="dimensao"
-                )
-                metricas.append(metrica_fractal)
-            
-            # Reset das leituras após coleta
-            self.leituras[dimensao] = []
-        
-        return metricas
-
-
-class AgregadorTemporal:
-    """
-    Agrega métricas em diferentes janelas temporais.
-    
-    Como um tecelão do tempo que entrelaça os fios dos eventos,
-    cria padrões visíveis nas tramas do passado,
-    revelando tendências ocultas nas dobras temporais.
-    """
-    def __init__(self, janelas: List[int] = None):
-        self.janelas = janelas or [60, 300, 900, 3600]  # segundos
-        self.metricas = {}  # Dict[str, Dict[int, List[MetricaDimensional]]]
-        self.lock = threading.Lock()
-        logger.info(f"AgregadorTemporal inicializado com janelas: {self.janelas}")
-    
-    def adicionar_metrica(self, metrica: MetricaDimensional):
-        """
-        Adiciona uma métrica às janelas temporais.
-        
-        Args:
-            metrica: Métrica a ser adicionada
-        """
-        with self.lock:
-            nome_chave = f"{metrica.dimensao}:{metrica.nome}"
-            
-            if nome_chave not in self.metricas:
-                self.metricas[nome_chave] = {janela: [] for janela in self.janelas}
-            
-            # Adiciona a métrica a cada janela
-            agora = time.time()
-            for janela in self.janelas:
-                # Remove métricas antigas
-                self.metricas[nome_chave][janela] = [
-                    m for m in self.metricas[nome_chave][janela]
-                    if agora - m.timestamp <= janela
-                ]
-                
-                # Adiciona nova métrica
-                self.metricas[nome_chave][janela].append(metrica)
-    
-    def obter_metricas_janela(self, dimensao: str, nome: str, janela: int) -> List[MetricaDimensional]:
-        """
-        Obtém métricas de uma janela temporal específica.
-        
-        Args:
-            dimensao: Dimensão da métrica
-            nome: Nome da métrica
-            janela: Tamanho da janela em segundos
-            
-        Returns:
-            Lista de métricas na janela
-        """
-        with self.lock:
-            nome_chave = f"{dimensao}:{nome}"
-            
-            if nome_chave not in self.metricas or janela not in self.metricas[nome_chave]:
-                return []
-            
-            # Filtra métricas dentro da janela
-            agora = time.time()
-            return [
-                m for m in self.metricas[nome_chave][janela]
-                if agora - m.timestamp <= janela
-            ]
-    
-    def calcular_estatisticas(self, dimensao: str, nome: str, janela: int) -> Dict[str, float]:
-        """
-        Calcula estatísticas para uma métrica em uma janela temporal.
-        
-        Args:
-            dimensao: Dimensão da métrica
-            nome: Nome da métrica
-            janela: Tamanho da janela em segundos
-            
-        Returns:
-            Dicionário com estatísticas (média, mediana, min, max, etc.)
-        """
-        metricas = self.obter_metricas_janela(dimensao, nome, janela)
-        
-        if not metricas:
-            return {
-                "contagem": 0,
-                "media": None,
-                "mediana": None,
-                "min": None,
-                "max": None,
-                "desvio_padrao": None
-            }
-        
-        valores = [m.valor for m in metricas]
-        
-        return {
-            "contagem": len(valores),
-            "media": np.mean(valores),
-            "mediana": np.median(valores),
-            "min": min(valores),
-            "max": max(valores),
-            "desvio_padrao": np.std(valores) if len(valores) > 1 else 0
-        }
-    
-    def detectar_tendencia(self, dimensao: str, nome: str, janela: int) -> Dict[str, Any]:
-        """
-        Detecta tendência para uma métrica em uma janela temporal.
-        
-        Args:
-            dimensao: Dimensão da métrica
-            nome: Nome da métrica
-            janela: Tamanho da janela em segundos
-            
-        Returns:
-            Dicionário com informações de tendência
-        """
-        metricas = self.obter_metricas_janela(dimensao, nome, janela)
-        
-        if len(metricas) < 3:
-            return {
-                "direcao": "estavel",
-                "inclinacao": 0,
-                "confianca": 0,
-                "amostras": len(metricas)
-            }
-        
-        # Ordena por timestamp
-        metricas.sort(key=lambda m: m.timestamp)
-        
-        # Extrai valores e timestamps
-        valores = np.array([m.valor for m in metricas])
-        timestamps = np.array([m.timestamp for m in metricas])
-        
-        # Normaliza timestamps para começar de 0
-        timestamps = timestamps - timestamps[0]
-        
-        # Regressão linear
-        if len(timestamps) > 1:
-            inclinacao, intercepto = np.polyfit(timestamps, valores, 1)
-            
-            # Calcula valores previstos
-            valores_previstos = inclinacao * timestamps + intercepto
-            
-            # Calcula erro quadrático médio
-            mse = np.mean((valores - valores_previstos) ** 2)
-            
-            # Calcula variância total
-            variancia_total = np.var(valores)
-            
-            # Calcula R² (coeficiente de determinação)
-            r2 = 1 - (mse / variancia_total) if variancia_total > 0 else 0
-            
-            # Determina direção
-            if abs(inclinacao) < 0.001 or r2 < 0.3:
-                direcao = "estavel"
-            elif inclinacao > 0:
-                direcao = "crescente"
-            else:
-                direcao = "decrescente"
-            
-            return {
-                "direcao": direcao,
-                "inclinacao": inclinacao,
-                "confianca": r2,
-                "amostras": len(metricas)
-            }
-        
-        return {
-            "direcao": "estavel",
-            "inclinacao": 0,
-            "confianca": 0,
-            "amostras": len(metricas)
-        }
-
-
-class ProcessadorContexto:
-    """
-    Enriquece dados brutos com informações contextuais.
-    
-    Como um alquimista de dados que transmuta sinais em significados,
-    destila a essência contextual das métricas brutas,
-    revelando a narrativa oculta nos números.
-    """
-    def __init__(self):
-        self.contextos_globais = {}
-        self.processadores = {}
-        self.lock = threading.Lock()
-        logger.info("ProcessadorContexto inicializado")
-    
-    def adicionar_contexto_global(self, chave: str, valor: Any):
-        """
-        Adiciona uma informação ao contexto global.
-        
-        Args:
-            chave: Chave do contexto
-            valor: Valor do contexto
-        """
-        with self.lock:
-            self.contextos_globais[chave] = valor
-    
-    def registrar_processador(self, dimensao: str, processador: Callable[[MetricaDimensional, Dict[str, Any]], Dict[str, Any]]):
-        """
-        Registra um processador de contexto para uma dimensão específica.
-        
-        Args:
-            dimensao: Dimensão da métrica
-            processador: Função que recebe (metrica, contexto_global) e retorna contexto adicional
-        """
-        with self.lock:
-            if dimensao not in self.processadores:
-                self.processadores[dimensao] = []
-            
-            self.processadores[dimensao].append(processador)
-            logger.info(f"Processador de contexto registrado para dimensão '{dimensao}'")
-    
-    def processar(self, metrica: MetricaDimensional) -> MetricaDimensional:
-        """
-        Processa uma métrica, enriquecendo seu contexto.
-        
-        Args:
-            metrica: Métrica a ser processada
-            
-        Returns:
-            Métrica com contexto enriquecido
-        """
-        with self.lock:
-            # Cria cópia da métrica para não modificar a original
-            nova_metrica = MetricaDimensional(
-                id=metrica.id,
-                nome=metrica.nome,
-                valor=metrica.valor,
-                timestamp=metrica.timestamp,
-                dimensao=metrica.dimensao,
-                unidade=metrica.unidade,
-                contexto=metrica.contexto.copy(),
-                confianca=metrica.confianca
-            )
-            
-            # Adiciona contexto global
-            for chave, valor in self.contextos_globais.items():
-                if chave not in nova_metrica.contexto:
-                    nova_metrica.contexto[chave] = valor
-            
-            # Aplica processadores específicos da dimensão
-            if metrica.dimensao in self.processadores:
-                for processador in self.processadores[metrica.dimensao]:
-                    try:
-                        contexto_adicional = processador(metrica, self.contextos_globais)
-                        if contexto_adicional:
-                            nova_metrica.contexto.update(contexto_adicional)
-                    except Exception as e:
-                        logger.error(f"Erro no processador de contexto: {str(e)}")
-            
-            return nova_metrica
-
-
-class AnalisadorFluxoContínuo:
-    """
-    Processa streams de dados em tempo real.
-    
-    Como um observador atento no rio de dados que flui incessantemente,
-    identifica padrões efêmeros nas correntes de informação,
-    capturando insights antes que se dissolvam no oceano do tempo.
-    """
-    def __init__(self, tamanho_janela: int = 100):
-        self.janela_deslizante = {}  # Dict[str, deque]
-        self.callbacks = {}  # Dict[str, List[Callable]]
-        self.tamanho_janela = tamanho_janela
-        self.lock = threading.Lock()
-        logger.info(f"AnalisadorFluxoContínuo inicializado com janela de {tamanho_janela}")
-    
-    def registrar_callback(self, dimensao: str, callback: Callable[[List[MetricaDimensional]], None]):
-        """
-        Registra um callback para processar métricas de uma dimensão específica.
-        
-        Args:
-            dimensao: Dimensão da métrica
-            callback: Função que recebe lista de métricas e processa
-        """
-        with self.lock:
-            if dimensao not in self.callbacks:
-                self.callbacks[dimensao] = []
-            
-            self.callbacks[dimensao].append(callback)
-            logger.info(f"Callback registrado para dimensão '{dimensao}'")
-    
-    def processar_metrica(self, metrica: MetricaDimensional):
-        """
-        Processa uma métrica, adicionando-a à janela deslizante e notificando callbacks.
-        
-        Args:
-            metrica: Métrica a ser processada
-        """
-        with self.lock:
-            dimensao = metrica.dimensao
-            
-            # Inicializa janela se não existir
-            if dimensao not in self.janela_deslizante:
-                self.janela_deslizante[dimensao] = deque(maxlen=self.tamanho_janela)
-            
-            # Adiciona métrica à janela
-            self.janela_deslizante[dimensao].append(metrica)
-            
-            # Notifica callbacks
-            if dimensao in self.callbacks:
-                janela_atual = list(self.janela_deslizante[dimensao])
-                for callback in self.callbacks[dimensao]:
-                    try:
-                        callback(janela_atual)
-                    except Exception as e:
-                        logger.error(f"Erro no callback de fluxo contínuo: {str(e)}")
-    
-    def obter_janela(self, dimensao: str) -> List[MetricaDimensional]:
-        """
-        Obtém a janela atual de métricas para uma dimensão.
-        
-        Args:
-            dimensao: Dimensão da métrica
-            
-        Returns:
-            Lista de métricas na janela
-        """
-        with self.lock:
-            if dimensao not in self.janela_deslizante:
-                return []
-            
-            return list(self.janela_deslizante[dimensao])
-    
-    def calcular_estatisticas_janela(self, dimensao: str) -> Dict[str, Dict[str, Any]]:
-        """
-        Calcula estatísticas para todas as métricas na janela de uma dimensão.
-        
-        Args:
-            dimensao: Dimensão da métrica
-            
-        Returns:
-            Dicionário com estatísticas por nome de métrica
-        """
-        janela = self.obter_janela(dimensao)
-        
-        if not janela:
-            return {}
-        
-        # Agrupa por nome
-        por_nome = {}
-        for metrica in janela:
-            if metrica.nome not in por_nome:
-                por_nome[metrica.nome] = []
-            por_nome[metrica.nome].append(metrica)
-        
-        # Calcula estatísticas por nome
-        estatisticas = {}
-        for nome, metricas in por_nome.items():
-            valores = [m.valor for m in metricas]
-            
-            estatisticas[nome] = {
-                "contagem": len(valores),
-                "media": np.mean(valores),
-                "mediana": np.median(valores),
-                "min": min(valores),
-                "max": max(valores),
-                "desvio_padrao": np.std(valores) if len(valores) > 1 else 0,
-                "ultima_atualizacao": max(m.timestamp for m in metricas)
-            }
-        
-        return estatisticas
-
-
-# Exemplo de uso
-if __name__ == "__main__":
-    import uvicorn
-    
-    # Inicializa os coletores
-    coletor_throughput = ColetorThroughput("api_requests", intervalo=5.0)
-    coletor_erros = ColetorErros("api_errors", intervalo=5.0)
-    coletor_latencia = ColetorLatencia("api_latencia", intervalo=5.0)
-    
-    # Inicia os coletores
-    logger.info("Módulo random importado com sucesso")
-    logger.info(f"Coletor {coletor_throughput.nome} inicializado com intervalo de {coletor_throughput.intervalo}s")
-    logger.info(f"Coletor {coletor_erros.nome} inicializado com intervalo de {coletor_erros.intervalo}s")
-    logger.info(f"Coletor {coletor_latencia.nome} inicializado com intervalo de {coletor_latencia.intervalo}s")
-    
-    coletor_throughput.iniciar()
-    coletor_erros.iniciar()
-    coletor_latencia.iniciar()
-    
-    # Registra algumas operações para teste
-    logger.info("Tentando registrar operação com random.randint")
-    valor = random.randint(1, 10)
-    logger.info(f"Valor gerado: {valor}")
-    coletor_throughput.registrar_operacao(valor)
-    
-    # Inicia o servidor
-    uvicorn.run(app, host="0.0.0.0", port=8080)
-=======
-            metadados=data.get("metadados", {})
-        )
-
-class DimensaoMonitoramento(Enum):
-    """
-    Enumeração das dimensões de monitoramento.
-    
-    PERFORMANCE: Métricas de desempenho
-    DISPONIBILIDADE: Métricas de disponibilidade
-    SEGURANCA: Métricas de segurança
-    CUSTO: Métricas de custo
-    QUALIDADE: Métricas de qualidade
-    """
-    PERFORMANCE = auto()
-    DISPONIBILIDADE = auto()
-    SEGURANCA = auto()
-    CUSTO = auto()
-    QUALIDADE = auto()
 
 class ColetorMetricas:
     """
-    Coleta métricas de diferentes fontes do sistema.
+    Responsável por coletar métricas do sistema.
     
-    Responsabilidades:
-    1. Coletar métricas de diferentes fontes
-    2. Normalizar dados coletados
-    3. Validar métricas
-    4. Armazenar dados coletados
+    Atributos:
+        metricas: Armazena as métricas coletadas
+        lock: Lock para thread safety
+        thread_coleta: Thread de coleta
+        rodando: Flag de controle
     """
     def __init__(self):
         self.metricas = defaultdict(list)
         self.lock = threading.Lock()
-        self.ultima_coleta = 0
-        logger.info("ColetorMetricas inicializado")
+        self.thread_coleta = None
+        self.rodando = False
+    
+    def iniciar(self):
+        """Inicia a coleta de métricas em background."""
+        if self.thread_coleta is None:
+            self.rodando = True
+            self.thread_coleta = threading.Thread(target=self._loop_coleta)
+            self.thread_coleta.daemon = True
+            self.thread_coleta.start()
+    
+    def parar(self):
+        """Para a coleta de métricas."""
+        self.rodando = False
+        if self.thread_coleta:
+            self.thread_coleta.join()
+            self.thread_coleta = None
+    
+    def _loop_coleta(self):
+        """Loop principal de coleta."""
+        while self.rodando:
+            try:
+                self._coletar_metricas()
+                time.sleep(config.intervalo_coleta)
+            except Exception as e:
+                logger.error(f"Erro no loop de coleta: {e}")
     
     @log_operacao_critica
-    def coletar_metricas(self) -> List[MetricaDimensional]:
-        """
-        Coleta métricas de todas as fontes configuradas.
-        
-        Returns:
-            List[MetricaDimensional]: Lista de métricas coletadas
-        """
-        metricas = []
-        
+    def _coletar_metricas(self):
+        """Coleta métricas do sistema."""
         # Coleta métricas de performance
-        metricas.extend(self._coletar_metricas_performance())
+        self._coletar_metricas_performance()
         
         # Coleta métricas de disponibilidade
-        metricas.extend(self._coletar_metricas_disponibilidade())
+        self._coletar_metricas_disponibilidade()
         
         # Coleta métricas de segurança
-        metricas.extend(self._coletar_metricas_seguranca())
+        self._coletar_metricas_seguranca()
         
         # Coleta métricas de custo
-        metricas.extend(self._coletar_metricas_custo())
+        self._coletar_metricas_custo()
         
         # Coleta métricas de qualidade
-        metricas.extend(self._coletar_metricas_qualidade())
-        
-        # Armazena métricas
-        with self.lock:
-            for metrica in metricas:
-                self.metricas[metrica.dimensao].append(metrica)
-            
-            # Limpa métricas antigas
-            self._limpar_metricas_antigas()
-            
-            self.ultima_coleta = time.time()
-        
-        return metricas
+        self._coletar_metricas_qualidade()
     
-    def _coletar_metricas_performance(self) -> List[MetricaDimensional]:
-        """
-        Coleta métricas de performance.
-        
-        Returns:
-            List[MetricaDimensional]: Métricas de performance
-        """
-        metricas = []
-        
-        # CPU
-        cpu_usage = self._obter_metrica_prometheus('cpu_usage')
-        if cpu_usage is not None:
-            metricas.append(MetricaDimensional(
-                id=f"cpu_usage_{int(time.time())}",
-                nome="CPU Usage",
-                valor=cpu_usage,
-                timestamp=time.time(),
-                dimensao=DimensaoMonitoramento.PERFORMANCE.name,
-                unidade="%"
-            ))
-        
-        # Memory
-        memory_usage = self._obter_metrica_prometheus('memory_usage')
-        if memory_usage is not None:
-            metricas.append(MetricaDimensional(
-                id=f"memory_usage_{int(time.time())}",
-                nome="Memory Usage",
-                valor=memory_usage,
-                timestamp=time.time(),
-                dimensao=DimensaoMonitoramento.PERFORMANCE.name,
-                unidade="%"
-            ))
-        
-        # Latência
-        latency = self._obter_metrica_prometheus('request_latency')
-        if latency is not None:
-            metricas.append(MetricaDimensional(
-                id=f"latency_{int(time.time())}",
-                nome="Request Latency",
-                valor=latency,
-                timestamp=time.time(),
-                dimensao=DimensaoMonitoramento.PERFORMANCE.name,
-                unidade="ms"
-            ))
-        
-        return metricas
-
-    def _coletar_metricas_disponibilidade(self) -> List[MetricaDimensional]:
-        """
-        Coleta métricas de disponibilidade.
-        
-        Returns:
-            List[MetricaDimensional]: Métricas de disponibilidade
-        """
-        metricas = []
-        
-        # Uptime
-        uptime = self._obter_metrica_prometheus('service_uptime')
-        if uptime is not None:
-            metricas.append(MetricaDimensional(
-                id=f"uptime_{int(time.time())}",
-                nome="Service Uptime",
-                valor=uptime,
-                timestamp=time.time(),
-                dimensao=DimensaoMonitoramento.DISPONIBILIDADE.name,
-                unidade="%"
-            ))
-        
-        # Erros
-        error_rate = self._obter_metrica_prometheus('error_rate')
-        if error_rate is not None:
-            metricas.append(MetricaDimensional(
-                id=f"error_rate_{int(time.time())}",
-                nome="Error Rate",
-                valor=error_rate,
-                timestamp=time.time(),
-                dimensao=DimensaoMonitoramento.DISPONIBILIDADE.name,
-                unidade="%"
-            ))
-        
-        return metricas
-    
-    def _coletar_metricas_seguranca(self) -> List[MetricaDimensional]:
-        """
-        Coleta métricas de segurança.
-        
-        Returns:
-            List[MetricaDimensional]: Métricas de segurança
-        """
-        metricas = []
-        
-        # Tentativas de login
-        login_attempts = self._obter_metrica_prometheus('failed_login_attempts')
-        if login_attempts is not None:
-            metricas.append(MetricaDimensional(
-                id=f"login_attempts_{int(time.time())}",
-                nome="Failed Login Attempts",
-                valor=login_attempts,
-                timestamp=time.time(),
-                dimensao=DimensaoMonitoramento.SEGURANCA.name,
-                unidade="count"
-            ))
-        
-        # Vulnerabilidades
-        vulnerabilities = self._obter_metrica_prometheus('security_vulnerabilities')
-        if vulnerabilities is not None:
-            metricas.append(MetricaDimensional(
-                id=f"vulnerabilities_{int(time.time())}",
-                nome="Security Vulnerabilities",
-                valor=vulnerabilities,
-                timestamp=time.time(),
-                dimensao=DimensaoMonitoramento.SEGURANCA.name,
-                unidade="count"
-            ))
-        
-        return metricas
-
-    def _coletar_metricas_custo(self) -> List[MetricaDimensional]:
-        """
-        Coleta métricas de custo.
-        
-        Returns:
-            List[MetricaDimensional]: Métricas de custo
-        """
-        metricas = []
-        
-        # Custo de infraestrutura
-        infra_cost = self._obter_metrica_prometheus('infrastructure_cost')
-        if infra_cost is not None:
-            metricas.append(MetricaDimensional(
-                id=f"infra_cost_{int(time.time())}",
-                nome="Infrastructure Cost",
-                valor=infra_cost,
-                timestamp=time.time(),
-                dimensao=DimensaoMonitoramento.CUSTO.name,
-                unidade="USD"
-            ))
-        
-        # Custo de operação
-        op_cost = self._obter_metrica_prometheus('operational_cost')
-        if op_cost is not None:
-            metricas.append(MetricaDimensional(
-                id=f"op_cost_{int(time.time())}",
-                nome="Operational Cost",
-                valor=op_cost,
-                timestamp=time.time(),
-                dimensao=DimensaoMonitoramento.CUSTO.name,
-                unidade="USD"
-            ))
-        
-        return metricas
-    
-    def _coletar_metricas_qualidade(self) -> List[MetricaDimensional]:
-        """
-        Coleta métricas de qualidade.
-        
-        Returns:
-            List[MetricaDimensional]: Métricas de qualidade
-        """
-        metricas = []
-        
-        # Cobertura de testes
-        test_coverage = self._obter_metrica_prometheus('test_coverage')
-        if test_coverage is not None:
-            metricas.append(MetricaDimensional(
-                id=f"test_coverage_{int(time.time())}",
-                nome="Test Coverage",
-                valor=test_coverage,
-                timestamp=time.time(),
-                dimensao=DimensaoMonitoramento.QUALIDADE.name,
-                unidade="%"
-            ))
-        
-        # Qualidade do código
-        code_quality = self._obter_metrica_prometheus('code_quality_score')
-        if code_quality is not None:
-            metricas.append(MetricaDimensional(
-                id=f"code_quality_{int(time.time())}",
-                nome="Code Quality Score",
-                valor=code_quality,
-                timestamp=time.time(),
-                dimensao=DimensaoMonitoramento.QUALIDADE.name,
-                unidade="score"
-            ))
-        
-        return metricas
-    
-    def _obter_metrica_prometheus(self, query: str) -> Optional[float]:
-        """
-        Obtém uma métrica do Prometheus.
-        
-        Args:
-            query: Query PromQL
-            
-        Returns:
-            float: Valor da métrica ou None se não encontrada
-        """
+    def _coletar_metricas_performance(self):
+        """Coleta métricas de performance."""
         try:
-            url = f"http://prometheus:9090/api/v1/query"
-            params = {
-                "query": query
-            }
+            # CPU
+            cpu_percent = psutil.cpu_percent(interval=1)
+            self._adicionar_metrica(
+                "cpu_usage",
+                cpu_percent,
+                "PERFORMANCE",
+                "%",
+                {"tipo": "sistema"}
+            )
             
-            response = requests.get(url, params=params, timeout=config.timeout_api)
-            response.raise_for_status()
+            # Memória
+            mem = psutil.virtual_memory()
+            self._adicionar_metrica(
+                "memoria_usage",
+                mem.percent,
+                "PERFORMANCE",
+                "%",
+                {"tipo": "sistema"}
+            )
             
-            data = response.json()
-            
-            if data["status"] == "success" and data["data"]["result"]:
-                return float(data["data"]["result"][0]["value"][1])
-            
-            return None
+            # Disco
+            disco = psutil.disk_usage('/')
+            self._adicionar_metrica(
+                "disco_usage",
+                disco.percent,
+                "PERFORMANCE",
+                "%",
+                {"tipo": "sistema"}
+            )
             
         except Exception as e:
-            logger.error(f"Erro ao obter métrica do Prometheus: {e}")
-            return None
+            logger.error(f"Erro ao coletar métricas de performance: {e}")
+    
+    def _coletar_metricas_disponibilidade(self):
+        """Coleta métricas de disponibilidade."""
+        try:
+            # Uptime
+            uptime = psutil.boot_time()
+            self._adicionar_metrica(
+                "uptime",
+                time.time() - uptime,
+                "DISPONIBILIDADE",
+                "segundos",
+                {"tipo": "sistema"}
+            )
+            
+            # Serviços
+            for servico in ["nginx", "postgres", "redis"]:
+                try:
+                    status = subprocess.run(
+                        ["systemctl", "is-active", servico],
+                        capture_output=True,
+                        text=True
+                    ).stdout.strip()
+                    
+                    self._adicionar_metrica(
+                        f"servico_{servico}",
+                        1 if status == "active" else 0,
+                        "DISPONIBILIDADE",
+                        "boolean",
+                        {"tipo": "servico", "nome": servico}
+                    )
+                except Exception as e:
+                    logger.error(f"Erro ao verificar serviço {servico}: {e}")
+            
+        except Exception as e:
+            logger.error(f"Erro ao coletar métricas de disponibilidade: {e}")
+    
+    def _coletar_metricas_seguranca(self):
+        """Coleta métricas de segurança."""
+        try:
+            # Tentativas de login
+            auth_log = "/var/log/auth.log"
+            if os.path.exists(auth_log):
+                with open(auth_log, "r") as f:
+                    tentativas = sum(1 for line in f if "Failed password" in line)
+                
+                self._adicionar_metrica(
+                    "tentativas_login",
+                    tentativas,
+                    "SEGURANCA",
+                    "contagem",
+                    {"tipo": "autenticacao"}
+                )
+            
+            # Portas abertas
+            portas = psutil.net_connections()
+            self._adicionar_metrica(
+                "portas_abertas",
+                len(portas),
+                "SEGURANCA",
+                "contagem",
+                {"tipo": "rede"}
+            )
+            
+        except Exception as e:
+            logger.error(f"Erro ao coletar métricas de segurança: {e}")
+    
+    def _coletar_metricas_custo(self):
+        """Coleta métricas de custo."""
+        try:
+            # Uso de recursos
+            cpu_percent = psutil.cpu_percent(interval=1)
+            mem = psutil.virtual_memory()
+            disco = psutil.disk_usage('/')
+            
+            # Calcula custo estimado
+            custo_cpu = cpu_percent * 0.1  # $0.1 por % de CPU
+            custo_mem = mem.percent * 0.05  # $0.05 por % de memória
+            custo_disco = disco.percent * 0.02  # $0.02 por % de disco
+            
+            custo_total = custo_cpu + custo_mem + custo_disco
+            
+            self._adicionar_metrica(
+                "custo_recursos",
+                custo_total,
+                "CUSTO",
+                "USD",
+                {"tipo": "recursos"}
+            )
+            
+        except Exception as e:
+            logger.error(f"Erro ao coletar métricas de custo: {e}")
+    
+    def _coletar_metricas_qualidade(self):
+        """Coleta métricas de qualidade."""
+        try:
+            # Latência
+            latencia = self._medir_latencia()
+            self._adicionar_metrica(
+                "latencia",
+                latencia,
+                "QUALIDADE",
+                "ms",
+                {"tipo": "rede"}
+            )
+            
+            # Taxa de erro
+            erros = self._contar_erros()
+            self._adicionar_metrica(
+                "taxa_erro",
+                erros,
+                "QUALIDADE",
+                "%",
+                {"tipo": "aplicacao"}
+            )
+            
+        except Exception as e:
+            logger.error(f"Erro ao coletar métricas de qualidade: {e}")
+    
+    def _medir_latencia(self) -> float:
+        """Mede a latência do sistema."""
+        try:
+            inicio = time.time()
+            requests.get("http://localhost:8080/health", timeout=1)
+            return (time.time() - inicio) * 1000  # ms
+        except:
+            return 999.9
+    
+    def _contar_erros(self) -> float:
+        """Conta a taxa de erros."""
+        try:
+            logs = self._ler_logs_erro()
+            total = len(logs)
+            erros = sum(1 for log in logs if "ERROR" in log)
+            return (erros / total * 100) if total > 0 else 0
+        except:
+            return 0
+    
+    def _ler_logs_erro(self) -> List[str]:
+        """Lê logs de erro."""
+        try:
+            with open("/var/log/nginx/error.log", "r") as f:
+                return f.readlines()[-100:]  # Últimas 100 linhas
+        except:
+            return []
+    
+    def _adicionar_metrica(self, nome: str, valor: float, dimensao: str, unidade: str, tags: Dict[str, str]):
+        """
+        Adiciona uma nova métrica.
+        
+        Args:
+            nome: Nome da métrica
+            valor: Valor da métrica
+            dimensao: Dimensão da métrica
+            unidade: Unidade de medida
+            tags: Tags adicionais
+        """
+        metrica = MetricaDimensional(
+            id=str(uuid.uuid4()),
+            nome=nome,
+            valor=valor,
+            timestamp=time.time(),
+            dimensao=dimensao,
+            unidade=unidade,
+            tags=tags
+        )
+        
+        with self.lock:
+            self.metricas[dimensao].append(metrica)
+            self._limpar_metricas_antigas()
     
     def _limpar_metricas_antigas(self):
+        """Remove métricas mais antigas que o tempo de retenção."""
+        agora = time.time()
+        with self.lock:
+            for dimensao in self.metricas:
+                self.metricas[dimensao] = [
+                    m for m in self.metricas[dimensao]
+                    if agora - m.timestamp < config.retencao_dados
+                ]
+    
+    def coletar_metricas(self) -> List[MetricaDimensional]:
         """
-        Remove métricas mais antigas que o período de retenção.
-        """
-        cutoff = time.time() - config.retencao_dados
+        Retorna todas as métricas coletadas.
         
-        for dimensao in self.metricas:
-            self.metricas[dimensao] = [
-                m for m in self.metricas[dimensao]
-                if m.timestamp > cutoff
-            ]
+        Returns:
+            List[MetricaDimensional]: Lista de métricas
+        """
+        with self.lock:
+            todas_metricas = []
+            for metricas in self.metricas.values():
+                todas_metricas.extend(metricas)
+            return todas_metricas
 
 class AnalisadorMetricas:
     """
-    Analisa métricas coletadas para identificar padrões e anomalias.
+    Responsável por analisar métricas e detectar padrões.
     
-    Responsabilidades:
-    1. Analisar tendências nas métricas
-    2. Detectar anomalias
-    3. Calcular estatísticas
-    4. Gerar insights
+    Atributos:
+        coletor: Referência ao coletor de métricas
+        lock: Lock para thread safety
     """
-    def __init__(self):
-        self.coletor = ColetorMetricas()
+    def __init__(self, coletor: ColetorMetricas):
+        self.coletor = coletor
         self.lock = threading.Lock()
-        logger.info("AnalisadorMetricas inicializado")
     
     @log_operacao_critica
-    def analisar_metricas(self) -> Dict[str, Any]:
+    def analisar_metricas(self) -> List[Dict[str, Any]]:
         """
-        Analisa todas as métricas coletadas.
+        Analisa métricas coletadas.
         
         Returns:
-            Dict[str, Any]: Resultados da análise
+            List[Dict[str, Any]]: Resultados da análise
         """
-        # Coleta métricas
         metricas = self.coletor.coletar_metricas()
+        resultados = []
         
         # Agrupa por dimensão
         metricas_por_dimensao = defaultdict(list)
@@ -1320,145 +439,147 @@ class AnalisadorMetricas:
             metricas_por_dimensao[metrica.dimensao].append(metrica)
         
         # Analisa cada dimensão
-        resultados = {}
         for dimensao, metricas_dimensao in metricas_por_dimensao.items():
-            resultados[dimensao] = self._analisar_dimensao(metricas_dimensao)
+            try:
+                # Calcula estatísticas
+                stats = self._calcular_estatisticas(metricas_dimensao)
+                
+                # Detecta anomalias
+                anomalias = self._detectar_anomalias([m.valor for m in metricas_dimensao])
+                
+                # Analisa tendências
+                tendencias = self._calcular_tendencias([m.valor for m in metricas_dimensao])
+                
+                resultados.append({
+                    "dimensao": dimensao,
+                    "estatisticas": stats,
+                    "anomalias": anomalias,
+                    "tendencias": tendencias,
+                    "timestamp": time.time()
+                })
+                
+            except Exception as e:
+                logger.error(f"Erro ao analisar dimensão {dimensao}: {e}")
         
         return resultados
     
-    def _analisar_dimensao(self, metricas: List[MetricaDimensional]) -> Dict[str, Any]:
+    def _calcular_estatisticas(self, metricas: List[MetricaDimensional]) -> Dict[str, float]:
         """
-        Analisa métricas de uma dimensão específica.
+        Calcula estatísticas das métricas.
         
         Args:
-            metricas: Lista de métricas da dimensão
+            metricas: Lista de métricas
             
         Returns:
-            Dict[str, Any]: Resultados da análise
+            Dict[str, float]: Estatísticas calculadas
         """
-        if not metricas:
-            return {}
-        
-        # Converte para DataFrame
-        df = pd.DataFrame([m.to_dict() for m in metricas])
-        
-        # Calcula estatísticas básicas
-        stats = {
-            "media": df["valor"].mean(),
-            "mediana": df["valor"].median(),
-            "desvio_padrao": df["valor"].std(),
-            "min": df["valor"].min(),
-            "max": df["valor"].max()
-        }
-        
-        # Detecta anomalias
-        anomalias = self._detectar_anomalias(df)
-        
-        # Calcula tendências
-        tendencias = self._calcular_tendencias(df)
-        
-            return {
-            "estatisticas": stats,
-            "anomalias": anomalias,
-            "tendencias": tendencias
+        valores = [m.valor for m in metricas]
+        return {
+            "media": np.mean(valores),
+            "mediana": np.median(valores),
+            "desvio": np.std(valores),
+            "min": np.min(valores),
+            "max": np.max(valores)
         }
     
-    def _detectar_anomalias(self, df: pd.DataFrame) -> List[Dict[str, Any]]:
+    def _detectar_anomalias(self, valores: List[float]) -> List[Dict[str, Any]]:
         """
-        Detecta anomalias nas métricas usando Z-score.
+        Detecta anomalias nos valores.
         
         Args:
-            df: DataFrame com as métricas
+            valores: Lista de valores
             
         Returns:
-            List[Dict[str, Any]]: Lista de anomalias detectadas
+            List[Dict[str, Any]]: Anomalias detectadas
         """
+        if len(valores) < 2:
+            return []
+        
+        media = np.mean(valores)
+        desvio = np.std(valores)
+        limite = 2 * desvio  # 2 desvios padrão
+        
         anomalias = []
-        
-        # Calcula Z-score
-        z_scores = np.abs((df["valor"] - df["valor"].mean()) / df["valor"].std())
-        
-        # Identifica anomalias (Z-score > 3)
-        anomalias_idx = z_scores[z_scores > 3].index
-        
-        for idx in anomalias_idx:
-            anomalias.append({
-                "timestamp": df.loc[idx, "timestamp"],
-                "valor": df.loc[idx, "valor"],
-                "z_score": z_scores[idx],
-                "nome": df.loc[idx, "nome"]
-            })
+        for i, valor in enumerate(valores):
+            if abs(valor - media) > limite:
+                anomalias.append({
+                    "indice": i,
+                    "valor": valor,
+                    "desvio": abs(valor - media) / desvio,
+                    "timestamp": time.time()
+                })
         
         return anomalias
     
-    def _calcular_tendencias(self, df: pd.DataFrame) -> Dict[str, float]:
+    def _calcular_tendencias(self, valores: List[float]) -> Dict[str, Any]:
         """
-        Calcula tendências nas métricas usando regressão linear.
+        Calcula tendências nos valores.
         
         Args:
-            df: DataFrame com as métricas
+            valores: Lista de valores
             
         Returns:
-            Dict[str, float]: Coeficientes da regressão
+            Dict[str, Any]: Tendências calculadas
         """
-        # Prepara dados para regressão
-        X = (df["timestamp"] - df["timestamp"].min()).values.reshape(-1, 1)
-        y = df["valor"].values
+        if len(valores) < 2:
+            return {}
         
-        # Calcula regressão linear
-        slope, intercept = np.polyfit(X.flatten(), y, 1)
-            
-            return {
+        x = np.arange(len(valores))
+        slope, intercept = np.polyfit(x, valores, 1)
+        
+        return {
             "inclinacao": slope,
-            "intercepto": intercept
+            "intercepto": intercept,
+            "r2": np.corrcoef(x, valores)[0, 1] ** 2,
+            "timestamp": time.time()
         }
 
 class GeradorAlertas:
     """
-    Gera alertas baseados na análise de métricas.
+    Responsável por gerar alertas baseados na análise.
     
-    Responsabilidades:
-    1. Definir regras de alerta
-    2. Avaliar condições de alerta
-    3. Gerar notificações
-    4. Gerenciar estado dos alertas
+    Atributos:
+        analisador: Referência ao analisador de métricas
+        alertas_ativos: Conjunto de alertas ativos
+        ultimo_alerta: Timestamp do último alerta por dimensão
+        lock: Lock para thread safety
     """
-    def __init__(self):
+    def __init__(self, analisador: AnalisadorMetricas):
+        self.analisador = analisador
         self.alertas_ativos = set()
         self.ultimo_alerta = defaultdict(float)
         self.lock = threading.Lock()
-        logger.info("GeradorAlertas inicializado")
     
     @log_operacao_critica
-    def avaliar_alertas(self, resultados_analise: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def avaliar_alertas(self, resultados: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
-        Avalia condições de alerta baseado nos resultados da análise.
+        Avalia resultados e gera alertas.
         
         Args:
-            resultados_analise: Resultados da análise de métricas
+            resultados: Resultados da análise
             
         Returns:
-            List[Dict[str, Any]]: Lista de alertas gerados
+            List[Dict[str, Any]]: Alertas gerados
         """
         alertas = []
         
-        for dimensao, resultado in resultados_analise.items():
+        for resultado in resultados:
+            dimensao = resultado["dimensao"]
+            
             # Verifica anomalias
-            for anomalia in resultado.get("anomalias", []):
+            for anomalia in resultado["anomalias"]:
                 alerta = self._gerar_alerta_anomalia(dimensao, anomalia)
                 if alerta:
                     alertas.append(alerta)
             
             # Verifica tendências
-            tendencias = resultado.get("tendencias", {})
-            if abs(tendencias.get("inclinacao", 0)) > 0.1:  # Tendência significativa
-                alerta = self._gerar_alerta_tendencia(dimensao, tendencias)
+            if resultado["tendencias"]:
+                alerta = self._gerar_alerta_tendencia(dimensao, resultado["tendencias"])
                 if alerta:
                     alertas.append(alerta)
             
             # Verifica limites
-            stats = resultado.get("estatisticas", {})
-            alerta = self._verificar_limites(dimensao, stats)
+            alerta = self._verificar_limites(dimensao, resultado["estatisticas"])
             if alerta:
                 alertas.append(alerta)
         
@@ -1466,7 +587,7 @@ class GeradorAlertas:
     
     def _gerar_alerta_anomalia(self, dimensao: str, anomalia: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
-        Gera alerta para uma anomalia detectada.
+        Gera alerta para anomalia.
         
         Args:
             dimensao: Dimensão da métrica
@@ -1475,7 +596,7 @@ class GeradorAlertas:
         Returns:
             Optional[Dict[str, Any]]: Alerta gerado ou None
         """
-        alerta_id = f"anomalia_{dimensao}_{anomalia['nome']}_{int(anomalia['timestamp'])}"
+        alerta_id = f"anomalia_{dimensao}_{int(time.time())}"
         
         # Verifica se já existe alerta ativo
         if alerta_id in self.alertas_ativos:
@@ -1485,12 +606,13 @@ class GeradorAlertas:
         if not self._verificar_limite_alertas():
             return None
         
+        # Gera alerta
         alerta = {
             "id": alerta_id,
             "tipo": "anomalia",
             "dimensao": dimensao,
-            "severidade": "alta" if anomalia["z_score"] > 5 else "media",
-            "mensagem": f"Anomalia detectada em {anomalia['nome']}: {anomalia['valor']} (Z-score: {anomalia['z_score']:.2f})",
+            "severidade": "alta",
+            "mensagem": f"Anomalia detectada em {dimensao}: desvio de {anomalia['desvio']:.2f} desvios",
             "timestamp": time.time(),
             "dados": anomalia
         }
@@ -1499,12 +621,12 @@ class GeradorAlertas:
         with self.lock:
             self.alertas_ativos.add(alerta_id)
             self.ultimo_alerta[dimensao] = time.time()
-            
+        
         return alerta
     
-    def _gerar_alerta_tendencia(self, dimensao: str, tendencias: Dict[str, float]) -> Optional[Dict[str, Any]]:
+    def _gerar_alerta_tendencia(self, dimensao: str, tendencias: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
-        Gera alerta para uma tendência significativa.
+        Gera alerta para tendência.
         
         Args:
             dimensao: Dimensão da métrica
@@ -1523,8 +645,10 @@ class GeradorAlertas:
         if not self._verificar_limite_alertas():
             return None
         
-        direcao = "aumentando" if tendencias["inclinacao"] > 0 else "diminuindo"
+        # Define direção da tendência
+        direcao = "subindo" if tendencias["inclinacao"] > 0 else "descendo"
         
+        # Gera alerta
         alerta = {
             "id": alerta_id,
             "tipo": "tendencia",
@@ -1598,7 +722,7 @@ class GeradorAlertas:
         
         if alerta:
             # Registra alerta
-        with self.lock:
+            with self.lock:
                 self.alertas_ativos.add(alerta_id)
                 self.ultimo_alerta[dimensao] = time.time()
         
@@ -1634,8 +758,8 @@ if __name__ == "__main__":
     
     # Inicializa componentes
     coletor = ColetorMetricas()
-    analisador = AnalisadorMetricas()
-    gerador_alertas = GeradorAlertas()
+    analisador = AnalisadorMetricas(coletor)
+    gerador_alertas = GeradorAlertas(analisador)
     
     @app.route('/health', methods=['GET'])
     def health_check():
@@ -1725,4 +849,3 @@ if __name__ == "__main__":
     
     # Inicia o servidor
     app.run(host='0.0.0.0', port=8080)
->>>>>>> origin/main

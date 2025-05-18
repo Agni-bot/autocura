@@ -1,0 +1,62 @@
+{{- if .Values.grafana.enabled }}
+{{- if .Values.grafana.prometheusRule.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "diagnostico.fullname" . }}-grafana
+  labels:
+    {{- include "diagnostico.labels" . | nindent 4 }}
+    app.kubernetes.io/component: grafana
+    {{- with .Values.grafana.prometheusRule.additionalLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+    - name: grafana.rules
+      rules:
+        - alert: GrafanaInstanceDown
+          expr: up{job="grafana"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Grafana instance {{ $labels.instance }} down"
+            description: "Grafana instance {{ $labels.instance }} has been down for more than 5 minutes."
+
+        - alert: GrafanaHighRequestLatency
+          expr: rate(http_request_duration_seconds_sum{job="grafana"}[5m]) / rate(http_request_duration_seconds_count{job="grafana"}[5m]) > 0.5
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High request latency on Grafana instance {{ $labels.instance }}"
+            description: "Grafana instance {{ $labels.instance }} has a 95th percentile request latency above 0.5s (current value: {{ $value }}s)"
+
+        - alert: GrafanaHighErrorRate
+          expr: rate(http_requests_total{job="grafana",status=~"5.."}[5m]) / rate(http_requests_total{job="grafana"}[5m]) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High error rate on Grafana instance {{ $labels.instance }}"
+            description: "Grafana instance {{ $labels.instance }} has a 5xx error rate above 5% (current value: {{ $value }})"
+
+        - alert: GrafanaHighMemoryUsage
+          expr: (process_resident_memory_bytes{job="grafana"} / container_memory_usage_bytes{job="grafana"}) * 100 > 80
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High memory usage on Grafana instance {{ $labels.instance }}"
+            description: "Grafana instance {{ $labels.instance }} is using more than 80% of its available memory (current value: {{ $value }}%)"
+
+        - alert: GrafanaHighCPUUsage
+          expr: rate(process_cpu_seconds_total{job="grafana"}[5m]) * 100 > 80
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High CPU usage on Grafana instance {{ $labels.instance }}"
+            description: "Grafana instance {{ $labels.instance }} is using more than 80% of its available CPU (current value: {{ $value }}%)"
+{{- end }}
+{{- end }} 

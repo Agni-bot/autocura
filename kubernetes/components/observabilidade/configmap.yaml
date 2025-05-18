@@ -37,6 +37,11 @@ data:
           enabled: true
           position: right
     connections:
+      monitoramento:
+        url: http://monitoramento:8081
+        timeout: 5
+        retry_attempts: 3
+        retry_delay: 2
       websocket_endpoint: /ws
       polling_interval: 5000
       reconnect_attempts: 5

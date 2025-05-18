@@ -36,10 +36,11 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Configura o ambiente Python
 ENV PYTHONUNBUFFERED=1
-ENV FLASK_APP=GeradorAcoes.app
+ENV FLASK_APP=app.py
 ENV FLASK_RUN_HOST=0.0.0.0
 ENV LOG_LEVEL=INFO
 ENV LOG_FILE=/app/logs/gerador_acoes.log
+ENV PYTHONPATH="/app:/app/../observabilidade:/app/../diagnostico"
 
 # Copy application code
 COPY . .
@@ -49,7 +50,7 @@ RUN mkdir -p /app/logs && \
     chown -R appuser:appuser /app
 
 # Set Python path
-ENV PYTHONPATH=/app/src
+ENV PYTHONPATH=/app
 
 # Switch to non-root user
 USER appuser
@@ -62,4 +63,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5002/health || exit 1
 
 # Command to run the application using Gunicorn
-CMD ["gunicorn", "--workers", "4", "--bind", "0.0.0.0:5002", "--access-logfile", "-", "GeradorAcoes.app:app"]
+CMD ["gunicorn", "--workers", "4", "--bind", "0.0.0.0:5002", "--access-logfile", "-", "app:app"]

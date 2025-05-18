@@ -35,7 +35,10 @@ from enum import Enum, auto
 import requests
 import os
 from functools import wraps
-from portal.acao_necessaria import TelaAcaoNecessaria, AcaoNecessaria
+try:
+    from observabilidade.acao_necessaria import TelaAcaoNecessaria, AcaoNecessaria
+except ModuleNotFoundError:
+    from src.observabilidade.acao_necessaria import TelaAcaoNecessaria, AcaoNecessaria
 from executor.executor import ExecutorAcoes, ResultadoExecucao
 
 # Configuração de logging

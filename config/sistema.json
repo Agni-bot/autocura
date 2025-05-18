@@ -1,0 +1,59 @@
+{
+    "sistema": {
+        "nome": "Sistema de Autocura",
+        "versao": "1.0.0",
+        "ambiente": "development",
+        "timezone": "America/Sao_Paulo",
+        "idioma": "pt_BR"
+    },
+    "servicos": {
+        "autocorrection": {
+            "host": "localhost",
+            "porta": 5000,
+            "timeout": 30
+        },
+        "diagnostico": {
+            "host": "localhost",
+            "porta": 5001,
+            "timeout": 30
+        },
+        "gerador_acoes": {
+            "host": "localhost",
+            "porta": 5002,
+            "timeout": 30
+        },
+        "monitoramento": {
+            "host": "localhost",
+            "porta": 5003,
+            "timeout": 30
+        },
+        "observabilidade": {
+            "host": "localhost",
+            "porta": 5004,
+            "timeout": 30
+        },
+        "portal": {
+            "host": "localhost",
+            "porta": 5005,
+            "timeout": 30
+        }
+    },
+    "monitoramento": {
+        "intervalo_coleta": 60,
+        "metricas": {
+            "cpu": {
+                "limite_alerta": 80
+            },
+            "memoria": {
+                "limite_alerta": 80
+            },
+            "disco": {
+                "limite_alerta": 80
+            }
+        }
+    },
+    "logging": {
+        "nivel": "INFO",
+        "arquivo": "logs/autocura.log"
+    }
+} 

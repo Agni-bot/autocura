@@ -1,156 +1,125 @@
-# Sistema de Autocura Cognitiva
+# Sistema de Autocura
 
-Este repositório contém o Sistema de Autocura Cognitiva, uma solução avançada para manutenção autônoma de sistemas de Inteligência Artificial.
+Sistema inteligente para detecção, diagnóstico e correção automática de problemas em sistemas computacionais.
 
-## Visão Geral
+## Características
 
-O Sistema de Autocura Cognitiva representa uma evolução significativa na manutenção autônoma de sistemas de IA. Diferentemente dos sistemas tradicionais de monitoramento e recuperação, este sistema incorpora princípios de cognição adaptativa, permitindo não apenas identificar e corrigir falhas, mas também evoluir continuamente para prevenir problemas futuros.
+- Detecção automática de problemas
+- Diagnóstico inteligente de causas raiz
+- Geração e execução de ações corretivas
+- Monitoramento contínuo do sistema
+- Logging detalhado de todas as operações
+- Interface de gerenciamento de ações
+- Configuração flexível via arquivos JSON
 
-## Pré-requisitos
+## Requisitos
 
-Para executar o Sistema de Autocura Cognitiva localmente, você precisará ter instalado:
+- Python 3.11+
+- Docker e Docker Compose
+- Acesso root/sudo para execução de ações do sistema
 
-- Docker
-- kubectl
-- kind (Kubernetes in Docker)
+## Instalação
 
-## Configuração do Ambiente Local
-
-Siga estas etapas para configurar e executar o Sistema de Autocura Cognitiva em seu ambiente local:
-
-### 1. Clone o repositório
-
+1. Clone o repositório:
 ```bash
-git clone https://github.com/seu-usuario/autocura-cognitiva.git
-cd autocura-cognitiva
+git clone https://github.com/seu-usuario/autocura.git
+cd autocura
 ```
 
-### 2. Configure o ambiente Kubernetes local
-
-Execute o script de configuração do ambiente para criar um cluster kind configurado para o Sistema de Autocura Cognitiva:
-
+2. Crie um ambiente virtual Python:
 ```bash
-# Torne o script executável
-chmod +x setup-kind.sh
-
-# Execute o script
-./setup-kind.sh
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+venv\Scripts\activate     # Windows
 ```
 
-Este script irá:
-- Verificar os pré-requisitos (Docker, kubectl, kind)
-- Criar um cluster kind com a configuração necessária
-- Configurar um registro Docker local
-- Conectar o registro à rede do kind
-
-### 3. Construa as imagens Docker
-
-Execute o script de build para construir todas as imagens Docker necessárias:
-
+3. Instale as dependências:
 ```bash
-# Torne o script executável
-chmod +x build.sh
-
-# Execute o script
-./build.sh
+pip install -r requirements.txt
 ```
 
-Este script irá:
-- Construir as imagens Docker para todos os componentes (monitoramento, diagnóstico, gerador de ações, observabilidade)
-- Construir as imagens Docker para os operadores (healing, rollback)
-- Enviar as imagens para o registro local
-
-### 4. Implante o sistema no cluster
-
-Implante o Sistema de Autocura Cognitiva no cluster kind:
-
+4. Configure as variáveis de ambiente:
 ```bash
-# Implante o ambiente de desenvolvimento
-kubectl apply -k kubernetes/environments/development
+cp .env.example .env
+# Edite o arquivo .env com suas configurações
 ```
 
-### 5. Verifique a implantação
+## Uso
 
-Verifique se todos os componentes foram implantados corretamente:
-
-```bash
-# Verifique os pods
-kubectl get pods -n autocura-cognitiva-dev
-
-# Verifique os serviços
-kubectl get services -n autocura-cognitiva-dev
-```
-
-### 6. Acesse o painel de observabilidade
-
-O painel de observabilidade está disponível através do serviço de observabilidade:
+### Executando com Docker
 
 ```bash
-# Encaminhe a porta do serviço de observabilidade
-kubectl port-forward -n autocura-cognitiva-dev svc/observabilidade 8080:8080
+docker-compose up -d
 ```
 
-Acesse o painel em seu navegador: http://localhost:8080
+### Executando localmente
+
+```bash
+python src/main.py
+```
 
 ## Estrutura do Projeto
 
 ```
-autocura_cognitiva/
-├── src/                      # Código-fonte dos componentes
-│   ├── monitoramento/        # Módulo de Monitoramento Multidimensional
-│   ├── diagnostico/          # Módulo de Diagnóstico Neural
-│   ├── gerador_acoes/        # Gerador de Ações Emergentes
-│   ├── observabilidade/      # Interface de Observabilidade 4D
-│   └── integracao/           # Módulos de integração
-├── kubernetes/               # Configurações de implantação
-│   ├── base/                 # Recursos base
-│   ├── operators/            # Operadores customizados
-│   ├── components/           # Componentes do sistema
-│   ├── environments/         # Ambientes paralelos
-│   └── storage/              # Configurações de armazenamento
-├── docs/                     # Documentação
-├── tests/                    # Testes
-└── config/                   # Configurações
+autocura/
+├── config/                 # Arquivos de configuração
+├── docs/                   # Documentação
+├── logs/                   # Logs do sistema
+├── src/                    # Código fonte
+│   ├── autocorrection/     # Módulo de autocorreção
+│   ├── core/              # Núcleo do sistema
+│   ├── diagnostico/       # Módulo de diagnóstico
+│   ├── executor/          # Módulo de execução
+│   ├── monitoramento/     # Módulo de monitoramento
+│   └── portal/            # Interface de gerenciamento
+├── tests/                 # Testes automatizados
+├── docker-compose.yml     # Configuração Docker
+└── requirements.txt       # Dependências Python
 ```
 
-## Solução de Problemas
+## Configuração
 
-### Erro ImagePullBackOff
+O sistema é configurado através de arquivos JSON na pasta `config/`:
 
-Se você encontrar erros de ImagePullBackOff:
+- `acoes.json`: Configuração de tipos de ações e prioridades
+- `monitoramento.json`: Configuração de métricas e alertas
+- `sistema.json`: Configurações gerais do sistema
 
-1. Verifique se o registro local está em execução:
-   ```bash
-   docker ps | grep registry
-   ```
+## Desenvolvimento
 
-2. Verifique se as imagens foram construídas e enviadas corretamente:
-   ```bash
-   docker images | grep autocura-cognitiva
-   ```
+### Executando Testes
 
-3. Verifique se o cluster kind está configurado para acessar o registro local:
-   ```bash
-   kubectl get nodes -o wide
-   ```
+```bash
+pytest tests/
+```
 
-4. Reconstrua as imagens e reimplante o sistema:
-   ```bash
-   ./build.sh
-   kubectl delete -k kubernetes/environments/development
-   kubectl apply -k kubernetes/environments/development
-   ```
+### Formatação de Código
 
-## Documentação Adicional
+```bash
+black src/
+isort src/
+flake8 src/
+```
 
-Para mais informações, consulte os documentos na pasta `docs/`:
+### Documentação
 
-- [Análise de Requisitos](docs/analise_requisitos.md)
-- [Arquitetura Modular](docs/arquitetura_modular.md)
-- [Plano de Implantação](docs/plano_implantacao.md)
-- [Protocolo de Emergência](docs/protocolo_emergencia.md)
-- [Documentação Completa](docs/documentacao_completa.md)
+```bash
+cd docs
+make html
+```
+
+## Contribuindo
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
+3. Commit suas mudanças (`git commit -am 'Adiciona nova feature'`)
+4. Push para a branch (`git push origin feature/nova-feature`)
+5. Crie um Pull Request
 
 ## Licença
 
-Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para detalhes.
+Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
+
+## Suporte
+
+Para suporte, envie um email para suporte@exemplo.com ou abra uma issue no GitHub.

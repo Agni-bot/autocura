@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  diagnostico:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+      - LOG_LEVEL=INFO
+      - LOG_FILE=/app/logs/diagnostico.log
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - autocura-network
+    depends_on:
+      - monitoramento
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+networks:
+  autocura-network:
+    external: true 

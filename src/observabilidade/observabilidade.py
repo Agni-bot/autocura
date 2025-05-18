@@ -129,50 +129,66 @@ def obter_metricas_do_monitoramento(metrica_id=None):
     Returns:
         Lista de métricas ou uma métrica específica
     """
-    try:
-        base_url = f"{MONITORAMENTO_URL}/api/metricas"
-        if metrica_id:
-            url = f"{base_url}/{metrica_id}"
-        else:
-            url = base_url
+    max_retries = 3
+    retry_delay = 2
+    
+    for attempt in range(max_retries):
+        try:
+            base_url = f"{MONITORAMENTO_URL}/api/metricas"
+            if metrica_id:
+                url = f"{base_url}/{metrica_id}"
+            else:
+                url = base_url
+                
+            response = requests.get(url, timeout=5)
+            response.raise_for_status()
             
-        response = requests.get(url, timeout=5)
-        response.raise_for_status()
-        
-        data = response.json()
-        
-        if metrica_id:
-            # Retorna uma única métrica
-            return MetricaDimensional(
-                id=data["id"],
-                nome=data["nome"],
-                valor=data["valor"],
-                timestamp=data["timestamp"],
-                dimensao=data["dimensao"],
-                unidade=data["unidade"],
-                tags=data.get("tags", {}),
-                metadados=data.get("metadados", {})
-            )
-        else:
-            # Retorna lista de métricas
-            metricas = []
-            for item in data:
-                metrica = MetricaDimensional(
-                    id=item["id"],
-                    nome=item["nome"],
-                    valor=item["valor"],
-                    timestamp=item["timestamp"],
-                    dimensao=item["dimensao"],
-                    unidade=item["unidade"],
-                    tags=item.get("tags", {}),
-                    metadados=item.get("metadados", {})
+            data = response.json()
+            
+            if metrica_id:
+                # Retorna uma única métrica
+                return MetricaDimensional(
+                    id=data["id"],
+                    nome=data["nome"],
+                    valor=data["valor"],
+                    timestamp=data["timestamp"],
+                    dimensao=data["dimensao"],
+                    unidade=data["unidade"],
+                    tags=data.get("tags", {}),
+                    metadados=data.get("metadados", {})
                 )
-                metricas.append(metrica)
-            return metricas
-            
-    except Exception as e:
-        logger.error(f"Erro ao obter métricas do monitoramento: {e}")
-        return []
+            else:
+                # Retorna lista de métricas
+                metricas = []
+                for item in data:
+                    metrica = MetricaDimensional(
+                        id=item["id"],
+                        nome=item["nome"],
+                        valor=item["valor"],
+                        timestamp=item["timestamp"],
+                        dimensao=item["dimensao"],
+                        unidade=item["unidade"],
+                        tags=item.get("tags", {}),
+                        metadados=item.get("metadados", {})
+                    )
+                    metricas.append(metrica)
+                return metricas
+                
+        except requests.exceptions.ConnectionError as e:
+            logger.error(f"Erro de conexão com monitoramento (tentativa {attempt + 1}/{max_retries}): {e}")
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay)
+                continue
+            return []
+        except requests.exceptions.Timeout as e:
+            logger.error(f"Timeout na conexão com monitoramento (tentativa {attempt + 1}/{max_retries}): {e}")
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay)
+                continue
+            return []
+        except Exception as e:
+            logger.error(f"Erro ao obter métricas do monitoramento: {e}")
+            return []
 
 def obter_diagnostico(diagnostico_id):
     """
@@ -682,15 +698,27 @@ def verificar_servicos_dependentes():
         "gerador": f"{GERADOR_URL}/health"
     }
     
+    max_retries = 3
+    retry_delay = 2
+    
     for nome, url in servicos.items():
-        try:
-            response = requests.get(url, timeout=5)
-            if response.status_code != 200:
-                logger.error(f"Serviço {nome} retornou status {response.status_code}")
+        for attempt in range(max_retries):
+            try:
+                response = requests.get(url, timeout=5)
+                if response.status_code == 200:
+                    break
+                else:
+                    logger.error(f"Serviço {nome} retornou status {response.status_code}")
+                    if attempt < max_retries - 1:
+                        time.sleep(retry_delay)
+                        continue
+                    return False
+            except Exception as e:
+                logger.error(f"Erro ao conectar com serviço {nome} (tentativa {attempt + 1}/{max_retries}): {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+                    continue
                 return False
-        except Exception as e:
-            logger.error(f"Erro ao conectar com serviço {nome}: {e}")
-            return False
     
     return True
 
@@ -727,184 +755,183 @@ def obter_acoes_priorizadas():
         return []
 
 # Inicialização da API e rotas
-if __name__ == "__main__":
-    from flask import Flask, request, jsonify
-    
-    app = Flask(__name__)
-    
-    # Inicializa o visualizador
-    visualizador = VisualizadorHolografico()
-    
-    # Verifica serviços dependentes antes de iniciar
+from flask import Flask, request, jsonify, render_template
+
+app = Flask(__name__)
+
+# Inicializa o visualizador
+visualizador = VisualizadorHolografico()
+
+# Verifica serviços dependentes antes de iniciar
+try:
+    if not verificar_servicos_dependentes():
+        logger.warning("Alguns serviços dependentes não estão disponíveis. Continuando com funcionalidade limitada...")
+except Exception as e:
+    logger.warning(f"Erro ao verificar serviços dependentes: {e}. Continuando com funcionalidade limitada...")
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({"status": "healthy"}), 200
+
+@app.route('/api/v1/metricas', methods=['GET'])
+def get_metricas():
     try:
-        if not verificar_servicos_dependentes():
-            logger.warning("Alguns serviços dependentes não estão disponíveis. Continuando com funcionalidade limitada...")
+        metricas = obter_metricas_do_monitoramento()
+        return jsonify([m.__dict__ for m in metricas]), 200
     except Exception as e:
-        logger.warning(f"Erro ao verificar serviços dependentes: {e}. Continuando com funcionalidade limitada...")
-    
-    @app.route('/health', methods=['GET'])
-    def health_check():
-        return jsonify({"status": "healthy"}), 200
+        logger.error(f"Erro ao obter métricas: {e}")
+        return jsonify({"erro": "Erro ao obter métricas"}), 500
 
-    @app.route('/api/v1/metricas', methods=['GET'])
-    def get_metricas():
-        try:
+@app.route('/api/v1/status', methods=['GET'])
+def get_status():
+    try:
+        status = verificar_servicos_dependentes()
+        return jsonify(status), 200
+    except Exception as e:
+        logger.error(f"Erro ao obter status: {e}")
+        return jsonify({"erro": "Erro ao obter status dos serviços"}), 500
+
+@app.route('/api/v1/diagnosticos', methods=['GET'])
+def get_diagnosticos():
+    try:
+        diagnosticos = obter_diagnosticos_ativos()
+        return jsonify([d.__dict__ for d in diagnosticos]), 200
+    except Exception as e:
+        logger.error(f"Erro ao obter diagnósticos: {e}")
+        return jsonify({"erro": "Erro ao obter diagnósticos"}), 500
+
+@app.route('/api/v1/acoes', methods=['GET'])
+def get_acoes():
+    try:
+        acoes = obter_acoes_priorizadas()
+        return jsonify([a.__dict__ for a in acoes]), 200
+    except Exception as e:
+        logger.error(f"Erro ao obter ações: {e}")
+        return jsonify({"erro": "Erro ao obter ações"}), 500
+
+@app.route('/api/visualizacoes/metricas-temporais', methods=['POST'])
+def criar_visualizacao_metricas_temporais():
+    try:
+        data = request.json
+        
+        # Obtém métricas do monitoramento se não fornecidas
+        if 'metricas' not in data:
             metricas = obter_metricas_do_monitoramento()
-            return jsonify([m.__dict__ for m in metricas]), 200
-        except Exception as e:
-            logger.error(f"Erro ao obter métricas: {e}")
-            return jsonify({"erro": "Erro ao obter métricas"}), 500
+        else:
+            metricas = []
+            for metrica_data in data['metricas']:
+                metrica = MetricaDimensional(
+                    id=metrica_data["id"],
+                    nome=metrica_data["nome"],
+                    valor=metrica_data["valor"],
+                    timestamp=metrica_data["timestamp"],
+                    dimensao=metrica_data["dimensao"],
+                    unidade=metrica_data["unidade"],
+                    tags=metrica_data.get("tags", {}),
+                    metadados=metrica_data.get("metadados", {})
+                )
+                metricas.append(metrica)
+        
+        # Obtém eventos se fornecidos
+        eventos = None
+        if 'eventos' in data:
+            eventos = []
+            for evento_data in data['eventos']:
+                evento = EventoSistema.from_dict(evento_data)
+                eventos.append(evento)
+        
+        # Cria visualização
+        resultado = visualizador.visualizar_metricas_temporais(
+            metricas=metricas,
+            titulo=data.get('titulo', 'Evolução Temporal de Métricas'),
+            agrupar_por_dimensao=data.get('agrupar_por_dimensao', True),
+            eventos=eventos,
+            salvar=True
+        )
+        
+        return jsonify({
+            "sucesso": True,
+            "caminho_arquivo": resultado,
+            "timestamp": time.time()
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro ao criar visualização de métricas temporais: {e}")
+        return jsonify({
+            "sucesso": False,
+            "erro": str(e),
+            "timestamp": time.time()
+        }), 500
 
-    @app.route('/api/v1/status', methods=['GET'])
-    def get_status():
-        try:
-            status = verificar_servicos_dependentes()
-            return jsonify(status), 200
-        except Exception as e:
-            logger.error(f"Erro ao obter status: {e}")
-            return jsonify({"erro": "Erro ao obter status dos serviços"}), 500
-
-    @app.route('/api/v1/diagnosticos', methods=['GET'])
-    def get_diagnosticos():
-        try:
-            diagnosticos = obter_diagnosticos_ativos()
-            return jsonify([d.__dict__ for d in diagnosticos]), 200
-        except Exception as e:
-            logger.error(f"Erro ao obter diagnósticos: {e}")
-            return jsonify({"erro": "Erro ao obter diagnósticos"}), 500
-
-    @app.route('/api/v1/acoes', methods=['GET'])
-    def get_acoes():
-        try:
-            acoes = obter_acoes_priorizadas()
-            return jsonify([a.__dict__ for a in acoes]), 200
-        except Exception as e:
-            logger.error(f"Erro ao obter ações: {e}")
-            return jsonify({"erro": "Erro ao obter ações"}), 500
-    
-    @app.route('/api/visualizacoes/metricas-temporais', methods=['POST'])
-    def criar_visualizacao_metricas_temporais():
-        try:
-            data = request.json
-            
-            # Obtém métricas do monitoramento se não fornecidas
-            if 'metricas' not in data:
-                metricas = obter_metricas_do_monitoramento()
-            else:
-                metricas = []
-                for metrica_data in data['metricas']:
-                    metrica = MetricaDimensional(
-                        id=metrica_data["id"],
-                        nome=metrica_data["nome"],
-                        valor=metrica_data["valor"],
-                        timestamp=metrica_data["timestamp"],
-                        dimensao=metrica_data["dimensao"],
-                        unidade=metrica_data["unidade"],
-                        tags=metrica_data.get("tags", {}),
-                        metadados=metrica_data.get("metadados", {})
-                    )
-                    metricas.append(metrica)
-            
-            # Obtém eventos se fornecidos
-            eventos = None
-            if 'eventos' in data:
-                eventos = []
-                for evento_data in data['eventos']:
-                    evento = EventoSistema.from_dict(evento_data)
-                    eventos.append(evento)
-            
-            # Cria visualização
-            resultado = visualizador.visualizar_metricas_temporais(
-                metricas=metricas,
-                titulo=data.get('titulo', 'Evolução Temporal de Métricas'),
-                agrupar_por_dimensao=data.get('agrupar_por_dimensao', True),
-                eventos=eventos,
-                salvar=True
-            )
-            
-            return jsonify({
-                "sucesso": True,
-                "caminho_arquivo": resultado,
-                "timestamp": time.time()
-            })
-            
-        except Exception as e:
-            logger.error(f"Erro ao criar visualização de métricas temporais: {e}")
-            return jsonify({
-                "sucesso": False,
-                "erro": str(e),
-                "timestamp": time.time()
-            }), 500
-    
-    @app.route('/api/v1/relatorio-completo', methods=['GET'])
-    def gerar_relatorio_completo():
-        try:
-            # Obtém métricas
-            metricas = obter_metricas_do_monitoramento()
-            
-            # Obtém diagnósticos
-            diagnosticos = obter_diagnosticos_ativos()
-            
-            # Obtém ações
-            acoes = obter_acoes_priorizadas()
-            
-            # Gera visualizações
-            visualizacao_metricas = visualizador.visualizar_metricas_temporais(
-                metricas=metricas,
-                titulo="Evolução Temporal das Métricas do Sistema",
-                agrupar_por_dimensao=True,
-                salvar=False
-            )
-            
-            visualizacao_correlacao = visualizador.visualizar_correlacao_metricas(
-                metricas=metricas,
-                titulo="Correlação entre Métricas do Sistema",
-                salvar=False
-            )
-            
-            # Prepara relatório
-            relatorio = {
-                "status_geral": {
-                    "timestamp": time.time(),
-                    "status_servicos": verificar_servicos_dependentes(),
-                    "metricas_ativas": len(metricas),
-                    "diagnosticos_ativos": len(diagnosticos),
-                    "acoes_pendentes": len(acoes)
-                },
-                "metricas": {
-                    "visualizacao_temporal": visualizacao_metricas,
-                    "visualizacao_correlacao": visualizacao_correlacao,
-                    "dados": [m.__dict__ for m in metricas]
-                },
-                "diagnosticos": [d.__dict__ for d in diagnosticos],
-                "acoes": [a.__dict__ for a in acoes],
-                "recomendacoes": {
-                    "curto_prazo": [a for a in acoes if a.tipo == "HOTFIX"],
-                    "medio_prazo": [a for a in acoes if a.tipo == "REFATORACAO"],
-                    "longo_prazo": [a for a in acoes if a.tipo == "REDESIGN"]
-                }
+@app.route('/api/v1/relatorio-completo', methods=['GET'])
+def gerar_relatorio_completo():
+    try:
+        # Obtém métricas
+        metricas = obter_metricas_do_monitoramento()
+        
+        # Obtém diagnósticos
+        diagnosticos = obter_diagnosticos_ativos()
+        
+        # Obtém ações
+        acoes = obter_acoes_priorizadas()
+        
+        # Gera visualizações
+        visualizacao_metricas = visualizador.visualizar_metricas_temporais(
+            metricas=metricas,
+            titulo="Evolução Temporal das Métricas do Sistema",
+            agrupar_por_dimensao=True,
+            salvar=False
+        )
+        
+        visualizacao_correlacao = visualizador.visualizar_correlacao_metricas(
+            metricas=metricas,
+            titulo="Correlação entre Métricas do Sistema",
+            salvar=False
+        )
+        
+        # Prepara relatório
+        relatorio = {
+            "status_geral": {
+                "timestamp": time.time(),
+                "status_servicos": verificar_servicos_dependentes(),
+                "metricas_ativas": len(metricas),
+                "diagnosticos_ativos": len(diagnosticos),
+                "acoes_pendentes": len(acoes)
+            },
+            "metricas": {
+                "visualizacao_temporal": visualizacao_metricas,
+                "visualizacao_correlacao": visualizacao_correlacao,
+                "dados": [m.__dict__ for m in metricas]
+            },
+            "diagnosticos": [d.__dict__ for d in diagnosticos],
+            "acoes": [a.__dict__ for a in acoes],
+            "recomendacoes": {
+                "curto_prazo": [a for a in acoes if a.tipo == "HOTFIX"],
+                "medio_prazo": [a for a in acoes if a.tipo == "REFATORACAO"],
+                "longo_prazo": [a for a in acoes if a.tipo == "REDESIGN"]
             }
-            
-            return jsonify(relatorio), 200
-            
-        except Exception as e:
-            logger.error(f"Erro ao gerar relatório completo: {e}")
-            return jsonify({
-                "erro": str(e),
-                "timestamp": time.time()
-            }), 500
-    
-    @app.route('/relatorio', methods=['GET'])
-    def mostrar_relatorio():
-        return render_template('relatorio.html')
-    
-    @app.route('/portal', methods=['GET'])
-    def portal_central():
-        return render_template('portal.html')
-    
-    @app.route('/', methods=['GET'])
-    def pagina_inicial():
-        return render_template('index.html')
-    
-    # Inicia o servidor
+        }
+        
+        return jsonify(relatorio), 200
+        
+    except Exception as e:
+        logger.error(f"Erro ao gerar relatório completo: {e}")
+        return jsonify({
+            "erro": str(e),
+            "timestamp": time.time()
+        }), 500
+
+@app.route('/relatorio', methods=['GET'])
+def mostrar_relatorio():
+    return render_template('relatorio.html')
+
+@app.route('/portal', methods=['GET'])
+def portal_central():
+    return render_template('portal.html')
+
+@app.route('/', methods=['GET'])
+def pagina_inicial():
+    return render_template('index.html')
+
+if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8080)

@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consciencia-situacional
+  labels:
+    app: consciencia-situacional
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: consciencia-situacional
+  template:
+    metadata:
+      labels:
+        app: consciencia-situacional
+    spec:
+      containers:
+      - name: consciencia-situacional
+        image: consciencia-situacional:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        env:
+        - name: CONFIG_PATH
+          value: /app/config.yaml
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config.yaml
+          subPath: config.yaml
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: config-volume
+        configMap:
+          name: consciencia-situacional-config 

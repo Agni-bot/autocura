@@ -1,33 +1,30 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-<<<<<<< HEAD
 
 namespace: autocura
 
-=======
-namespace: autocura
->>>>>>> origin/main
 resources:
-- prometheus.yaml
-- grafana.yaml
-- alertmanager.yaml
-- alertmanager-config.yaml
-- fluentd.yaml
-- elasticsearch.yaml
-- kibana.yaml
-<<<<<<< HEAD
+  - deployment.yaml
+  - service.yaml
+  - configmap.yaml
+  - role.yaml
+  - rolebinding.yaml
+  - serviceaccount.yaml
+  - prometheus.yaml
+  - alertmanager.yaml
+  - alertmanager-config.yaml
+  - grafana.yaml
+  - elasticsearch.yaml
+  - kibana.yaml
+  - fluentd.yaml
+  - ingress.yaml
+  - prometheus-server-pvc.yaml
+  - storage-prometheus-alertmanager-0.yaml
 
-=======
->>>>>>> origin/main
 labels:
 - pairs:
     app.kubernetes.io/name: observabilidade
     app.kubernetes.io/part-of: autocura
-<<<<<<< HEAD
 
 commonAnnotations:
   description: "Configurações de observabilidade do Sistema de Autocura Cognitiva"
-=======
-commonAnnotations:
-  description: Configurações de observabilidade do Sistema de Autocura Cognitiva
->>>>>>> origin/main
