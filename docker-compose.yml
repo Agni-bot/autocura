@@ -1,0 +1,146 @@
+version: '3.8'
+
+services:
+  # Módulo Will - Sistema de Decisão
+  will:
+    build:
+      context: ./src/will
+      dockerfile: Dockerfile
+    container_name: will_system
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./src/will/logs:/app/logs
+      - ./src/will/data:/app/data
+    environment:
+      FLASK_ENV: "production"
+      LOG_LEVEL: "INFO"
+    networks:
+      - autocura_network
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Módulo de Diagnóstico
+  diagnostico:
+    build:
+      context: ./src/diagnostico
+      dockerfile: Dockerfile
+    container_name: diagnostico_system
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./src/diagnostico/logs:/app/logs
+    networks:
+      - autocura_network
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Módulo Gerador de Ações
+  gerador_acoes:
+    build:
+      context: ./src/GeradorAcoes
+      dockerfile: Dockerfile
+    container_name: gerador_acoes_system
+    ports:
+      - "5002:5002"
+    volumes:
+      - ./src/GeradorAcoes/logs:/app/logs
+    networks:
+      - autocura_network
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:5002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Módulo de Observabilidade
+  observabilidade:
+    build:
+      context: ./src/observabilidade
+      dockerfile: Dockerfile
+    container_name: observabilidade_system
+    ports:
+      - "5003:5003"
+    volumes:
+      - ./src/observabilidade/logs:/app/logs
+    networks:
+      - autocura_network
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:5003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Módulo de Monitoramento
+  monitoramento:
+    build:
+      context: ./src/monitoramento
+      dockerfile: Dockerfile
+    container_name: monitoramento_system
+    ports:
+      - "5004:5004"
+    volumes:
+      - ./src/monitoramento/logs:/app/logs
+    networks:
+      - autocura_network
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:5004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Módulo Executor
+  executor:
+    build:
+      context: ./src/executor
+      dockerfile: Dockerfile
+    container_name: executor_system
+    ports:
+      - "5005:5005"
+    volumes:
+      - ./src/executor/logs:/app/logs
+    networks:
+      - autocura_network
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:5005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Módulo Guardião Cognitivo
+  guardiao_cognitivo:
+    build:
+      context: ./src/guardiaoCognitivo
+      dockerfile: Dockerfile
+    container_name: guardiao_cognitivo_system
+    ports:
+      - "5006:5006"
+    volumes:
+      - ./src/guardiaoCognitivo/logs:/app/logs
+    networks:
+      - autocura_network
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:5006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  autocura_network:
+    name: autocura_network
+    driver: bridge
+
+volumes:
+  will_data:
+  diagnostico_data:
+  gerador_acoes_data:
+  observabilidade_data:
+  monitoramento_data:
+  executor_data:
+  guardiao_cognitivo_data: 

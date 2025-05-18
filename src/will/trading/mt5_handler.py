@@ -3,7 +3,13 @@ MetaTrader 5 Handler Module
 Responsible for managing connection and operations with MetaTrader 5.
 """
 
-import MetaTrader5 as mt5
+try:
+    import MetaTrader5 as mt5
+    MT5_AVAILABLE = True
+except ImportError:
+    MT5_AVAILABLE = False
+    mt5 = None
+
 import pandas as pd
 from datetime import datetime
 import logging
@@ -44,6 +50,9 @@ class MT5Handler:
         Returns:
             tuple[bool, str]: (sucesso, mensagem)
         """
+        if not MT5_AVAILABLE:
+            return False, "MetaTrader5 não está disponível no ambiente."
+
         try:
             # Inicializa o MT5
             if not mt5.initialize(path=self.path):
@@ -83,6 +92,9 @@ class MT5Handler:
 
     def disconnect(self) -> None:
         """Desconecta do terminal MT5."""
+        if not MT5_AVAILABLE:
+            return
+
         if self.connected:
             mt5.shutdown()
             self.connected = False
@@ -92,6 +104,9 @@ class MT5Handler:
 
     def _load_symbols_info(self) -> None:
         """Carrega informações de todos os símbolos disponíveis."""
+        if not MT5_AVAILABLE:
+            return
+
         symbols = mt5.symbols_get()
         if symbols is None:
             error = mt5.last_error()
@@ -126,6 +141,9 @@ class MT5Handler:
         Returns:
             dict: Informações da conta
         """
+        if not MT5_AVAILABLE:
+            return {"error": "MetaTrader5 não está disponível no ambiente."}
+
         if not self.connected:
             return {"error": "Não conectado ao MT5"}
 
@@ -151,6 +169,9 @@ class MT5Handler:
         Returns:
             dict: Informações do símbolo
         """
+        if not MT5_AVAILABLE:
+            return {"error": "MetaTrader5 não está disponível no ambiente."}
+
         if not self.connected:
             return {"error": "Não conectado ao MT5"}
 
@@ -169,6 +190,9 @@ class MT5Handler:
         Returns:
             dict: Preço atual (bid/ask)
         """
+        if not MT5_AVAILABLE:
+            return {"error": "MetaTrader5 não está disponível no ambiente."}
+
         if not self.connected:
             return {"error": "Não conectado ao MT5"}
 
@@ -209,6 +233,9 @@ class MT5Handler:
         Returns:
             dict: Resultado da ordem
         """
+        if not MT5_AVAILABLE:
+            return {"error": "MetaTrader5 não está disponível no ambiente."}
+
         if not self.connected:
             return {"error": "Não conectado ao MT5"}
 
@@ -261,6 +288,9 @@ class MT5Handler:
         Returns:
             list: Lista de posições abertas
         """
+        if not MT5_AVAILABLE:
+            return [{"error": "MetaTrader5 não está disponível no ambiente."}]
+
         if not self.connected:
             return [{"error": "Não conectado ao MT5"}]
 
@@ -293,6 +323,9 @@ class MT5Handler:
         Returns:
             dict: Resultado da operação
         """
+        if not MT5_AVAILABLE:
+            return {"error": "MetaTrader5 não está disponível no ambiente."}
+
         if not self.connected:
             return {"error": "Não conectado ao MT5"}
 
@@ -352,6 +385,9 @@ class MT5Handler:
         Returns:
             pd.DataFrame: Dados históricos
         """
+        if not MT5_AVAILABLE:
+            return pd.DataFrame()
+
         if not self.connected:
             return pd.DataFrame()
 

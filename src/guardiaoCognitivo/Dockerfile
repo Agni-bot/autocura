@@ -1,12 +1,65 @@
-FROM python:3.9-slim
+# Build stage
+FROM python:3.11-slim as builder
 
+# Set working directory
 WORKDIR /app
 
-COPY requirements.txt requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    python3-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
+# Copy requirements first for better caching
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir gunicorn && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Final stage
+FROM python:3.11-slim
+
+# Create non-root user
+RUN useradd -m -u 1000 appuser && \
+    apt-get update && \
+    apt-get install -y curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy only necessary files from builder
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Configura o ambiente Python
+ENV PYTHONUNBUFFERED=1
+ENV FLASK_APP=guardiaoCognitivo.app
+ENV FLASK_RUN_HOST=0.0.0.0
+ENV LOG_LEVEL=INFO
+ENV LOG_FILE=/app/logs/guardiao_cognitivo.log
+
+# Copy application code
 COPY . .
 
-EXPOSE 8081
+# Create necessary directories and set permissions
+RUN mkdir -p /app/logs && \
+    chown -R appuser:appuser /app
 
-CMD ["python", "guardiao_cognitivo.py"]
+# Set Python path
+ENV PYTHONPATH=/app/src
+
+# Switch to non-root user
+USER appuser
+
+# Expose the port the app runs on
+EXPOSE 5006
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:5006/health || exit 1
+
+# Command to run the application using Gunicorn
+CMD ["gunicorn", "--workers", "4", "--bind", "0.0.0.0:5006", "--access-logfile", "-", "guardiaoCognitivo.app:app"]

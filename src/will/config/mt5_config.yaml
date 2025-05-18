@@ -1,10 +1,10 @@
 # Configurações do MetaTrader 5
 mt5:
   # Configurações de conexão
-  server: "FBS-Demo"  # Servidor demo FBS
-  login: 101202061  # Número da conta demo
-  password: "A2GdZ/i5"  # Senha da conta demo
-  path: "C:/Program Files/FBS MetaTrader 5/terminal64.exe"  # Caminho correto do terminal
+  server: "MetaQuotes-Demo"  # Servidor demo padrão
+  login: null  # Será preenchido pelo usuário
+  password: null  # Será preenchido pelo usuário
+  path: "C:/Program Files/MetaTrader 5/terminal64.exe"  # Caminho padrão do MT5
 
   # Configurações de trading
   trading:

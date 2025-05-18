@@ -3,16 +3,13 @@
 ## 1. Implementação Técnica
 
 ### 1.1 Requisitos Técnicos
-- Stack tecnológico
-- Dependências
-- Versões
-- Configurações
+- Stack tecnológico: Python 3.11+, FastAPI, HTML/CSS/JS
+- Dependências: ver requirements.txt em src/observabilidade
+- Estrutura de pastas centralizada em src/observabilidade
 
 ### 1.2 Ambiente de Desenvolvimento
-- Setup local
-- Ferramentas
-- IDEs
-- Extensões
+- Setup local e Docker
+- Ferramentas: VSCode, Docker, k8s, Prometheus, Grafana
 
 ## 2. Processo de Desenvolvimento
 
@@ -27,32 +24,19 @@
 - Pair programming
 - TDD
 - Clean code
+- Documentação obrigatória em docs/
 
 ## 3. Implementação
 
 ### 3.1 Estrutura do Projeto
-- Organização de código
-- Padrões de nomenclatura
-- Documentação
-- Versionamento
+- src/observabilidade/templates: todos os templates HTML
+- src/observabilidade/static: todos os arquivos estáticos (CSS, JS)
+- src/observabilidade/main.py: ponto único de entrada web
+- Remoção do diretório frontend
 
 ### 3.2 Scripts de Automação
-- Validação de Ambiente (01_validar_ambiente.sh)
-- Instalação de Dependências (02_instalar_dependencias.sh)
-- Configuração de Usuários (03_configurar_usuarios_grupos.sh)
-- Criação de Diretórios (04_criar_diretorios.sh)
-- Download de Artefatos (05_baixar_artefatos_aplicacao.sh)
-- Configuração da Aplicação (06_configurar_aplicacao.sh)
-- Inicialização de Serviços (07_inicializar_servicos.sh)
-- Validação Pós-Instalação (08_validacao_pos_instalacao.sh)
-- Limpeza de Instalação (09_limpeza_instalacao.sh)
-- Inicialização do Frontend (10_iniciar_frontend.sh)
-
-### 3.3 Scripts de Suporte
-- Build (build.sh, build.cmd, build-images.ps1)
-- Setup Kubernetes (setup-kind.sh, setup-kind2.sh, setup-kind.cmd)
-- Inicialização do Portal (iniciar_portal.ps1)
-- Testes (run_test.bat)
+- Build Docker automatizado
+- Deploy via Kubernetes
 
 ## 4. Qualidade e Testes
 
@@ -72,11 +56,12 @@
 
 ### 5.1 Informações Técnicas
 - Última atualização: [DATA]
-- Versão: 1.0
-- Status: Em revisão
+- Versão: 1.1
+- Status: Atualizado para arquitetura unificada
 - Responsável: Equipe de Desenvolvimento
 
 ### 5.2 Histórico de Revisões
+- v1.1: Unificação frontend/backend em observabilidade
 - v1.0: Consolidação inicial
 - Integração de implementação técnica
 - Adição de processo de desenvolvimento

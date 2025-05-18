@@ -3,16 +3,18 @@
 ## 1. Arquitetura Core
 
 ### 1.1 Visão Geral do Sistema
-- Princípios arquiteturais
-- Componentes principais
-- Fluxos de dados
-- Interações entre sistemas
+- Arquitetura baseada em microserviços
+- Ponto único de entrada web: módulo observabilidade (FastAPI)
+- Frontend e backend unificados em src/observabilidade
+- Dashboards, portais e relatórios centralizados
+- Fluxos de dados integrados entre módulos
 
 ### 1.2 Estrutura Base
 - Microserviços
 - APIs e endpoints
 - Banco de dados
 - Cache e mensageria
+- Servidor de arquivos estáticos e templates centralizado
 
 ## 2. Infraestrutura
 
@@ -37,8 +39,8 @@
 - Anti-padrões
 
 ### 3.2 Componentes de Software
-- Frontend
-- Backend
+- Observabilidade (frontend + backend)
+- Módulos: diagnóstico, monitoramento, geração de ações, etc.
 - Middleware
 - Integrações
 
@@ -60,11 +62,12 @@
 
 ### 5.1 Informações Técnicas
 - Última atualização: [DATA]
-- Versão: 1.0
-- Status: Em revisão
+- Versão: 1.1
+- Status: Atualizado para arquitetura unificada
 - Responsável: Equipe de Arquitetura
 
 ### 5.2 Histórico de Revisões
+- v1.1: Unificação frontend/backend em observabilidade
 - v1.0: Consolidação inicial
 - Integração de arquitetura core
 - Adição de infraestrutura

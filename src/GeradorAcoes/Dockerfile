@@ -1,34 +1,65 @@
-FROM python:3.11-slim
+# Build stage
+FROM python:3.11-slim as builder
 
-# Instalar dependências do sistema
+# Set working directory
+WORKDIR /app
+
+# Install build dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     gcc \
+    python3-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Definir diretório de trabalho
-WORKDIR /app
-
-# Copiar arquivos de requisitos primeiro para aproveitar o cache do Docker
+# Copy requirements first for better caching
 COPY requirements.txt .
-
-# Instalar dependências Python
 RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir gunicorn && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copiar o resto do código
+# Final stage
+FROM python:3.11-slim
+
+# Create non-root user
+RUN useradd -m -u 1000 appuser && \
+    apt-get update && \
+    apt-get install -y curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy only necessary files from builder
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Configura o ambiente Python
+ENV PYTHONUNBUFFERED=1
+ENV FLASK_APP=GeradorAcoes.app
+ENV FLASK_RUN_HOST=0.0.0.0
+ENV LOG_LEVEL=INFO
+ENV LOG_FILE=/app/logs/gerador_acoes.log
+
+# Copy application code
 COPY . .
 
-# Definir variáveis de ambiente padrão
-ENV SCORE_MINIMO=0.3
-ENV TIMEOUT_API=5
-ENV MAX_ACOES_REDESIGN=2
-ENV PRIORIDADE_HOTFIX=0.8
-ENV PRIORIDADE_REFATORACAO=0.5
-ENV PRIORIDADE_REDESIGN=0.3
+# Create necessary directories and set permissions
+RUN mkdir -p /app/logs && \
+    chown -R appuser:appuser /app
 
-# Expor a porta
-EXPOSE 8082
+# Set Python path
+ENV PYTHONPATH=/app/src
 
-# Comando para executar a aplicação
-CMD ["python", "gerador.py"]
+# Switch to non-root user
+USER appuser
+
+# Expose the port the app runs on
+EXPOSE 5002
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:5002/health || exit 1
+
+# Command to run the application using Gunicorn
+CMD ["gunicorn", "--workers", "4", "--bind", "0.0.0.0:5002", "--access-logfile", "-", "GeradorAcoes.app:app"]

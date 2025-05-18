@@ -1,5 +1,37 @@
 # Volume 6: Interface e Experiência do Usuário
 
+## 1. Visão Geral
+- Interface centralizada no módulo observabilidade
+- Acesso via navegador ao endpoint principal do FastAPI
+- Templates HTML e arquivos estáticos organizados em src/observabilidade
+
+## 2. Fluxo Visual
+- Página inicial: Painel de Controle Autocura (index.html)
+- Navegação para dashboards, métricas, portais e relatórios
+- Visualização responsiva e moderna
+
+## 3. Rotas Principais
+- `/` : Painel principal (index.html)
+- `/monitoramento/metrics` : Métricas do sistema
+- `/monitoramento/health` : Saúde do sistema
+- `/diagnostico/sistema` : Diagnóstico do sistema (JSON)
+- `/diagnostico/servicos` : Diagnóstico dos serviços (JSON)
+- Outras rotas conforme módulos
+
+## 4. Templates e Estáticos
+- Todos os templates em src/observabilidade/templates
+- CSS e JS em src/observabilidade/static
+
+## 5. Exemplos de Uso
+- Acesse http://localhost:8000 para visualizar o painel
+- Navegue entre módulos e dashboards pelo menu visual
+
+## 6. Metadados
+- Última atualização: [DATA]
+- Versão: 1.1
+- Status: Atualizado para arquitetura unificada
+- Responsável: Equipe de UX
+
 ## 1. Design de Interface
 
 ### 1.1 Princípios de Design

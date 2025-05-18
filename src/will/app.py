@@ -9,6 +9,8 @@ from datetime import datetime
 import json
 from typing import Dict, Any
 import os
+from functools import wraps
+import time
 
 from trading.mt5_manager import MT5Manager
 from validators.forex_validator import ForexValidator
@@ -36,114 +38,188 @@ def add_cors_headers(response):
     response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
     return response
 
-@app.route('/api/will/status', methods=['GET'])
-def will_status_endpoint():
-    """Endpoint para verificar o status do sistema."""
-    try:
-        # Obtém informações da conta MT5
-        account_info = mt5_manager.get_account_info()
-        
-        # Obtém posições abertas
-        positions = mt5_manager.get_open_positions()
-        
-        # Prepara resposta
-        response = {
-            "status": "online",
-            "timestamp": datetime.now().isoformat(),
-            "mt5_connected": mt5_manager.handler is not None and mt5_manager.handler.connected,
-            "account_info": account_info,
-            "open_positions": positions,
-            "system_info": {
-                "version": "1.0.0",
-                "environment": os.getenv("ENVIRONMENT", "development")
-            }
-        }
-        
-        logger.info(f"Status endpoint acessado: {response}")
-        return add_cors_headers(jsonify(response))
-        
-    except Exception as e:
-        logger.error(f"Erro no status endpoint: {str(e)}")
-        return add_cors_headers(jsonify({
-            "status": "error",
-            "message": str(e)
-        })), 500
+def handle_errors(f):
+    """Decorator para tratamento centralizado de erros."""
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except Exception as e:
+            logger.error(f"Erro na função {f.__name__}: {str(e)}")
+            return add_cors_headers(jsonify({
+                "status": "error",
+                "message": str(e),
+                "timestamp": datetime.now().isoformat()
+            })), 500
+    return wrapper
 
-@app.route('/api/will/decision', methods=['POST'])
-def will_decision_endpoint():
-    """Endpoint para obter decisão de trading."""
-    try:
-        # Verifica se o request é JSON
+def validate_json_request(f):
+    """Decorator para validar se o request é JSON."""
+    @wraps(f)
+    def wrapper(*args, **kwargs):
         if not request.is_json:
             return add_cors_headers(jsonify({
                 "status": "error",
-                "message": "Content-Type deve ser application/json"
+                "message": "Content-Type deve ser application/json",
+                "timestamp": datetime.now().isoformat()
             })), 400
+        return f(*args, **kwargs)
+    return wrapper
 
-        # Obtém dados do request
-        data = request.get_json()
-        
-        # Valida campos obrigatórios
-        if not data or 'asset' not in data or 'volume' not in data:
-            return add_cors_headers(jsonify({
-                "status": "error",
-                "message": "Campos 'asset' e 'volume' são obrigatórios"
-            })), 400
+@app.route('/health', methods=['GET'])
+@handle_errors
+def health_check():
+    """Endpoint para verificar a saúde do sistema."""
+    # Verifica conexão com MT5
+    mt5_status = mt5_manager.handler is not None and mt5_manager.handler.connected
+    
+    # Verifica conexão com banco de dados
+    db_status = True  # TODO: Implementar verificação real
+    
+    # Verifica conexão com Elasticsearch
+    es_status = True  # TODO: Implementar verificação real
+    
+    # Determina status geral
+    overall_status = "healthy" if all([mt5_status, db_status, es_status]) else "degraded"
+    
+    response = {
+        "status": overall_status,
+        "timestamp": datetime.now().isoformat(),
+        "components": {
+            "mt5": mt5_status,
+            "database": db_status,
+            "elasticsearch": es_status
+        },
+        "version": "1.0.0"
+    }
+    
+    status_code = 200 if overall_status == "healthy" else 503
+    return add_cors_headers(jsonify(response)), status_code
 
-        # Valida par de moedas
-        is_valid, error_msg = forex_validator.validate_currency_pair(data['asset'])
-        if not is_valid:
-            return add_cors_headers(jsonify({
-                "status": "error",
-                "message": error_msg
-            })), 400
-
-        # Valida volume
-        is_valid, error_msg = forex_validator.validate_volume(data['volume'])
-        if not is_valid:
-            return add_cors_headers(jsonify({
-                "status": "error",
-                "message": error_msg
-            })), 400
-
-        # Obtém informações do par
-        pair_info = forex_validator.get_pair_info(data['asset'])
-        
-        # Obtém preço atual
-        current_price = mt5_manager.get_current_price(data['asset'])
-        
-        # Gera decisão
-        decision = {
-            "status": "success",
-            "timestamp": datetime.now().isoformat(),
-            "asset": data['asset'],
-            "volume": data['volume'],
-            "current_price": current_price,
-            "pair_info": pair_info,
-            "decision": {
-                "action": "BUY" if current_price.get('bid', 0) > 0 else "SELL",
-                "confidence": 0.85,
-                "reason": "Análise técnica e fundamentalista",
-                "stop_loss": current_price.get('bid', 0) * 0.99,
-                "take_profit": current_price.get('bid', 0) * 1.02
-            },
-            "market_analysis": {
-                "trend": "bullish",
-                "support_levels": [current_price.get('bid', 0) * 0.98, current_price.get('bid', 0) * 0.96],
-                "resistance_levels": [current_price.get('bid', 0) * 1.02, current_price.get('bid', 0) * 1.04],
-                "volatility": "medium"
-            }
+@app.route('/api/will/status', methods=['GET'])
+@handle_errors
+def will_status_endpoint():
+    """Endpoint para verificar o status do sistema."""
+    # Obtém informações da conta MT5
+    account_info = mt5_manager.get_account_info()
+    
+    # Obtém posições abertas
+    positions = mt5_manager.get_open_positions()
+    
+    # Prepara resposta
+    response = {
+        "status": "online",
+        "timestamp": datetime.now().isoformat(),
+        "mt5_connected": mt5_manager.handler is not None and mt5_manager.handler.connected,
+        "account_info": account_info,
+        "open_positions": positions,
+        "system_info": {
+            "version": "1.0.0",
+            "environment": os.getenv("ENVIRONMENT", "development"),
+            "uptime": time.time() - app.start_time if hasattr(app, 'start_time') else 0
         }
-        
-        logger.info(f"Decisão gerada: {decision}")
-        return add_cors_headers(jsonify(decision))
-        
-    except Exception as e:
-        logger.error(f"Erro no decision endpoint: {str(e)}")
+    }
+    
+    logger.info(f"Status endpoint acessado: {response}")
+    return add_cors_headers(jsonify(response))
+
+@app.route('/api/will/mt5/config', methods=['POST'])
+@handle_errors
+@validate_json_request
+def configure_mt5():
+    """Configura as credenciais do MT5."""
+    data = request.get_json()
+    
+    required_fields = ['server', 'login', 'password']
+    for field in required_fields:
+        if field not in data:
+            return add_cors_headers(jsonify({
+                'status': 'error',
+                'message': f'Campo obrigatório não fornecido: {field}',
+                'timestamp': datetime.now().isoformat()
+            })), 400
+    
+    # Atualiza configurações
+    mt5_manager.config['server'] = data['server']
+    mt5_manager.config['login'] = data['login']
+    mt5_manager.config['password'] = data['password']
+    
+    # Tenta conectar com as novas credenciais
+    success, message = mt5_manager.connect()
+    
+    return add_cors_headers(jsonify({
+        'status': 'success' if success else 'error',
+        'message': message,
+        'timestamp': datetime.now().isoformat()
+    }))
+
+@app.route('/api/will/decision', methods=['POST'])
+@handle_errors
+@validate_json_request
+def will_decision_endpoint():
+    """Endpoint para obter decisão de trading."""
+    # Obtém dados do request
+    data = request.get_json()
+    
+    # Valida campos obrigatórios
+    required_fields = ['asset', 'volume']
+    missing_fields = [field for field in required_fields if field not in data]
+    if missing_fields:
         return add_cors_headers(jsonify({
             "status": "error",
-            "message": str(e)
-        })), 500
+            "message": f"Campos obrigatórios faltando: {', '.join(missing_fields)}",
+            "timestamp": datetime.now().isoformat()
+        })), 400
+
+    # Valida par de moedas
+    is_valid, error_msg = forex_validator.validate_currency_pair(data['asset'])
+    if not is_valid:
+        return add_cors_headers(jsonify({
+            "status": "error",
+            "message": error_msg,
+            "timestamp": datetime.now().isoformat()
+        })), 400
+
+    # Valida volume
+    is_valid, error_msg = forex_validator.validate_volume(data['volume'])
+    if not is_valid:
+        return add_cors_headers(jsonify({
+            "status": "error",
+            "message": error_msg,
+            "timestamp": datetime.now().isoformat()
+        })), 400
+
+    # Obtém informações do par
+    pair_info = forex_validator.get_pair_info(data['asset'])
+    
+    # Obtém preço atual
+    current_price = mt5_manager.get_current_price(data['asset'])
+    
+    # Gera decisão
+    decision = {
+        "status": "success",
+        "timestamp": datetime.now().isoformat(),
+        "asset": data['asset'],
+        "volume": data['volume'],
+        "current_price": current_price,
+        "pair_info": pair_info,
+        "decision": {
+            "action": "BUY" if current_price.get('bid', 0) > 0 else "SELL",
+            "confidence": 0.85,
+            "reason": "Análise técnica e fundamentalista",
+            "stop_loss": current_price.get('bid', 0) * 0.99,
+            "take_profit": current_price.get('bid', 0) * 1.02
+        },
+        "market_analysis": {
+            "trend": "bullish",
+            "support_levels": [current_price.get('bid', 0) * 0.98, current_price.get('bid', 0) * 0.96],
+            "resistance_levels": [current_price.get('bid', 0) * 1.02, current_price.get('bid', 0) * 1.04],
+            "volatility": "medium"
+        }
+    }
+    
+    logger.info(f"Decisão gerada: {decision}")
+    return add_cors_headers(jsonify(decision))
 
 @app.route('/api/will/pairs', methods=['GET'])
 def will_pairs_endpoint():
