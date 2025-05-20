@@ -6,11 +6,27 @@
         "threshold_anomalia": 0.95
     },
     "metricas": {
-        "cpu": ["percent", "load"],
-        "memoria": ["percent", "used"],
-        "disco": ["percent", "io"],
-        "rede": ["bytes", "packets"],
-        "aplicacao": ["latencia", "erros", "requisicoes"]
+        "cpu": [
+            "percent",
+            "load"
+        ],
+        "memoria": [
+            "percent",
+            "used"
+        ],
+        "disco": [
+            "percent",
+            "io"
+        ],
+        "rede": [
+            "bytes",
+            "packets"
+        ],
+        "aplicacao": [
+            "latencia",
+            "erros",
+            "requisicoes"
+        ]
     },
     "correlacao": {
         "min_correlacao": 0.7,
@@ -22,4 +38,4 @@
         "intervalo_predicao": 300,
         "min_confianca": 0.8
     }
-} 
+}
