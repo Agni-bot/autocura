@@ -1,0 +1,13 @@
+{
+  "decisoes_recentes": [],
+  "estado_sistema": {
+    "versao": "1.0.0",
+    "modulos_ativos": [],
+    "ultima_atualizacao": "2025-05-20T00:00:00"
+  },
+  "log_eventos": [],
+  "parametros_gerais": {
+    "modo_diagnostico": true,
+    "limite_agentes": 10
+  }
+}
