@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentelemetry-collector
+  namespace: monitoring
+  labels:
+    app: opentelemetry-collector
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: opentelemetry-collector
+  template:
+    metadata:
+      labels:
+        app: opentelemetry-collector
+      annotations:
+        seccomp.security.alpha.kubernetes.io/pod: runtime/default
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
+      containers:
+      - name: opentelemetry-collector
+        image: otel/opentelemetry-collector-contrib:latest
+        args: ["--config=/conf/opentelemetry-config.yaml"]
+        volumeMounts:
+        - name: opentelemetry-config
+          mountPath: /conf
+        ports:
+        - containerPort: 4317
+          name: grpc
+        - containerPort: 4318
+          name: http
+        - containerPort: 8889
+          name: prometheus
+        - containerPort: 13133
+          name: healthcheck
+        - containerPort: 1777
+          name: pprof
+        - containerPort: 55679
+          name: zpages
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "400Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: healthcheck
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /
+            port: healthcheck
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: opentelemetry-config
+        configMap:
+          name: opentelemetry-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opentelemetry-collector
+  namespace: monitoring
+spec:
+  selector:
+    app: opentelemetry-collector
+  ports:
+  - name: grpc
+    port: 4317
+    targetPort: grpc
+  - name: http
+    port: 4318
+    targetPort: http
+  - name: prometheus
+    port: 8889
+    targetPort: prometheus
+  - name: healthcheck
+    port: 13133
+    targetPort: healthcheck
+  - name: pprof
+    port: 1777
+    targetPort: pprof
+  - name: zpages
+    port: 55679
+    targetPort: zpages
+  type: ClusterIP 

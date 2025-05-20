@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: monitoring
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      scrape_timeout: 10s
+
+    rule_files:
+      - /etc/prometheus/rules/*.yml
+
+    scrape_configs:
+      - job_name: 'autocura'
+        metrics_path: '/metrics'
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            regex: autocura
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_container_port_name]
+            regex: metrics
+            action: keep
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: kubernetes_pod_name
+
+  rules.yml: |
+    groups:
+    - name: autocura
+      rules:
+      - alert: HighCPUUsage
+        expr: container_cpu_usage_seconds_total{container="api"} > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alto uso de CPU no container API"
+          description: "Container {{ $labels.container }} está usando {{ $value }}% de CPU"
+
+      - alert: HighMemoryUsage
+        expr: container_memory_usage_bytes{container="api"} > 400Mi
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alto uso de memória no container API"
+          description: "Container {{ $labels.container }} está usando {{ $value }} bytes de memória"
+
+      - alert: HighLatency
+        expr: http_request_duration_seconds{quantile="0.9"} > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alta latência nas requisições HTTP"
+          description: "90% das requisições estão demorando mais que 1s"
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Alta taxa de erros HTTP"
+          description: "Taxa de erros 5xx está acima de 5%"
+
+      - alert: PodRestarting
+        expr: kube_pod_container_status_restarts_total{container="api"} > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container reiniciando frequentemente"
+          description: "Container {{ $labels.container }} reiniciou {{ $value }} vezes"
+
+      - alert: LowDiskSpace
+        expr: node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} < 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Espaço em disco baixo"
+          description: "Apenas {{ $value | humanizePercentage }} de espaço disponível"
+
+      - alert: HighNetworkErrors
+        expr: rate(node_network_transmit_errs_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Erros de rede detectados"
+          description: "Erros de transmissão de rede detectados no nó {{ $labels.instance }}" 
