@@ -1,0 +1,47 @@
+```
++-------------------------------------------------------------------------------------------------------------+
+|                                 MATRIZ DE TRANSIÇÃO DE AUTONOMIA                                            |
++-------------------------------------------------------------------------------------------------------------+
+|                                                                                                             |
+|  +-------------------+  +-------------------+  +-------------------+  +-------------------+  +--------------+|
+|  |    NÍVEL 1        |  |    NÍVEL 2        |  |    NÍVEL 3        |  |    NÍVEL 4        |  |   NÍVEL 5    ||
+|  |   ASSISTÊNCIA     |  |    AUTONOMIA      |  |    AUTONOMIA      |  |    AUTONOMIA      |  |  AUTONOMIA   ||
+|  |                   |  |   SUPERVISIONADA  |  |    CONDICIONAL    |  |      ALTA         |  |    PLENA     ||
+|  +--------+----------+  +--------+----------+  +--------+----------+  +--------+----------+  +------+-------+|
+|           |                     |                      |                      |                     |        |
+|           v                     v                      v                      v                     v        |
+|  +-------------------+  +-------------------+  +-------------------+  +-------------------+  +--------------+|
+|  | • Análises e      |  | • Ações rotineiras|  | • Maioria das     |  | • Operação quase  |  | • Independên-||
+|  |   recomendações   |  |   e baixo impacto |  |   ações indepen-  |  |   completamente   |  |   cia total  ||
+|  | • Todas ações     |  |   independentes   |  |   dentes          |  |   independente    |  |   dentro de  ||
+|  |   requerem        |  | • Ações signifi-  |  | • Escala decisões |  | • Escala apenas   |  |   limites    ||
+|  |   aprovação       |  |   cativas com     |  |   críticas ou     |  |   decisões excep- |  |   éticos     ||
+|  |   humana          |  |   aprovação       |  |   eticamente      |  |   cionalmente     |  | • Humanos    ||
+|  |                   |  |                   |  |   complexas        |  |   críticas        |  |   mantêm     ||
+|  |                   |  |                   |  |                   |  |                   |  |   veto        ||
+|  +-------------------+  +-------------------+  +-------------------+  +-------------------+  +--------------+|
+|                                                                                                             |
+|  +-------------------+  +-------------------+  +-------------------+  +-------------------+  +--------------+|
+|  | CRITÉRIOS AVANÇO  |  | CRITÉRIOS AVANÇO  |  | CRITÉRIOS AVANÇO  |  | CRITÉRIOS AVANÇO  |  |              ||
+|  | • Precisão >95%   |  | • Precisão >97%   |  | • Precisão >99%   |  | • Precisão >99.9% |  |              ||
+|  | • Zero falsos     |  | • Zero falsos     |  | • Zero falsos     |  | • Demonstração    |  |    NÍVEL     ||
+|  |   negativos       |  |   negativos       |  |   negativos       |  |   consistente de  |  |    MÁXIMO    ||
+|  | • Alinhamento     |  | • Alinhamento     |  | • Alinhamento     |  |   alinhamento     |  |              ||
+|  |   ético validado  |  |   ético validado  |  |   ético validado  |  |   ético perfeito  |  |              ||
+|  | • 3+ meses de     |  | • 6+ meses de     |  | • 12+ meses de    |  | • 24+ meses de    |  |              ||
+|  |   operação        |  |   operação        |  |   operação        |  |   operação        |  |              ||
+|  +-------------------+  +-------------------+  +-------------------+  +-------------------+  +--------------+|
+|                                                                                                             |
+|  +-------------------+  +-------------------+  +-------------------+  +-------------------+  +--------------+|
+|  | REVERSÃO PARA     |  | REVERSÃO PARA     |  | REVERSÃO PARA     |  | REVERSÃO PARA     |  | REVERSÃO PARA||
+|  | NÍVEL ANTERIOR    |  | NÍVEL ANTERIOR    |  | NÍVEL ANTERIOR    |  | NÍVEL ANTERIOR    |  | NÍVEL ANTER. ||
+|  | • Falha crítica   |  | • Falha crítica   |  | • Falha crítica   |  | • Falha crítica   |  | • Falha crít.||
+|  | • Violação ética  |  | • Violação ética  |  | • Violação ética  |  | • Violação ética  |  | • Violação   ||
+|  | • Degradação      |  | • Degradação      |  | • Degradação      |  | • Degradação      |  |   ética      ||
+|  |   cognitiva       |  |   cognitiva       |  |   cognitiva       |  |   cognitiva       |  | • Degradação ||
+|  | • Solicitação     |  | • Solicitação     |  | • Solicitação     |  | • Solicitação     |  |   cognitiva  ||
+|  |   humana          |  |   humana          |  |   humana          |  |   humana          |  | • Solicitação||
+|  +-------------------+  +-------------------+  +-------------------+  +-------------------+  |   humana     ||
+|                                                                                             +--------------+|
++-------------------------------------------------------------------------------------------------------------+
+```
