@@ -1,0 +1,6 @@
+apiVersion: 1
+
+organizations:
+  - name: Autocura
+    uid: autocura
+    description: Organização do sistema Autocura 

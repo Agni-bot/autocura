@@ -2,15 +2,42 @@
 Testes do gerador de ações do sistema.
 """
 import pytest
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, Any
 
-from src.acoes.gerador_acoes import GeradorAcoes
+from src.acoes.gerador_acoes import GeradorAcoes, Acao
+from src.diagnostico.rede_neural import Diagnostico
 
 @pytest.fixture
 def gerador():
     """Fixture que fornece uma instância do gerador de ações para os testes."""
     return GeradorAcoes()
+
+@pytest.fixture
+def diagnostico_cpu():
+    """Fixture que fornece um diagnóstico de alta CPU para os testes."""
+    return Diagnostico(
+        timestamp=datetime.now(),
+        anomalia_detectada=True,
+        score_anomalia=0.9,
+        padrao_detectado="alta_cpu",
+        confianca=0.8,
+        metricas_relevantes=["cpu_usage"],
+        recomendacoes=["Verificar processos com alto consumo de CPU"]
+    )
+
+@pytest.fixture
+def diagnostico_memoria():
+    """Fixture que fornece um diagnóstico de alta memória para os testes."""
+    return Diagnostico(
+        timestamp=datetime.now(),
+        anomalia_detectada=True,
+        score_anomalia=0.85,
+        padrao_detectado="alta_memoria",
+        confianca=0.75,
+        metricas_relevantes=["memory_usage"],
+        recomendacoes=["Verificar vazamentos de memória"]
+    )
 
 def test_gerar_acao_manutencao():
     """Testa a geração de ação de manutenção."""
@@ -300,4 +327,170 @@ def test_obter_acoes_por_tipo():
     assert len(hotfixes) == 1
     assert manutencoes[0]["id"] == "test_1"
     assert manutencoes[1]["id"] == "test_3"
-    assert hotfixes[0]["id"] == "test_2" 
+    assert hotfixes[0]["id"] == "test_2"
+
+def test_inicializacao(gerador):
+    """Testa a inicialização do gerador de ações."""
+    assert gerador.mapeamento_acoes is not None
+    assert len(gerador.mapeamento_acoes) > 0
+    assert isinstance(gerador.historico_acoes, list)
+    assert len(gerador.historico_acoes) == 0
+
+def test_gerar_acao_cpu(gerador, diagnostico_cpu):
+    """Testa a geração de ação para alta CPU."""
+    acao = gerador.gerar_acao(diagnostico_cpu)
+    
+    assert acao is not None
+    assert acao.tipo == "escalar_horizontal"
+    assert acao.prioridade == 2
+    assert acao.status == "pendente"
+    assert acao.diagnostico == diagnostico_cpu
+    assert "min_replicas" in acao.parametros
+    assert "max_replicas" in acao.parametros
+    assert "target_cpu" in acao.parametros
+
+def test_gerar_acao_memoria(gerador, diagnostico_memoria):
+    """Testa a geração de ação para alta memória."""
+    acao = gerador.gerar_acao(diagnostico_memoria)
+    
+    assert acao is not None
+    assert acao.tipo == "otimizar_memoria"
+    assert acao.prioridade == 2
+    assert acao.status == "pendente"
+    assert acao.diagnostico == diagnostico_memoria
+    assert "clear_cache" in acao.parametros
+    assert "gc_threshold" in acao.parametros
+    assert "max_memory" in acao.parametros
+
+def test_gerar_acao_sem_anomalia(gerador):
+    """Testa a geração de ação quando não há anomalia."""
+    diagnostico = Diagnostico(
+        timestamp=datetime.now(),
+        anomalia_detectada=False,
+        score_anomalia=0.1,
+        padrao_detectado="normal",
+        confianca=0.9,
+        metricas_relevantes=[],
+        recomendacoes=[]
+    )
+    
+    acao = gerador.gerar_acao(diagnostico)
+    assert acao is None
+
+def test_gerar_acao_padrao_desconhecido(gerador):
+    """Testa a geração de ação para padrão desconhecido."""
+    diagnostico = Diagnostico(
+        timestamp=datetime.now(),
+        anomalia_detectada=True,
+        score_anomalia=0.9,
+        padrao_detectado="padrao_desconhecido",
+        confianca=0.8,
+        metricas_relevantes=[],
+        recomendacoes=[]
+    )
+    
+    acao = gerador.gerar_acao(diagnostico)
+    assert acao is None
+
+def test_obter_acoes_pendentes(gerador, diagnostico_cpu, diagnostico_memoria):
+    """Testa a obtenção de ações pendentes."""
+    # Gera algumas ações
+    acao1 = gerador.gerar_acao(diagnostico_cpu)
+    acao2 = gerador.gerar_acao(diagnostico_memoria)
+    
+    # Atualiza status de uma ação
+    gerador.atualizar_status_acao(acao1.id, "sucesso")
+    
+    # Obtém ações pendentes
+    acoes_pendentes = gerador.obter_acoes_pendentes()
+    
+    assert len(acoes_pendentes) == 1
+    assert acoes_pendentes[0].id == acao2.id
+    assert acoes_pendentes[0].status == "pendente"
+
+def test_atualizar_status_acao(gerador, diagnostico_cpu):
+    """Testa a atualização de status de uma ação."""
+    acao = gerador.gerar_acao(diagnostico_cpu)
+    
+    # Atualiza status
+    resultado = {"replicas": 3, "cpu_usage": 0.6}
+    sucesso = gerador.atualizar_status_acao(
+        acao.id,
+        "sucesso",
+        resultado
+    )
+    
+    assert sucesso
+    assert acao.status == "sucesso"
+    assert acao.resultado == resultado
+
+def test_atualizar_status_acao_inexistente(gerador):
+    """Testa a atualização de status de uma ação inexistente."""
+    sucesso = gerador.atualizar_status_acao(
+        "acao_inexistente",
+        "sucesso"
+    )
+    
+    assert not sucesso
+
+def test_obter_historico_acoes(gerador, diagnostico_cpu, diagnostico_memoria):
+    """Testa a obtenção do histórico de ações com filtros."""
+    # Gera algumas ações
+    acao1 = gerador.gerar_acao(diagnostico_cpu)
+    acao2 = gerador.gerar_acao(diagnostico_memoria)
+    
+    # Atualiza status
+    gerador.atualizar_status_acao(acao1.id, "sucesso")
+    
+    # Testa filtros
+    acoes_cpu = gerador.obter_historico_acoes(tipo="escalar_horizontal")
+    assert len(acoes_cpu) == 1
+    assert acoes_cpu[0].id == acao1.id
+    
+    acoes_sucesso = gerador.obter_historico_acoes(status="sucesso")
+    assert len(acoes_sucesso) == 1
+    assert acoes_sucesso[0].id == acao1.id
+
+def test_obter_estatisticas_acoes(gerador, diagnostico_cpu, diagnostico_memoria):
+    """Testa a obtenção de estatísticas das ações."""
+    # Gera algumas ações
+    acao1 = gerador.gerar_acao(diagnostico_cpu)
+    acao2 = gerador.gerar_acao(diagnostico_memoria)
+    
+    # Atualiza status
+    gerador.atualizar_status_acao(acao1.id, "sucesso")
+    gerador.atualizar_status_acao(acao2.id, "falha")
+    
+    # Obtém estatísticas
+    stats = gerador.obter_estatisticas_acoes()
+    
+    assert stats["total"] == 2
+    assert stats["por_tipo"]["escalar_horizontal"] == 1
+    assert stats["por_tipo"]["otimizar_memoria"] == 1
+    assert stats["por_status"]["sucesso"] == 1
+    assert stats["por_status"]["falha"] == 1
+    assert stats["taxa_sucesso"] == 50.0
+
+def test_limpar_historico(gerador, diagnostico_cpu):
+    """Testa a limpeza do histórico de ações."""
+    # Gera ação antiga
+    acao_antiga = Acao(
+        id="acao_antiga",
+        tipo="escalar_horizontal",
+        descricao="Teste",
+        prioridade=1,
+        timestamp=datetime.now() - timedelta(days=31),
+        diagnostico=diagnostico_cpu,
+        parametros={},
+        status="sucesso"
+    )
+    gerador.historico_acoes.append(acao_antiga)
+    
+    # Gera ação recente
+    acao_recente = gerador.gerar_acao(diagnostico_cpu)
+    
+    # Limpa histórico
+    gerador.limpar_historico(dias=30)
+    
+    assert len(gerador.historico_acoes) == 1
+    assert gerador.historico_acoes[0].id == acao_recente.id 

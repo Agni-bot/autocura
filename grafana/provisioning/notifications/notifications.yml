@@ -1,0 +1,44 @@
+apiVersion: 1
+
+notifications:
+  - name: slack-notifications
+    type: slack
+    uid: slack-notifications
+    orgId: 1
+    isDefault: true
+    settings:
+      url: https://hooks.slack.com/services/YOUR_SLACK_WEBHOOK_URL
+      recipient: "#monitoring"
+      mentionChannel: "here"
+      mentionUsers: ""
+      token: ""
+      uploadImage: true
+      title: "{{ .Title }}"
+      message: "{{ .Message }}"
+      iconEmoji: ":chart_with_upwards_trend:"
+      iconUrl: ""
+      username: "Grafana"
+      footer: "Autocura Monitoring"
+      color: "#36a64f"
+      fields:
+        - title: "Status"
+          value: "{{ .Status }}"
+          short: true
+        - title: "Severity"
+          value: "{{ .Severity }}"
+          short: true
+        - title: "Start Time"
+          value: "{{ .StartTime }}"
+          short: true
+        - title: "End Time"
+          value: "{{ .EndTime }}"
+          short: true
+        - title: "Description"
+          value: "{{ .Description }}"
+          short: false
+        - title: "Dashboard"
+          value: "{{ .DashboardURL }}"
+          short: false
+        - title: "Logs"
+          value: "{{ .LogsURL }}"
+          short: false 

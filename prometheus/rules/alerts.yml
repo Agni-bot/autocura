@@ -2,15 +2,13 @@ groups:
   - name: autocura
     rules:
       - alert: HighErrorRate
-        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 5
         for: 5m
         labels:
-          severity: warning
+          severity: critical
         annotations:
-          summary: "High error rate detected"
-          description: "Error rate is {{ $value | humanizePercentage }} for the last 5 minutes"
-          dashboard: "http://grafana:3000/d/autocura/error-rates"
-          runbook: "http://docs.autocura/runbooks/high-error-rate"
+          summary: "Alta taxa de erros"
+          description: "A taxa de erros está acima de 5% por mais de 5 minutos"
 
       - alert: HighLatency
         expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
@@ -18,32 +16,26 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "High latency detected"
-          description: "95th percentile latency is {{ $value }}s for the last 5 minutes"
-          dashboard: "http://grafana:3000/d/autocura/latency"
-          runbook: "http://docs.autocura/runbooks/high-latency"
+          summary: "Alta latência nas requisições"
+          description: "O percentil 95 da latência está acima de 1 segundo por mais de 5 minutos"
 
       - alert: HighMemoryUsage
-        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.9
+        expr: (process_resident_memory_bytes / container_memory_usage_bytes) * 100 > 85
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "High memory usage"
-          description: "Memory usage is {{ $value | humanizePercentage }} for the last 5 minutes"
-          dashboard: "http://grafana:3000/d/autocura/memory"
-          runbook: "http://docs.autocura/runbooks/high-memory"
+          summary: "Alta utilização de memória"
+          description: "A utilização de memória está acima de 85% por mais de 5 minutos"
 
       - alert: HighCPUUsage
-        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        expr: rate(process_cpu_seconds_total[5m]) * 100 > 80
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "High CPU usage"
-          description: "CPU usage is {{ $value | humanizePercentage }} for the last 5 minutes"
-          dashboard: "http://grafana:3000/d/autocura/cpu"
-          runbook: "http://docs.autocura/runbooks/high-cpu"
+          summary: "Alta utilização de CPU"
+          description: "A utilização de CPU está acima de 80% por mais de 5 minutos"
 
       - alert: ServiceDown
         expr: up == 0
@@ -65,4 +57,58 @@ groups:
           summary: "High disk usage"
           description: "Disk usage is {{ $value | humanizePercentage }} for the last 5 minutes"
           dashboard: "http://grafana:3000/d/autocura/disk"
-          runbook: "http://docs.autocura/runbooks/high-disk" 
+          runbook: "http://docs.autocura/runbooks/high-disk"
+
+      - alert: InsufficientInstances
+        expr: kube_deployment_status_replicas_available / kube_deployment_spec_replicas < 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Instâncias insuficientes"
+          description: "O número de instâncias disponíveis está abaixo de 80% do esperado por mais de 5 minutos"
+
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis indisponível"
+          description: "O Redis está indisponível há mais de 1 minuto"
+
+      - alert: HighRedisMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alta utilização de memória no Redis"
+          description: "A utilização de memória do Redis está acima de 85% por mais de 5 minutos"
+
+      - alert: AnomalyDetected
+        expr: anomaly_score > 0.8
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Anomalia detectada"
+          description: "Uma anomalia foi detectada no sistema com score acima de 0.8"
+
+      - alert: EncryptionFailure
+        expr: encryption_operation_failures_total > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Falha na criptografia"
+          description: "Falhas na operação de criptografia detectadas"
+
+      - alert: CertificateExpiringSoon
+        expr: cert_expiry_timestamp_seconds - time() < 86400 * 30
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Certificado próximo do vencimento"
+          description: "Um certificado expirará em menos de 30 dias" 

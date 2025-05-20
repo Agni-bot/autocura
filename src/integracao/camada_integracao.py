@@ -14,6 +14,9 @@ import websockets
 import redis
 import msgpack
 import yaml
+from src.monitoramento.coletor_metricas import Metrica
+from src.diagnostico.rede_neural import Diagnostico
+from src.acoes.gerador_acoes import Acao
 
 # Configuração de logging
 logging.basicConfig(
@@ -23,271 +26,314 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class CamadaIntegracao:
-    def __init__(self):
-        self.base_dir = Path(__file__).parent.parent.parent
-        self.memoria_path = self.base_dir / 'memoria' / 'memoria_compartilhada.json'
-        self.config_path = self.base_dir / 'config' / 'integracao.yaml'
-        self.estado: Dict[str, Any] = {
-            'ciclo_atual': 0,
-            'ultima_execucao': None,
-            'conexoes_ativas': {},
-            'mensagens_processadas': [],
-            'erros': []
+    """Camada de integração responsável pela comunicação entre componentes."""
+    
+    def __init__(
+        self,
+        config: Dict[str, Any],
+        timeout: int = 30,
+        max_retries: int = 3
+    ):
+        """Inicializa a camada de integração."""
+        self.config = config
+        self.timeout = timeout
+        self.max_retries = max_retries
+        self.session: Optional[aiohttp.ClientSession] = None
+        
+        # Endpoints configurados
+        self.endpoints = {
+            "prometheus": config.get("prometheus_url", "http://localhost:9090"),
+            "loki": config.get("loki_url", "http://localhost:3100"),
+            "grafana": config.get("grafana_url", "http://localhost:3000"),
+            "kubernetes": config.get("kubernetes_url", "http://localhost:8001"),
+            "redis": config.get("redis_url", "redis://localhost:6379")
         }
-        self.adaptadores = {
-            'http': self.adaptador_http,
-            'websocket': self.adaptador_websocket,
-            'redis': self.adaptador_redis,
-            'kafka': self.adaptador_kafka
+        
+        # Headers padrão
+        self.headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
         }
-        self.tradutores = {
-            'json': self.tradutor_json,
-            'msgpack': self.tradutor_msgpack,
-            'yaml': self.tradutor_yaml
-        }
-        self.gateways = {}
-        self.fila_mensagens = asyncio.Queue()
-    
-    async def carregar_configuracao(self):
-        """Carrega a configuração da camada de integração."""
-        try:
-            if self.config_path.exists():
-                with open(self.config_path, 'r', encoding='utf-8') as f:
-                    self.config = yaml.safe_load(f)
-            else:
-                self.config = {
-                    'adaptadores': {
-                        'http': {'timeout': 30, 'retries': 3},
-                        'websocket': {'ping_interval': 20},
-                        'redis': {'host': 'localhost', 'port': 6379},
-                        'kafka': {'bootstrap_servers': ['localhost:9092']}
-                    },
-                    'tradutores': {
-                        'json': {'indent': 2},
-                        'msgpack': {'use_bin_type': True},
-                        'yaml': {'default_flow_style': False}
-                    },
-                    'gateways': {}
-                }
-            logger.info("Configuração carregada com sucesso")
-        except Exception as e:
-            logger.error(f"Erro ao carregar configuração: {str(e)}")
-            raise
-    
-    async def carregar_memoria(self):
-        """Carrega o estado atual da memória compartilhada."""
-        try:
-            if self.memoria_path.exists():
-                with open(self.memoria_path, 'r', encoding='utf-8') as f:
-                    memoria = json.load(f)
-                    self.estado.update(memoria.get('estado_integracao', {}))
-            logger.info("Memória da integração carregada com sucesso")
-        except Exception as e:
-            logger.error(f"Erro ao carregar memória da integração: {str(e)}")
-            raise
-    
-    async def adaptador_http(self, endpoint: str, metodo: str, dados: Dict[str, Any]) -> Dict[str, Any]:
-        """Adaptador para comunicação HTTP."""
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.request(
-                    metodo,
-                    endpoint,
-                    json=dados,
-                    timeout=self.config['adaptadores']['http']['timeout']
-                ) as response:
-                    return await response.json()
-        except Exception as e:
-            logger.error(f"Erro no adaptador HTTP: {str(e)}")
-            raise
-    
-    async def adaptador_websocket(self, endpoint: str, mensagem: Dict[str, Any]) -> Dict[str, Any]:
-        """Adaptador para comunicação WebSocket."""
-        try:
-            async with websockets.connect(endpoint) as websocket:
-                await websocket.send(json.dumps(mensagem))
-                resposta = await websocket.recv()
-                return json.loads(resposta)
-        except Exception as e:
-            logger.error(f"Erro no adaptador WebSocket: {str(e)}")
-            raise
-    
-    async def adaptador_redis(self, chave: str, valor: Any) -> Any:
-        """Adaptador para comunicação Redis."""
-        try:
-            redis_client = redis.Redis(
-                host=self.config['adaptadores']['redis']['host'],
-                port=self.config['adaptadores']['redis']['port']
+        
+        # Adiciona headers de autenticação se configurados
+        if "auth_token" in config:
+            self.headers["Authorization"] = f"Bearer {config['auth_token']}"
+        
+        logger.info("Camada de integração inicializada")
+
+    async def inicializar(self):
+        """Inicializa a sessão HTTP."""
+        if not self.session:
+            self.session = aiohttp.ClientSession(
+                headers=self.headers,
+                timeout=aiohttp.ClientTimeout(total=self.timeout)
             )
-            if isinstance(valor, (dict, list)):
-                valor = msgpack.packb(valor)
-            redis_client.set(chave, valor)
-            return redis_client.get(chave)
-        except Exception as e:
-            logger.error(f"Erro no adaptador Redis: {str(e)}")
-            raise
-    
-    async def adaptador_kafka(self, topico: str, mensagem: Dict[str, Any]) -> None:
-        """Adaptador para comunicação Kafka."""
-        try:
-            # TODO: Implementar adaptador Kafka real
-            logger.info(f"Mensagem enviada para o tópico {topico}: {mensagem}")
-        except Exception as e:
-            logger.error(f"Erro no adaptador Kafka: {str(e)}")
-            raise
-    
-    def tradutor_json(self, dados: Any) -> str:
-        """Tradutor para formato JSON."""
-        try:
-            return json.dumps(dados, indent=self.config['tradutores']['json']['indent'])
-        except Exception as e:
-            logger.error(f"Erro no tradutor JSON: {str(e)}")
-            raise
-    
-    def tradutor_msgpack(self, dados: Any) -> bytes:
-        """Tradutor para formato MessagePack."""
-        try:
-            return msgpack.packb(dados, use_bin_type=self.config['tradutores']['msgpack']['use_bin_type'])
-        except Exception as e:
-            logger.error(f"Erro no tradutor MessagePack: {str(e)}")
-            raise
-    
-    def tradutor_yaml(self, dados: Any) -> str:
-        """Tradutor para formato YAML."""
-        try:
-            return yaml.dump(dados, default_flow_style=self.config['tradutores']['yaml']['default_flow_style'])
-        except Exception as e:
-            logger.error(f"Erro no tradutor YAML: {str(e)}")
-            raise
-    
-    async def registrar_gateway(self, nome: str, config: Dict[str, Any]):
-        """Registra um novo gateway de serviço."""
-        try:
-            self.gateways[nome] = {
-                'config': config,
-                'status': 'ativo',
-                'ultima_verificacao': datetime.now().isoformat()
-            }
-            logger.info(f"Gateway {nome} registrado com sucesso")
-        except Exception as e:
-            logger.error(f"Erro ao registrar gateway {nome}: {str(e)}")
-            raise
-    
-    async def verificar_gateways(self):
-        """Verifica o status dos gateways registrados."""
-        try:
-            for nome, gateway in self.gateways.items():
-                try:
-                    # TODO: Implementar verificação real de status
-                    gateway['status'] = 'ativo'
-                    gateway['ultima_verificacao'] = datetime.now().isoformat()
-                except Exception as e:
-                    gateway['status'] = 'inativo'
-                    gateway['erro'] = str(e)
-                    logger.error(f"Erro ao verificar gateway {nome}: {str(e)}")
-        except Exception as e:
-            logger.error(f"Erro ao verificar gateways: {str(e)}")
-            raise
-    
-    async def processar_mensagem(self, mensagem: Dict[str, Any]):
-        """Processa uma mensagem recebida."""
-        try:
-            # Extrair informações da mensagem
-            origem = mensagem.get('origem')
-            destino = mensagem.get('destino')
-            protocolo = mensagem.get('protocolo')
-            formato = mensagem.get('formato')
-            dados = mensagem.get('dados')
-            
-            # Validar mensagem
-            if not all([origem, destino, protocolo, formato, dados]):
-                raise ValueError("Mensagem incompleta")
-            
-            # Traduzir dados se necessário
-            if formato in self.tradutores:
-                dados = self.tradutores[formato](dados)
-            
-            # Enviar mensagem usando adaptador apropriado
-            if protocolo in self.adaptadores:
-                resultado = await self.adaptadores[protocolo](destino, dados)
-                
-                # Registrar mensagem processada
-                self.estado['mensagens_processadas'].append({
-                    'timestamp': datetime.now().isoformat(),
-                    'origem': origem,
-                    'destino': destino,
-                    'protocolo': protocolo,
-                    'status': 'sucesso',
-                    'resultado': resultado
-                })
-            else:
-                raise ValueError(f"Protocolo não suportado: {protocolo}")
-            
-        except Exception as e:
-            logger.error(f"Erro ao processar mensagem: {str(e)}")
-            self.estado['erros'].append({
-                'timestamp': datetime.now().isoformat(),
-                'mensagem': str(e),
-                'detalhes': mensagem
+            logger.info("Sessão HTTP inicializada")
+
+    async def finalizar(self):
+        """Finaliza a sessão HTTP."""
+        if self.session:
+            await self.session.close()
+            self.session = None
+            logger.info("Sessão HTTP finalizada")
+
+    async def enviar_metricas(
+        self,
+        metricas: List[Metrica],
+        endpoint: str = "prometheus"
+    ) -> bool:
+        """Envia métricas para o endpoint especificado."""
+        if not self.session:
+            await self.inicializar()
+        
+        url = f"{self.endpoints[endpoint]}/api/v1/write"
+        
+        # Prepara payload
+        payload = []
+        for metrica in metricas:
+            payload.append({
+                "name": metrica.nome,
+                "value": metrica.valor,
+                "type": metrica.tipo,
+                "labels": metrica.labels,
+                "timestamp": metrica.timestamp.isoformat()
             })
-            raise
-    
-    async def atualizar_memoria(self):
-        """Atualiza a memória compartilhada com o novo estado."""
-        try:
-            self.estado['ultima_execucao'] = datetime.now().isoformat()
-            self.estado['ciclo_atual'] += 1
-            
-            # Carrega memória existente
-            if self.memoria_path.exists():
-                with open(self.memoria_path, 'r', encoding='utf-8') as f:
-                    memoria = json.load(f)
-            else:
-                memoria = {}
-            
-            # Atualiza estado da integração
-            memoria['estado_integracao'] = self.estado
-            
-            # Salva memória atualizada
-            with open(self.memoria_path, 'w', encoding='utf-8') as f:
-                json.dump(memoria, f, indent=2, ensure_ascii=False)
-            
-            logger.info("Memória da integração atualizada com sucesso")
-        except Exception as e:
-            logger.error(f"Erro ao atualizar memória da integração: {str(e)}")
-            raise
-    
-    async def ciclo_integracao(self):
-        """Executa um ciclo completo de integração."""
-        try:
-            logger.info("Iniciando ciclo de integração...")
-            
-            await self.carregar_configuracao()
-            await self.carregar_memoria()
-            await self.verificar_gateways()
-            
-            # Processar mensagens pendentes
-            while not self.fila_mensagens.empty():
-                mensagem = await self.fila_mensagens.get()
-                await self.processar_mensagem(mensagem)
-            
-            await self.atualizar_memoria()
-            
-            logger.info("Ciclo de integração concluído com sucesso!")
-            
-        except Exception as e:
-            logger.error(f"Erro durante o ciclo de integração: {str(e)}")
-            raise
-    
-    async def executar_continuamente(self, intervalo: int = 60):  # 1 minuto
-        """Executa ciclos de integração continuamente."""
-        while True:
+        
+        # Tenta enviar com retry
+        for tentativa in range(self.max_retries):
             try:
-                await self.ciclo_integracao()
-                await asyncio.sleep(intervalo)
+                async with self.session.post(url, json=payload) as response:
+                    if response.status == 200:
+                        logger.info(f"Métricas enviadas com sucesso para {endpoint}")
+                        return True
+                    else:
+                        logger.warning(
+                            f"Falha ao enviar métricas para {endpoint}, "
+                            f"status: {response.status}"
+                        )
             except Exception as e:
-                logger.error(f"Erro no ciclo contínuo de integração: {str(e)}")
-                await asyncio.sleep(intervalo)  # Aguarda antes de tentar novamente
+                logger.error(
+                    f"Erro ao enviar métricas para {endpoint}, "
+                    f"tentativa {tentativa + 1}: {str(e)}"
+                )
+                if tentativa < self.max_retries - 1:
+                    await asyncio.sleep(2 ** tentativa)  # Backoff exponencial
+        
+        return False
+
+    async def enviar_diagnostico(
+        self,
+        diagnostico: Diagnostico,
+        endpoint: str = "grafana"
+    ) -> bool:
+        """Envia diagnóstico para o endpoint especificado."""
+        if not self.session:
+            await self.inicializar()
+        
+        url = f"{self.endpoints[endpoint]}/api/diagnostics"
+        
+        # Prepara payload
+        payload = {
+            "timestamp": diagnostico.timestamp.isoformat(),
+            "anomalia_detectada": diagnostico.anomalia_detectada,
+            "score_anomalia": diagnostico.score_anomalia,
+            "padrao_detectado": diagnostico.padrao_detectado,
+            "confianca": diagnostico.confianca,
+            "metricas_relevantes": diagnostico.metricas_relevantes,
+            "recomendacoes": diagnostico.recomendacoes
+        }
+        
+        # Tenta enviar com retry
+        for tentativa in range(self.max_retries):
+            try:
+                async with self.session.post(url, json=payload) as response:
+                    if response.status == 200:
+                        logger.info(f"Diagnóstico enviado com sucesso para {endpoint}")
+                        return True
+                    else:
+                        logger.warning(
+                            f"Falha ao enviar diagnóstico para {endpoint}, "
+                            f"status: {response.status}"
+                        )
+            except Exception as e:
+                logger.error(
+                    f"Erro ao enviar diagnóstico para {endpoint}, "
+                    f"tentativa {tentativa + 1}: {str(e)}"
+                )
+                if tentativa < self.max_retries - 1:
+                    await asyncio.sleep(2 ** tentativa)
+        
+        return False
+
+    async def enviar_acao(
+        self,
+        acao: Acao,
+        endpoint: str = "kubernetes"
+    ) -> bool:
+        """Envia ação para o endpoint especificado."""
+        if not self.session:
+            await self.inicializar()
+        
+        url = f"{self.endpoints[endpoint]}/api/actions"
+        
+        # Prepara payload
+        payload = {
+            "id": acao.id,
+            "tipo": acao.tipo,
+            "descricao": acao.descricao,
+            "prioridade": acao.prioridade,
+            "timestamp": acao.timestamp.isoformat(),
+            "parametros": acao.parametros,
+            "status": acao.status
+        }
+        
+        # Tenta enviar com retry
+        for tentativa in range(self.max_retries):
+            try:
+                async with self.session.post(url, json=payload) as response:
+                    if response.status == 200:
+                        logger.info(f"Ação enviada com sucesso para {endpoint}")
+                        return True
+                    else:
+                        logger.warning(
+                            f"Falha ao enviar ação para {endpoint}, "
+                            f"status: {response.status}"
+                        )
+            except Exception as e:
+                logger.error(
+                    f"Erro ao enviar ação para {endpoint}, "
+                    f"tentativa {tentativa + 1}: {str(e)}"
+                )
+                if tentativa < self.max_retries - 1:
+                    await asyncio.sleep(2 ** tentativa)
+        
+        return False
+
+    async def obter_metricas(
+        self,
+        query: str,
+        endpoint: str = "prometheus",
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None
+    ) -> List[Dict[str, Any]]:
+        """Obtém métricas do endpoint especificado."""
+        if not self.session:
+            await self.inicializar()
+        
+        url = f"{self.endpoints[endpoint]}/api/v1/query"
+        
+        # Prepara parâmetros
+        params = {"query": query}
+        if start_time:
+            params["start"] = start_time.isoformat()
+        if end_time:
+            params["end"] = end_time.isoformat()
+        
+        # Tenta obter com retry
+        for tentativa in range(self.max_retries):
+            try:
+                async with self.session.get(url, params=params) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        logger.info(f"Métricas obtidas com sucesso de {endpoint}")
+                        return data.get("data", {}).get("result", [])
+                    else:
+                        logger.warning(
+                            f"Falha ao obter métricas de {endpoint}, "
+                            f"status: {response.status}"
+                        )
+            except Exception as e:
+                logger.error(
+                    f"Erro ao obter métricas de {endpoint}, "
+                    f"tentativa {tentativa + 1}: {str(e)}"
+                )
+                if tentativa < self.max_retries - 1:
+                    await asyncio.sleep(2 ** tentativa)
+        
+        return []
+
+    async def obter_logs(
+        self,
+        query: str,
+        endpoint: str = "loki",
+        limit: int = 100
+    ) -> List[Dict[str, Any]]:
+        """Obtém logs do endpoint especificado."""
+        if not self.session:
+            await self.inicializar()
+        
+        url = f"{self.endpoints[endpoint]}/api/v1/query"
+        
+        # Prepara parâmetros
+        params = {
+            "query": query,
+            "limit": limit
+        }
+        
+        # Tenta obter com retry
+        for tentativa in range(self.max_retries):
+            try:
+                async with self.session.get(url, params=params) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        logger.info(f"Logs obtidos com sucesso de {endpoint}")
+                        return data.get("data", {}).get("result", [])
+                    else:
+                        logger.warning(
+                            f"Falha ao obter logs de {endpoint}, "
+                            f"status: {response.status}"
+                        )
+            except Exception as e:
+                logger.error(
+                    f"Erro ao obter logs de {endpoint}, "
+                    f"tentativa {tentativa + 1}: {str(e)}"
+                )
+                if tentativa < self.max_retries - 1:
+                    await asyncio.sleep(2 ** tentativa)
+        
+        return []
+
+    async def verificar_saude_endpoint(
+        self,
+        endpoint: str
+    ) -> Dict[str, Any]:
+        """Verifica a saúde do endpoint especificado."""
+        if not self.session:
+            await self.inicializar()
+        
+        url = f"{self.endpoints[endpoint]}/health"
+        
+        try:
+            async with self.session.get(url) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return {
+                        "status": "ok",
+                        "endpoint": endpoint,
+                        "details": data
+                    }
+                else:
+                    return {
+                        "status": "error",
+                        "endpoint": endpoint,
+                        "error": f"Status code: {response.status}"
+                    }
+        except Exception as e:
+            return {
+                "status": "error",
+                "endpoint": endpoint,
+                "error": str(e)
+            }
+
+    async def verificar_saude_todos_endpoints(self) -> Dict[str, Dict[str, Any]]:
+        """Verifica a saúde de todos os endpoints configurados."""
+        resultados = {}
+        
+        for endpoint in self.endpoints:
+            resultado = await self.verificar_saude_endpoint(endpoint)
+            resultados[endpoint] = resultado
+        
+        return resultados
 
 async def main():
     """Função principal."""

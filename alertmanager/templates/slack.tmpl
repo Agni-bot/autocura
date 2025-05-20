@@ -1,0 +1,67 @@
+{{ define "slack.default.title" }}
+[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .CommonLabels.alertname }}
+{{ end }}
+
+{{ define "slack.default.text" }}
+{{ range .Alerts }}
+*Alert:* {{ .Annotations.summary }}
+*Description:* {{ .Annotations.description }}
+*Severity:* {{ .Labels.severity }}
+*Start Time:* {{ .StartsAt }}
+{{ if .EndsAt }}*End Time:* {{ .EndsAt }}{{ end }}
+{{ end }}
+{{ end }}
+
+{{ define "slack.default.dashboardurl" }}
+https://grafana.example.com/d/{{ .CommonLabels.alertname }}
+{{ end }}
+
+{{ define "slack.default.logsurl" }}
+https://loki.example.com/explore?query={{ .CommonLabels.alertname }}
+{{ end }}
+
+{{ define "slack.critical.title" }}
+🚨 [CRITICAL] {{ .CommonLabels.alertname }}
+{{ end }}
+
+{{ define "slack.critical.text" }}
+{{ range .Alerts }}
+*CRITICAL ALERT*
+*Alert:* {{ .Annotations.summary }}
+*Description:* {{ .Annotations.description }}
+*Severity:* {{ .Labels.severity }}
+*Start Time:* {{ .StartsAt }}
+{{ if .EndsAt }}*End Time:* {{ .EndsAt }}{{ end }}
+{{ end }}
+{{ end }}
+
+{{ define "slack.critical.dashboardurl" }}
+https://grafana.example.com/d/{{ .CommonLabels.alertname }}
+{{ end }}
+
+{{ define "slack.critical.logsurl" }}
+https://loki.example.com/explore?query={{ .CommonLabels.alertname }}
+{{ end }}
+
+{{ define "slack.warning.title" }}
+⚠️ [WARNING] {{ .CommonLabels.alertname }}
+{{ end }}
+
+{{ define "slack.warning.text" }}
+{{ range .Alerts }}
+*WARNING ALERT*
+*Alert:* {{ .Annotations.summary }}
+*Description:* {{ .Annotations.description }}
+*Severity:* {{ .Labels.severity }}
+*Start Time:* {{ .StartsAt }}
+{{ if .EndsAt }}*End Time:* {{ .EndsAt }}{{ end }}
+{{ end }}
+{{ end }}
+
+{{ define "slack.warning.dashboardurl" }}
+https://grafana.example.com/d/{{ .CommonLabels.alertname }}
+{{ end }}
+
+{{ define "slack.warning.logsurl" }}
+https://loki.example.com/explore?query={{ .CommonLabels.alertname }}
+{{ end }} 

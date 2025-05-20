@@ -1,0 +1,145 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: varlogs
+          __path__: /var/log/*log
+
+  - job_name: autocura
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: autocura
+          __path__: /var/log/autocura/*.log
+
+  - job_name: docker
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: docker
+          __path__: /var/lib/docker/containers/*/*-json.log
+
+  - job_name: kubernetes
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        target_label: app
+      - source_labels: [__meta_kubernetes_pod_label_component]
+        target_label: component
+      - source_labels: [__meta_kubernetes_pod_name]
+        target_label: pod
+      - source_labels: [__meta_kubernetes_namespace]
+        target_label: namespace
+      - source_labels: [__meta_kubernetes_pod_container_name]
+        target_label: container
+      - source_labels: [__meta_kubernetes_pod_uid]
+        target_label: pod_uid
+      - source_labels: [__meta_kubernetes_pod_node_name]
+        target_label: node
+      - source_labels: [__meta_kubernetes_pod_host_ip]
+        target_label: host_ip
+      - source_labels: [__meta_kubernetes_pod_ip]
+        target_label: pod_ip
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_mirror]
+        target_label: mirror
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_seen]
+        target_label: seen
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_source]
+        target_label: source
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_version]
+        target_label: version
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_hash]
+        target_label: hash
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_mirror_hash]
+        target_label: mirror_hash
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_seen_hash]
+        target_label: seen_hash
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_source_hash]
+        target_label: source_hash
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_version_hash]
+        target_label: version_hash
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_mirror_version]
+        target_label: mirror_version
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_seen_version]
+        target_label: seen_version
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_source_version]
+        target_label: source_version
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_mirror_seen]
+        target_label: mirror_seen
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_mirror_source]
+        target_label: mirror_source
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_mirror_version]
+        target_label: mirror_version
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_seen_mirror]
+        target_label: seen_mirror
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_seen_source]
+        target_label: seen_source
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_seen_version]
+        target_label: seen_version
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_source_mirror]
+        target_label: source_mirror
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_source_seen]
+        target_label: source_seen
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_source_version]
+        target_label: source_version
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_version_mirror]
+        target_label: version_mirror
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_version_seen]
+        target_label: version_seen
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_version_source]
+        target_label: version_source
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_hash_mirror]
+        target_label: hash_mirror
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_hash_seen]
+        target_label: hash_seen
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_hash_source]
+        target_label: hash_source
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_hash_version]
+        target_label: hash_version
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_mirror_hash_mirror]
+        target_label: mirror_hash_mirror
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_mirror_hash_seen]
+        target_label: mirror_hash_seen
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_mirror_hash_source]
+        target_label: mirror_hash_source
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_mirror_hash_version]
+        target_label: mirror_hash_version
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_seen_hash_mirror]
+        target_label: seen_hash_mirror
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_seen_hash_seen]
+        target_label: seen_hash_seen
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_seen_hash_source]
+        target_label: seen_hash_source
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_seen_hash_version]
+        target_label: seen_hash_version
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_source_hash_mirror]
+        target_label: source_hash_mirror
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_source_hash_seen]
+        target_label: source_hash_seen
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_source_hash_source]
+        target_label: source_hash_source
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_source_hash_version]
+        target_label: source_hash_version
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_version_hash_mirror]
+        target_label: version_hash_mirror
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_version_hash_seen]
+        target_label: version_hash_seen
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_version_hash_source]
+        target_label: version_hash_source
+      - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_version_hash_version]
+        target_label: version_hash_version 

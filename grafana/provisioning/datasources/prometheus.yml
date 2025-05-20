@@ -9,10 +9,29 @@ datasources:
     editable: false
     version: 1
     jsonData:
-      timeInterval: "15s"
-      queryTimeout: "30s"
-      httpMethod: "POST"
+      timeInterval: 5s
+      queryTimeout: 30s
+      httpMethod: POST
       manageAlerts: true
-      alertmanagerUid: "alertmanager"
+      alertmanagerUid: alertmanager
     secureJsonData:
-      basicAuthPassword: "" 
+      httpHeaderName1: "X-Scope-OrgID"
+      httpHeaderValue1: "1"
+
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    isDefault: false
+    editable: false
+    version: 1
+    jsonData:
+      maxLines: 1000
+      derivedFields:
+        - datasourceUid: prometheus
+          matcherRegex: "traceID=(\\w+)"
+          name: TraceID
+          url: "$${__value.raw}"
+    secureJsonData:
+      httpHeaderName1: "X-Scope-OrgID"
+      httpHeaderValue1: "1" 

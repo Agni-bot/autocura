@@ -8,6 +8,9 @@ import time
 import psutil
 import os
 import sys
+import prometheus_client as prom
+import queue
+from dataclasses import dataclass
 
 from ..core.logger import Logger
 from ..core.cache import Cache
@@ -16,18 +19,81 @@ from ..core.cache import Cache
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("coletor_metricas")
 
+@dataclass
+class Metrica:
+    nome: str
+    valor: float
+    tipo: str
+    labels: Dict[str, str]
+    timestamp: datetime
+
 class ColetorMetricas:
     """Sistema de coleta de métricas"""
     
-    def __init__(self, logger: Logger, cache: Cache, config_path: str = "config/metricas.json"):
-        self.logger = logger
-        self.cache = cache
-        self.config = self._carregar_config(config_path)
-        self.lock = threading.Lock()
+    def __init__(self,
+                 intervalo_coleta: int = 15,
+                 buffer_size: int = 1000,
+                 prometheus_port: int = 8000):
+        """
+        Inicializa o coletor de métricas.
+        
+        Args:
+            intervalo_coleta: Intervalo em segundos entre coletas
+            buffer_size: Tamanho do buffer para armazenamento de métricas
+            prometheus_port: Porta para exposição de métricas Prometheus
+        """
+        self.intervalo_coleta = intervalo_coleta
+        self.buffer_size = buffer_size
+        self.prometheus_port = prometheus_port
+        
+        # Inicializa métricas Prometheus
+        self.metricas_prometheus = {
+            'cpu_usage': prom.Gauge('cpu_usage_percent', 'CPU Usage in percent'),
+            'memory_usage': prom.Gauge('memory_usage_bytes', 'Memory usage in bytes'),
+            'disk_usage': prom.Gauge('disk_usage_percent', 'Disk usage in percent'),
+            'network_io': prom.Gauge('network_io_bytes', 'Network I/O in bytes'),
+            'request_latency': prom.Histogram('request_latency_seconds', 'Request latency in seconds'),
+            'error_rate': prom.Gauge('error_rate', 'Error rate in percent'),
+            'active_connections': prom.Gauge('active_connections', 'Number of active connections')
+        }
+        
+        # Inicializa buffer de métricas
+        self.buffer_metricas = queue.Queue(maxsize=buffer_size)
+        
+        # Inicializa thread de coleta
         self.thread_coleta = None
         self.running = False
-        self.logger.registrar_evento("metricas", "INFO", "Sistema de Métricas inicializado")
+        
+        # Inicia servidor Prometheus
+        prom.start_http_server(prometheus_port)
+        
+        logger.info("Coletor de métricas inicializado com sucesso")
     
+    def iniciar_coleta(self) -> None:
+        """
+        Inicia o processo de coleta de métricas em background.
+        """
+        if self.thread_coleta is not None:
+            logger.warning("Coleta já está em execução")
+            return
+            
+        self.running = True
+        self.thread_coleta = threading.Thread(target=self._loop_coleta)
+        self.thread_coleta.daemon = True
+        self.thread_coleta.start()
+        logger.info("Coleta de métricas iniciada")
+    
+    def parar_coleta(self) -> None:
+        """
+        Para o processo de coleta de métricas.
+        """
+        if self.thread_coleta is None:
+            logger.warning("Coleta não está em execução")
+            return
+            
+        self.running = False
+        self.thread_coleta.join()
+        self.thread_coleta = None
     def _carregar_config(self, config_path: str) -> Dict[str, Any]:
         """Carrega a configuração do coletor"""
         try:

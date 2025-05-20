@@ -10,83 +10,76 @@ import uuid
 import json
 import logging
 from ..core.base import BaseComponent
+from src.diagnostico.rede_neural import Diagnostico
 
+# Configuração de logging
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 @dataclass
 class Acao:
-    """Representa uma ação a ser executada pelo sistema."""
-    
+    """Classe que representa uma ação emergente gerada pelo sistema."""
     id: str
     tipo: str
-    parametros: Dict[str, Any]
+    descricao: str
     prioridade: int
-    timestamp_criacao: float
-    status: str = "pendente"
+    timestamp: datetime
+    diagnostico: Diagnostico
+    parametros: Dict[str, Any]
+    status: str
     resultado: Optional[Dict[str, Any]] = None
-    timestamp_execucao: Optional[float] = None
-    
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Acao":
-        return cls(
-            id=data.get("id", str(uuid.uuid4())),
-            tipo=data["tipo"],
-            parametros=data["parametros"],
-            prioridade=data.get("prioridade", 1),
-            timestamp_criacao=data.get("timestamp_criacao", datetime.now().timestamp()),
-            status=data.get("status", "pendente"),
-            resultado=data.get("resultado"),
-            timestamp_execucao=data.get("timestamp_execucao")
-        )
-
-@dataclass
-class PlanoAcao:
-    """Representa um plano de ação contendo múltiplas ações."""
-    
-    id: str
-    diagnostico_id: str
-    acoes: List[Acao]
-    timestamp_criacao: float
-    status: str = "criado"
-    resultado: Optional[Dict[str, Any]] = None
-    timestamp_conclusao: Optional[float] = None
-    
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "PlanoAcao":
-        return cls(
-            id=data.get("id", str(uuid.uuid4())),
-            diagnostico_id=data["diagnostico_id"],
-            acoes=[Acao.from_dict(a) for a in data["acoes"]],
-            timestamp_criacao=data.get("timestamp_criacao", datetime.now().timestamp()),
-            status=data.get("status", "criado"),
-            resultado=data.get("resultado"),
-            timestamp_conclusao=data.get("timestamp_conclusao")
-        )
 
 class GeradorAcoes(BaseComponent):
-    """Gerador de ações baseado em diagnósticos do sistema."""
+    """Gerador de ações emergentes baseado em diagnósticos."""
     
     def __init__(self, name: str = "GeradorAcoes"):
         super().__init__(name)
-        self._historico_planos: List[PlanoAcao] = []
-        self._acoes_disponiveis: Dict[str, Dict[str, Any]] = {
-            "reiniciar_servico": {
-                "descricao": "Reinicia um serviço específico",
-                "parametros": ["servico_id"]
+        self.mapeamento_acoes = {
+            "alta_cpu": {
+                "tipo": "escalar_horizontal",
+                "descricao": "Escalar horizontalmente para distribuir carga",
+                "prioridade": 2,
+                "parametros": {
+                    "min_replicas": 2,
+                    "max_replicas": 5,
+                    "target_cpu": 70
+                }
             },
-            "escalar_recursos": {
-                "descricao": "Ajusta a alocação de recursos",
-                "parametros": ["recurso", "quantidade"]
+            "alta_memoria": {
+                "tipo": "otimizar_memoria",
+                "descricao": "Otimizar uso de memória e limpar cache",
+                "prioridade": 2,
+                "parametros": {
+                    "clear_cache": True,
+                    "gc_threshold": 85,
+                    "max_memory": "2Gi"
+                }
             },
-            "limpar_cache": {
-                "descricao": "Limpa o cache do sistema",
-                "parametros": ["tipo_cache"]
+            "alta_latencia": {
+                "tipo": "otimizar_performance",
+                "descricao": "Otimizar performance e reduzir latência",
+                "prioridade": 1,
+                "parametros": {
+                    "enable_cache": True,
+                    "timeout": 30,
+                    "max_retries": 3
+                }
             },
-            "otimizar_consulta": {
-                "descricao": "Otimiza uma consulta específica",
-                "parametros": ["consulta_id"]
+            "alta_taxa_erro": {
+                "tipo": "corrigir_erros",
+                "descricao": "Corrigir erros e implementar retry",
+                "prioridade": 0,  # Máxima prioridade
+                "parametros": {
+                    "retry_strategy": "exponential",
+                    "max_retries": 5,
+                    "circuit_breaker": True
+                }
             }
         }
+        
+        self.historico_acoes: List[Acao] = []
+        
+        logger.info("Gerador de ações emergentes inicializado")
     
     def initialize(self) -> None:
         """Inicializa o gerador de ações."""
@@ -102,75 +95,133 @@ class GeradorAcoes(BaseComponent):
         """Carrega configurações do gerador de ações."""
         config = self.get_config()
         if "acoes_disponiveis" in config:
-            self._acoes_disponiveis.update(config["acoes_disponiveis"])
+            self.mapeamento_acoes.update(config["acoes_disponiveis"])
     
     def _salvar_historico(self) -> None:
         """Salva o histórico de planos de ação."""
         # TODO: Implementar persistência do histórico
         pass
     
-    def gerar_plano_acao(self, diagnostico_id: str, contexto: Dict[str, Any]) -> PlanoAcao:
-        """Gera um plano de ação baseado no diagnóstico e contexto."""
-        logger.info(f"Gerando plano de ação para diagnóstico {diagnostico_id}")
+    def gerar_acao(self, diagnostico: Diagnostico) -> Optional[Acao]:
+        """Gera uma ação emergente baseada no diagnóstico."""
+        if not diagnostico.anomalia_detectada:
+            logger.info("Nenhuma anomalia detectada, nenhuma ação necessária")
+            return None
         
-        acoes = self._gerar_acoes_para_diagnostico(contexto)
-        plano = PlanoAcao(
-            id=str(uuid.uuid4()),
-            diagnostico_id=diagnostico_id,
-            acoes=acoes,
-            timestamp_criacao=datetime.now().timestamp()
+        # Obtém configuração da ação
+        config = self.mapeamento_acoes.get(diagnostico.padrao_detectado)
+        if not config:
+            logger.warning(
+                f"Padrão desconhecido: {diagnostico.padrao_detectado}, "
+                "nenhuma ação gerada"
+            )
+            return None
+        
+        # Gera ID único
+        acao_id = f"acao_{len(self.historico_acoes) + 1}"
+        
+        # Cria ação
+        acao = Acao(
+            id=acao_id,
+            tipo=config["tipo"],
+            descricao=config["descricao"],
+            prioridade=config["prioridade"],
+            timestamp=datetime.now(),
+            diagnostico=diagnostico,
+            parametros=config["parametros"],
+            status="pendente"
         )
         
-        self._historico_planos.append(plano)
-        return plano
-    
-    def _gerar_acoes_para_diagnostico(self, contexto: Dict[str, Any]) -> List[Acao]:
-        """Gera ações específicas baseadas no contexto do diagnóstico."""
-        acoes = []
+        # Adiciona ao histórico
+        self.historico_acoes.append(acao)
         
-        # Exemplo de lógica de geração de ações
-        if contexto.get("tipo_anomalia") == "sobrecarga":
-            acoes.append(Acao(
-                id=str(uuid.uuid4()),
-                tipo="escalar_recursos",
-                parametros={
-                    "recurso": "cpu",
-                    "quantidade": contexto.get("nivel_gravidade", 1.0) * 2
-                },
-                prioridade=1,
-                timestamp_criacao=datetime.now().timestamp()
-            ))
+        logger.info(f"Ação gerada: {acao_id} - {acao.tipo}")
+        return acao
+
+    def obter_acoes_pendentes(self) -> List[Acao]:
+        """Retorna lista de ações pendentes ordenadas por prioridade."""
+        return sorted(
+            [a for a in self.historico_acoes if a.status == "pendente"],
+            key=lambda x: x.prioridade
+        )
+
+    def atualizar_status_acao(
+        self,
+        acao_id: str,
+        status: str,
+        resultado: Optional[Dict[str, Any]] = None
+    ) -> bool:
+        """Atualiza o status de uma ação."""
+        for acao in self.historico_acoes:
+            if acao.id == acao_id:
+                acao.status = status
+                if resultado:
+                    acao.resultado = resultado
+                logger.info(f"Status da ação {acao_id} atualizado para {status}")
+                return True
         
-        elif contexto.get("tipo_anomalia") == "latencia_alta":
-            acoes.append(Acao(
-                id=str(uuid.uuid4()),
-                tipo="otimizar_consulta",
-                parametros={
-                    "consulta_id": contexto.get("consulta_id", "default")
-                },
-                prioridade=2,
-                timestamp_criacao=datetime.now().timestamp()
-            ))
+        logger.warning(f"Ação {acao_id} não encontrada")
+        return False
+
+    def obter_historico_acoes(
+        self,
+        tipo: Optional[str] = None,
+        status: Optional[str] = None
+    ) -> List[Acao]:
+        """Retorna histórico de ações com filtros opcionais."""
+        acoes = self.historico_acoes
         
-        return acoes
-    
-    def obter_plano_acao(self, plano_id: str) -> Optional[PlanoAcao]:
-        """Obtém um plano de ação pelo ID."""
-        for plano in self._historico_planos:
-            if plano.id == plano_id:
-                return plano
-        return None
-    
-    def atualizar_status_plano(self, plano_id: str, status: str, resultado: Optional[Dict[str, Any]] = None) -> bool:
-        """Atualiza o status de um plano de ação."""
-        plano = self.obter_plano_acao(plano_id)
-        if not plano:
-            return False
+        if tipo:
+            acoes = [a for a in acoes if a.tipo == tipo]
         
-        plano.status = status
-        if resultado:
-            plano.resultado = resultado
-        if status in ["concluido", "falhou"]:
-            plano.timestamp_conclusao = datetime.now().timestamp()
+        if status:
+            acoes = [a for a in acoes if a.status == status]
         
-        return True 
+        return sorted(acoes, key=lambda x: x.timestamp, reverse=True)
+
+    def obter_estatisticas_acoes(self) -> Dict[str, Any]:
+        """Retorna estatísticas sobre as ações geradas."""
+        total = len(self.historico_acoes)
+        
+        if total == 0:
+            return {
+                "total": 0,
+                "por_tipo": {},
+                "por_status": {},
+                "taxa_sucesso": 0.0
+            }
+        
+        # Contagem por tipo
+        por_tipo = {}
+        for acao in self.historico_acoes:
+            por_tipo[acao.tipo] = por_tipo.get(acao.tipo, 0) + 1
+        
+        # Contagem por status
+        por_status = {}
+        for acao in self.historico_acoes:
+            por_status[acao.status] = por_status.get(acao.status, 0) + 1
+        
+        # Taxa de sucesso
+        sucessos = por_status.get("sucesso", 0)
+        taxa_sucesso = (sucessos / total) * 100
+        
+        return {
+            "total": total,
+            "por_tipo": por_tipo,
+            "por_status": por_status,
+            "taxa_sucesso": taxa_sucesso
+        }
+
+    def limpar_historico(self, dias: int = 30):
+        """Limpa histórico de ações mais antigas que o número de dias especificado."""
+        from datetime import timedelta
+        
+        data_limite = datetime.now() - timedelta(days=dias)
+        self.historico_acoes = [
+            a for a in self.historico_acoes
+            if a.timestamp > data_limite
+        ]
+        
+        logger.info(
+            f"Histórico de ações limpo, mantendo apenas ações dos últimos {dias} dias"
+        ) 

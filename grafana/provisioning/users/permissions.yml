@@ -1,0 +1,38 @@
+apiVersion: 1
+
+permissions:
+  - orgId: 1
+    role: Admin
+    permissions:
+      - action: dashboards:read
+        scope: dashboards:*
+      - action: dashboards:write
+        scope: dashboards:*
+      - action: dashboards:delete
+        scope: dashboards:*
+      - action: datasources:read
+        scope: datasources:*
+      - action: datasources:write
+        scope: datasources:*
+      - action: datasources:delete
+        scope: datasources:*
+      - action: users:read
+        scope: users:*
+      - action: users:write
+        scope: users:*
+      - action: users:delete
+        scope: users:*
+      - action: orgs:read
+        scope: orgs:*
+      - action: orgs:write
+        scope: orgs:*
+      - action: orgs:delete
+        scope: orgs:*
+
+  - orgId: 1
+    role: Viewer
+    permissions:
+      - action: dashboards:read
+        scope: dashboards:*
+      - action: datasources:read
+        scope: datasources:* 
