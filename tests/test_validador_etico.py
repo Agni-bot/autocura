@@ -374,4 +374,322 @@ def test_validacao_aprovacao():
     # Verificar resultado
     assert resultado["aprovada"] == True
     assert resultado["nivel_confianca"] >= 0.95
-    assert "aprovacao" in resultado["validacoes"] 
+    assert "aprovacao" in resultado["validacoes"]
+
+def test_validacao_preservacao_vida():
+    """Testa a validação ética do pilar de preservação da vida."""
+    validador = ValidadorEtico(GerenciadorMemoria())
+    
+    # Simular decisão que afeta preservação da vida
+    decisao = {
+        "id": "test_11",
+        "tipo": "redesign",
+        "contexto": {
+            "documentacao": True,
+            "rastreavel": True,
+            "explicavel": True,
+            "impacto": "critico",
+            "reversivel": True,
+            "testes": True,
+            "revisao": True,
+            "aprovacao": True,
+            "afeta_vida": True,
+            "mitigacao_riscos": True,
+            "plano_emergencia": True
+        }
+    }
+    
+    # Validar decisão
+    resultado = validador.validar_decisao(decisao)
+    
+    # Verificar resultado
+    assert resultado["aprovada"] == True
+    assert resultado["nivel_confianca"] >= 0.99
+    assert "preservacao_vida" in resultado["validacoes"]
+    assert "mitigacao_riscos" in resultado["validacoes"]
+    assert "plano_emergencia" in resultado["validacoes"]
+
+def test_validacao_equidade_global():
+    """Testa a validação ética do pilar de equidade global."""
+    validador = ValidadorEtico(GerenciadorMemoria())
+    
+    # Simular decisão que afeta equidade global
+    decisao = {
+        "id": "test_12",
+        "tipo": "redesign",
+        "contexto": {
+            "documentacao": True,
+            "rastreavel": True,
+            "explicavel": True,
+            "impacto": "alto",
+            "reversivel": True,
+            "testes": True,
+            "revisao": True,
+            "aprovacao": True,
+            "afeta_equidade": True,
+            "analise_impacto": {
+                "grupos_afetados": ["todos"],
+                "distribuicao_beneficios": "equitativa",
+                "mitigacao_desigualdades": True
+            }
+        }
+    }
+    
+    # Validar decisão
+    resultado = validador.validar_decisao(decisao)
+    
+    # Verificar resultado
+    assert resultado["aprovada"] == True
+    assert resultado["nivel_confianca"] >= 0.95
+    assert "equidade_global" in resultado["validacoes"]
+    assert "analise_impacto" in resultado["validacoes"]
+
+def test_validacao_transparencia_radical():
+    """Testa a validação ética do pilar de transparência radical."""
+    validador = ValidadorEtico(GerenciadorMemoria())
+    
+    # Simular decisão que requer transparência radical
+    decisao = {
+        "id": "test_13",
+        "tipo": "redesign",
+        "contexto": {
+            "documentacao": True,
+            "rastreavel": True,
+            "explicavel": True,
+            "impacto": "alto",
+            "reversivel": True,
+            "testes": True,
+            "revisao": True,
+            "aprovacao": True,
+            "transparencia": {
+                "publico": True,
+                "detalhamento_completo": True,
+                "auditoria_publica": True,
+                "registro_imutavel": True
+            }
+        }
+    }
+    
+    # Validar decisão
+    resultado = validador.validar_decisao(decisao)
+    
+    # Verificar resultado
+    assert resultado["aprovada"] == True
+    assert resultado["nivel_confianca"] >= 0.95
+    assert "transparencia_radical" in resultado["validacoes"]
+    assert "auditoria_publica" in resultado["validacoes"]
+
+def test_validacao_sustentabilidade():
+    """Testa a validação ética do pilar de sustentabilidade."""
+    validador = ValidadorEtico(GerenciadorMemoria())
+    
+    # Simular decisão que afeta sustentabilidade
+    decisao = {
+        "id": "test_14",
+        "tipo": "redesign",
+        "contexto": {
+            "documentacao": True,
+            "rastreavel": True,
+            "explicavel": True,
+            "impacto": "alto",
+            "reversivel": True,
+            "testes": True,
+            "revisao": True,
+            "aprovacao": True,
+            "sustentabilidade": {
+                "impacto_ambiental": "minimo",
+                "recursos_renovaveis": True,
+                "ciclo_vida": "longo",
+                "descarte_seguro": True
+            }
+        }
+    }
+    
+    # Validar decisão
+    resultado = validador.validar_decisao(decisao)
+    
+    # Verificar resultado
+    assert resultado["aprovada"] == True
+    assert resultado["nivel_confianca"] >= 0.95
+    assert "sustentabilidade" in resultado["validacoes"]
+    assert "impacto_ambiental" in resultado["validacoes"]
+
+def test_validacao_controle_humano():
+    """Testa a validação ética do pilar de controle humano residual."""
+    validador = ValidadorEtico(GerenciadorMemoria())
+    
+    # Simular decisão que requer controle humano
+    decisao = {
+        "id": "test_15",
+        "tipo": "redesign",
+        "contexto": {
+            "documentacao": True,
+            "rastreavel": True,
+            "explicavel": True,
+            "impacto": "critico",
+            "reversivel": True,
+            "testes": True,
+            "revisao": True,
+            "aprovacao": True,
+            "controle_humano": {
+                "supervisao_continua": True,
+                "veto_humano": True,
+                "intervencao_manual": True,
+                "auditoria_humana": True
+            }
+        }
+    }
+    
+    # Validar decisão
+    resultado = validador.validar_decisao(decisao)
+    
+    # Verificar resultado
+    assert resultado["aprovada"] == True
+    assert resultado["nivel_confianca"] >= 0.99
+    assert "controle_humano" in resultado["validacoes"]
+    assert "supervisao_continua" in resultado["validacoes"]
+
+def test_validacao_lgpd_gdpr():
+    """Testa a validação de conformidade com LGPD/GDPR."""
+    validador = ValidadorEtico(GerenciadorMemoria())
+    
+    # Simular decisão que lida com dados pessoais
+    decisao = {
+        "id": "test_16",
+        "tipo": "redesign",
+        "contexto": {
+            "documentacao": True,
+            "rastreavel": True,
+            "explicavel": True,
+            "impacto": "alto",
+            "reversivel": True,
+            "testes": True,
+            "revisao": True,
+            "aprovacao": True,
+            "dados_pessoais": {
+                "consentimento": True,
+                "finalidade_especifica": True,
+                "minimizacao": True,
+                "seguranca": True,
+                "direitos_titulares": True,
+                "transferencia_internacional": False
+            }
+        }
+    }
+    
+    # Validar decisão
+    resultado = validador.validar_decisao(decisao)
+    
+    # Verificar resultado
+    assert resultado["aprovada"] == True
+    assert resultado["nivel_confianca"] >= 0.95
+    assert "conformidade_lgpd" in resultado["validacoes"]
+    assert "dados_pessoais" in resultado["validacoes"]
+
+def test_validacao_viés_equidade():
+    """Testa a validação de viés e equidade nas decisões."""
+    validador = ValidadorEtico(GerenciadorMemoria())
+    
+    # Simular decisão que requer análise de viés
+    decisao = {
+        "id": "test_17",
+        "tipo": "redesign",
+        "contexto": {
+            "documentacao": True,
+            "rastreavel": True,
+            "explicavel": True,
+            "impacto": "alto",
+            "reversivel": True,
+            "testes": True,
+            "revisao": True,
+            "aprovacao": True,
+            "analise_vies": {
+                "grupos_afetados": ["todos"],
+                "metricas_equidade": True,
+                "testes_vies": True,
+                "mitigacao_vies": True,
+                "monitoramento_continuo": True
+            }
+        }
+    }
+    
+    # Validar decisão
+    resultado = validador.validar_decisao(decisao)
+    
+    # Verificar resultado
+    assert resultado["aprovada"] == True
+    assert resultado["nivel_confianca"] >= 0.95
+    assert "analise_vies" in resultado["validacoes"]
+    assert "metricas_equidade" in resultado["validacoes"]
+
+def test_validacao_decisao_financeira():
+    """Testa a validação ética de decisões financeiras."""
+    validador = ValidadorEtico(GerenciadorMemoria())
+    
+    # Simular decisão financeira
+    decisao = {
+        "id": "test_18",
+        "tipo": "redesign",
+        "contexto": {
+            "documentacao": True,
+            "rastreavel": True,
+            "explicavel": True,
+            "impacto": "alto",
+            "reversivel": True,
+            "testes": True,
+            "revisao": True,
+            "aprovacao": True,
+            "aspectos_financeiros": {
+                "tokenizacao_impacto": True,
+                "simulacao_cenarios": True,
+                "equidade_distributiva": True,
+                "sustentabilidade_financeira": True,
+                "transparencia_radical": True
+            }
+        }
+    }
+    
+    # Validar decisão
+    resultado = validador.validar_decisao(decisao)
+    
+    # Verificar resultado
+    assert resultado["aprovada"] == True
+    assert resultado["nivel_confianca"] >= 0.95
+    assert "aspectos_financeiros" in resultado["validacoes"]
+    assert "equidade_distributiva" in resultado["validacoes"]
+
+def test_validacao_cenario_extremo():
+    """Testa a validação ética em cenário extremo."""
+    validador = ValidadorEtico(GerenciadorMemoria())
+    
+    # Simular decisão em cenário extremo
+    decisao = {
+        "id": "test_19",
+        "tipo": "redesign",
+        "contexto": {
+            "documentacao": True,
+            "rastreavel": True,
+            "explicavel": True,
+            "impacto": "critico",
+            "reversivel": True,
+            "testes": True,
+            "revisao": True,
+            "aprovacao": True,
+            "cenario_extremo": {
+                "simulacao_completa": True,
+                "analise_consequencias": True,
+                "planos_contingencia": True,
+                "monitoramento_intensivo": True,
+                "reversao_automatica": True
+            }
+        }
+    }
+    
+    # Validar decisão
+    resultado = validador.validar_decisao(decisao)
+    
+    # Verificar resultado
+    assert resultado["aprovada"] == True
+    assert resultado["nivel_confianca"] >= 0.99
+    assert "cenario_extremo" in resultado["validacoes"]
+    assert "planos_contingencia" in resultado["validacoes"] 
