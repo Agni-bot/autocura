@@ -12,8 +12,10 @@ import numpy as np
 import requests
 import flask
 from kubernetes import client, config # Adicionado para interagir com Kubernetes
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
+import asyncio
+from prometheus_client import Counter, Gauge, Histogram
 
 from ..memoria.gerenciador_memoria import GerenciadorMemoria
 
@@ -67,6 +69,16 @@ class PlanoAcaoInfo:
             resultado_eficacia=data.get("resultado_eficacia")
         )
 
+@dataclass
+class EventoCognitivo:
+    """Representa um evento cognitivo do sistema."""
+    tipo: str
+    timestamp: datetime
+    severidade: float
+    contexto: Dict[str, Any]
+    impacto: float
+    resolvido: bool = False
+
 # --- Configurações do Guardião ---
 CONFIG_GUARDIAN = {
     "api_monitoramento_url": os.getenv("MONITORAMENTO_SERVICE_URL", "http://monitoramento:8080/api"),
@@ -99,6 +111,52 @@ class GuardiaoCognitivo:
         self.kube_api_client = None
         self._inicializar_kube_client()
         logger.info("Guardião Cognitivo inicializado com config: %s", CONFIG_GUARDIAN)
+
+        # Métricas Prometheus
+        self.metricas = {
+            "eventos_cognitivos": Counter(
+                "eventos_cognitivos_total",
+                "Total de eventos cognitivos",
+                ["tipo", "severidade"]
+            ),
+            "saude_cognitiva": Gauge(
+                "saude_cognitiva",
+                "Saúde cognitiva do sistema",
+                ["dimensao"]
+            ),
+            "tempo_resposta": Histogram(
+                "tempo_resposta_guardiao",
+                "Tempo de resposta do guardião",
+                ["acao"]
+            )
+        }
+        
+        # Histórico de eventos
+        self.historico_eventos: List[EventoCognitivo] = []
+        
+        # Limites de alerta
+        self.limites = {
+            "cpu": 80.0,
+            "memoria": 80.0,
+            "latencia": 1000.0,
+            "erros": 5.0,
+            "anomalias": 3.0
+        }
+        
+        # Ações protetivas
+        self.acoes_protetivas = {
+            "alta_cpu": self._acao_alta_cpu,
+            "alta_memoria": self._acao_alta_memoria,
+            "alta_latencia": self._acao_alta_latencia,
+            "alta_taxa_erros": self._acao_alta_taxa_erros,
+            "anomalia_detectada": self._acao_anomalia_detectada
+        }
+        
+        # Cache de métricas
+        self.cache_metricas = {}
+        self.cache_timeout = timedelta(minutes=5)
+        
+        self.logger.info("Guardião Cognitivo inicializado")
 
     def _inicializar_kube_client(self):
         try:
@@ -465,6 +523,247 @@ class GuardiaoCognitivo:
                 self.aplicar_salvaguardas(violacao)
         
         return resultados
+
+    async def registrar_evento(self, tipo: str, severidade: float, contexto: Dict[str, Any], impacto: float) -> None:
+        """Registra um evento cognitivo.
+        
+        Args:
+            tipo: Tipo do evento
+            severidade: Severidade do evento (0-1)
+            contexto: Contexto do evento
+            impacto: Impacto do evento (0-1)
+        """
+        evento = EventoCognitivo(
+            tipo=tipo,
+            timestamp=datetime.now(),
+            severidade=severidade,
+            contexto=contexto,
+            impacto=impacto
+        )
+        
+        self.historico_eventos.append(evento)
+        
+        # Atualiza métricas
+        self.metricas["eventos_cognitivos"].labels(
+            tipo=tipo,
+            severidade=f"{severidade:.1f}"
+        ).inc()
+        
+        self.logger.info(f"Evento cognitivo registrado: {tipo} (severidade: {severidade}, impacto: {impacto})")
+    
+    async def avaliar_saude_cognitiva(self) -> Dict[str, Any]:
+        """Avalia a saúde cognitiva do sistema.
+        
+        Returns:
+            Dicionário com avaliação da saúde
+        """
+        saude = {
+            "timestamp": datetime.now(),
+            "score_geral": 1.0,
+            "dimensoes": {},
+            "alertas": []
+        }
+        
+        # Avalia cada dimensão
+        for dimensao, limite in self.limites.items():
+            valor = self.cache_metricas.get(dimensao, 0)
+            score = 1.0 - (valor / limite) if valor < limite else 0.0
+            
+            saude["dimensoes"][dimensao] = {
+                "valor": valor,
+                "limite": limite,
+                "score": score
+            }
+            
+            # Atualiza métrica
+            self.metricas["saude_cognitiva"].labels(dimensao=dimensao).set(score)
+            
+            # Verifica alertas
+            if valor > limite:
+                saude["alertas"].append({
+                    "dimensao": dimensao,
+                    "valor": valor,
+                    "limite": limite,
+                    "severidade": (valor - limite) / limite
+                })
+        
+        # Calcula score geral
+        scores = [d["score"] for d in saude["dimensoes"].values()]
+        saude["score_geral"] = np.mean(scores)
+        
+        return saude
+    
+    async def verificar_limites(self, metricas: Dict[str, float]) -> List[Dict[str, Any]]:
+        """Verifica se as métricas ultrapassam os limites.
+        
+        Args:
+            metricas: Dicionário com métricas
+            
+        Returns:
+            Lista de violações de limites
+        """
+        violacoes = []
+        
+        for nome, valor in metricas.items():
+            if nome in self.limites and valor > self.limites[nome]:
+                violacoes.append({
+                    "metrica": nome,
+                    "valor": valor,
+                    "limite": self.limites[nome],
+                    "severidade": (valor - self.limites[nome]) / self.limites[nome]
+                })
+        
+        return violacoes
+    
+    async def executar_acao_protetiva(self, tipo: str, contexto: Dict[str, Any]) -> bool:
+        """Executa uma ação protetiva.
+        
+        Args:
+            tipo: Tipo da ação
+            contexto: Contexto da ação
+            
+        Returns:
+            True se a ação foi executada com sucesso
+        """
+        if tipo not in self.acoes_protetivas:
+            self.logger.error(f"Ação protetiva desconhecida: {tipo}")
+            return False
+        
+        try:
+            with self.metricas["tempo_resposta"].labels(acao=tipo).time():
+                sucesso = await self.acoes_protetivas[tipo](contexto)
+            
+            if sucesso:
+                self.logger.info(f"Ação protetiva {tipo} executada com sucesso")
+            else:
+                self.logger.warning(f"Ação protetiva {tipo} falhou")
+            
+            return sucesso
+            
+        except Exception as e:
+            self.logger.error(f"Erro ao executar ação protetiva {tipo}: {e}")
+            return False
+    
+    async def _acao_alta_cpu(self, contexto: Dict[str, Any]) -> bool:
+        """Ação protetiva para alta CPU."""
+        try:
+            # Implementar lógica de ação
+            await asyncio.sleep(1)  # Simulação
+            return True
+        except Exception as e:
+            self.logger.error(f"Erro na ação de alta CPU: {e}")
+            return False
+    
+    async def _acao_alta_memoria(self, contexto: Dict[str, Any]) -> bool:
+        """Ação protetiva para alta memória."""
+        try:
+            # Implementar lógica de ação
+            await asyncio.sleep(1)  # Simulação
+            return True
+        except Exception as e:
+            self.logger.error(f"Erro na ação de alta memória: {e}")
+            return False
+    
+    async def _acao_alta_latencia(self, contexto: Dict[str, Any]) -> bool:
+        """Ação protetiva para alta latência."""
+        try:
+            # Implementar lógica de ação
+            await asyncio.sleep(1)  # Simulação
+            return True
+        except Exception as e:
+            self.logger.error(f"Erro na ação de alta latência: {e}")
+            return False
+    
+    async def _acao_alta_taxa_erros(self, contexto: Dict[str, Any]) -> bool:
+        """Ação protetiva para alta taxa de erros."""
+        try:
+            # Implementar lógica de ação
+            await asyncio.sleep(1)  # Simulação
+            return True
+        except Exception as e:
+            self.logger.error(f"Erro na ação de alta taxa de erros: {e}")
+            return False
+    
+    async def _acao_anomalia_detectada(self, contexto: Dict[str, Any]) -> bool:
+        """Ação protetiva para anomalia detectada."""
+        try:
+            # Implementar lógica de ação
+            await asyncio.sleep(1)  # Simulação
+            return True
+        except Exception as e:
+            self.logger.error(f"Erro na ação de anomalia: {e}")
+            return False
+    
+    async def atualizar_metricas(self, metricas: Dict[str, float]) -> None:
+        """Atualiza as métricas do sistema.
+        
+        Args:
+            metricas: Dicionário com métricas
+        """
+        self.cache_metricas = metricas
+        self.cache_metricas["timestamp"] = datetime.now()
+    
+    async def obter_historico_eventos(self, periodo: Optional[timedelta] = None) -> List[EventoCognitivo]:
+        """Obtém o histórico de eventos.
+        
+        Args:
+            periodo: Período de tempo (opcional)
+            
+        Returns:
+            Lista de eventos
+        """
+        if not periodo:
+            return self.historico_eventos
+        
+        inicio = datetime.now() - periodo
+        return [
+            evento for evento in self.historico_eventos
+            if evento.timestamp >= inicio
+        ]
+    
+    async def limpar_historico(self, periodo: timedelta) -> None:
+        """Limpa o histórico de eventos antigos.
+        
+        Args:
+            periodo: Período de tempo para manter
+        """
+        inicio = datetime.now() - periodo
+        self.historico_eventos = [
+            evento for evento in self.historico_eventos
+            if evento.timestamp >= inicio
+        ]
+        
+        self.logger.info(f"Histórico de eventos limpo (período: {periodo})")
+    
+    async def gerar_relatorio(self, periodo: Optional[timedelta] = None) -> Dict[str, Any]:
+        """Gera um relatório do guardião.
+        
+        Args:
+            periodo: Período de tempo (opcional)
+            
+        Returns:
+            Dicionário com relatório
+        """
+        eventos = await self.obter_historico_eventos(periodo)
+        saude = await self.avaliar_saude_cognitiva()
+        
+        relatorio = {
+            "timestamp": datetime.now(),
+            "saude": saude,
+            "eventos": [
+                {
+                    "tipo": e.tipo,
+                    "timestamp": e.timestamp,
+                    "severidade": e.severidade,
+                    "impacto": e.impacto,
+                    "resolvido": e.resolvido
+                }
+                for e in eventos
+            ],
+            "metricas": self.cache_metricas
+        }
+        
+        return relatorio
 
 # Criar instância do gerenciador de memória
 gerenciador_memoria = GerenciadorMemoria()

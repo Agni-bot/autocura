@@ -2,15 +2,238 @@
 Testes do guardião cognitivo do sistema.
 """
 import pytest
-from datetime import datetime
+import asyncio
+from datetime import datetime, timedelta
+from unittest.mock import Mock, patch
+import numpy as np
 from typing import Dict, Any
 
-from src.guardiao.guardiao_cognitivo import GuardiaoCognitivo
+from src.guardiao.guardiao_cognitivo import GuardiaoCognitivo, EventoCognitivo
 
 @pytest.fixture
-def guardiao():
-    """Fixture que fornece uma instância do guardião cognitivo para os testes."""
-    return GuardiaoCognitivo()
+def config():
+    """Fixture com configuração básica para os testes."""
+    return {
+        "prometheus_port": 9090
+    }
+
+@pytest.fixture
+def guardiao(config):
+    """Fixture com instância do guardião cognitivo."""
+    return GuardiaoCognitivo(config)
+
+@pytest.fixture
+def metricas():
+    """Fixture com métricas de exemplo."""
+    return {
+        "cpu": 75.0,
+        "memoria": 65.0,
+        "latencia": 800.0,
+        "erros": 3.0,
+        "anomalias": 2.0
+    }
+
+@pytest.mark.asyncio
+async def test_inicializacao(guardiao):
+    """Testa a inicialização do guardião cognitivo."""
+    assert guardiao.config is not None
+    assert guardiao.metricas is not None
+    assert guardiao.historico_eventos == []
+    assert guardiao.limites is not None
+    assert guardiao.acoes_protetivas is not None
+    assert guardiao.cache_metricas == {}
+    assert guardiao.cache_timeout == timedelta(minutes=5)
+
+@pytest.mark.asyncio
+async def test_registrar_evento(guardiao):
+    """Testa o registro de eventos cognitivos."""
+    tipo = "teste"
+    severidade = 0.8
+    contexto = {"teste": "valor"}
+    impacto = 0.6
+    
+    await guardiao.registrar_evento(tipo, severidade, contexto, impacto)
+    
+    assert len(guardiao.historico_eventos) == 1
+    evento = guardiao.historico_eventos[0]
+    assert evento.tipo == tipo
+    assert evento.severidade == severidade
+    assert evento.contexto == contexto
+    assert evento.impacto == impacto
+    assert not evento.resolvido
+
+@pytest.mark.asyncio
+async def test_avaliar_saude_cognitiva(guardiao, metricas):
+    """Testa a avaliação da saúde cognitiva."""
+    await guardiao.atualizar_metricas(metricas)
+    saude = await guardiao.avaliar_saude_cognitiva()
+    
+    assert saude["timestamp"] is not None
+    assert "score_geral" in saude
+    assert "dimensoes" in saude
+    assert "alertas" in saude
+    
+    for dimensao in guardiao.limites:
+        assert dimensao in saude["dimensoes"]
+        assert "valor" in saude["dimensoes"][dimensao]
+        assert "limite" in saude["dimensoes"][dimensao]
+        assert "score" in saude["dimensoes"][dimensao]
+
+@pytest.mark.asyncio
+async def test_verificar_limites(guardiao, metricas):
+    """Testa a verificação de limites."""
+    # Métricas dentro dos limites
+    violacoes = await guardiao.verificar_limites(metricas)
+    assert len(violacoes) == 0
+    
+    # Métricas acima dos limites
+    metricas_alta = {
+        "cpu": 90.0,
+        "memoria": 85.0,
+        "latencia": 1200.0,
+        "erros": 7.0,
+        "anomalias": 4.0
+    }
+    
+    violacoes = await guardiao.verificar_limites(metricas_alta)
+    assert len(violacoes) > 0
+    
+    for violacao in violacoes:
+        assert "metrica" in violacao
+        assert "valor" in violacao
+        assert "limite" in violacao
+        assert "severidade" in violacao
+
+@pytest.mark.asyncio
+async def test_executar_acao_protetiva(guardiao):
+    """Testa a execução de ações protetivas."""
+    # Ação válida
+    sucesso = await guardiao.executar_acao_protetiva("alta_cpu", {"cpu": 90.0})
+    assert sucesso
+    
+    # Ação inválida
+    sucesso = await guardiao.executar_acao_protetiva("acao_invalida", {})
+    assert not sucesso
+
+@pytest.mark.asyncio
+async def test_atualizar_metricas(guardiao, metricas):
+    """Testa a atualização de métricas."""
+    await guardiao.atualizar_metricas(metricas)
+    
+    assert guardiao.cache_metricas == metricas
+    assert "timestamp" in guardiao.cache_metricas
+
+@pytest.mark.asyncio
+async def test_obter_historico_eventos(guardiao):
+    """Testa a obtenção do histórico de eventos."""
+    # Adiciona eventos
+    for i in range(3):
+        await guardiao.registrar_evento(
+            f"teste_{i}",
+            0.5,
+            {"teste": i},
+            0.5
+        )
+    
+    # Sem período
+    eventos = await guardiao.obter_historico_eventos()
+    assert len(eventos) == 3
+    
+    # Com período
+    eventos = await guardiao.obter_historico_eventos(timedelta(minutes=1))
+    assert len(eventos) == 3
+    
+    # Período antigo
+    eventos = await guardiao.obter_historico_eventos(timedelta(days=1))
+    assert len(eventos) == 0
+
+@pytest.mark.asyncio
+async def test_limpar_historico(guardiao):
+    """Testa a limpeza do histórico."""
+    # Adiciona eventos
+    for i in range(3):
+        await guardiao.registrar_evento(
+            f"teste_{i}",
+            0.5,
+            {"teste": i},
+            0.5
+        )
+    
+    # Limpa histórico
+    await guardiao.limpar_historico(timedelta(minutes=1))
+    assert len(guardiao.historico_eventos) == 3
+    
+    # Limpa histórico antigo
+    await guardiao.limpar_historico(timedelta(days=1))
+    assert len(guardiao.historico_eventos) == 0
+
+@pytest.mark.asyncio
+async def test_gerar_relatorio(guardiao, metricas):
+    """Testa a geração de relatório."""
+    # Adiciona eventos e métricas
+    await guardiao.registrar_evento("teste", 0.5, {"teste": "valor"}, 0.5)
+    await guardiao.atualizar_metricas(metricas)
+    
+    relatorio = await guardiao.gerar_relatorio()
+    
+    assert "timestamp" in relatorio
+    assert "saude" in relatorio
+    assert "eventos" in relatorio
+    assert "metricas" in relatorio
+    
+    assert len(relatorio["eventos"]) == 1
+    assert relatorio["metricas"] == metricas
+
+@pytest.mark.asyncio
+async def test_acoes_protetivas(guardiao):
+    """Testa as ações protetivas individuais."""
+    # Testa cada ação protetiva
+    for tipo in guardiao.acoes_protetivas:
+        sucesso = await guardiao.executar_acao_protetiva(tipo, {})
+        assert sucesso
+
+@pytest.mark.asyncio
+async def test_metricas_prometheus(guardiao):
+    """Testa as métricas do Prometheus."""
+    # Registra eventos
+    await guardiao.registrar_evento("teste", 0.5, {}, 0.5)
+    
+    # Verifica contadores
+    assert guardiao.metricas["eventos_cognitivos"]._value.get() > 0
+    
+    # Verifica gauges
+    await guardiao.atualizar_metricas({"cpu": 50.0})
+    await guardiao.avaliar_saude_cognitiva()
+    assert guardiao.metricas["saude_cognitiva"]._value.get() is not None
+
+@pytest.mark.asyncio
+async def test_limites_alertas(guardiao):
+    """Testa os limites e alertas."""
+    # Métricas normais
+    metricas_normais = {
+        "cpu": 50.0,
+        "memoria": 50.0,
+        "latencia": 500.0,
+        "erros": 2.0,
+        "anomalias": 1.0
+    }
+    
+    await guardiao.atualizar_metricas(metricas_normais)
+    saude = await guardiao.avaliar_saude_cognitiva()
+    assert len(saude["alertas"]) == 0
+    
+    # Métricas críticas
+    metricas_criticas = {
+        "cpu": 90.0,
+        "memoria": 90.0,
+        "latencia": 1500.0,
+        "erros": 7.0,
+        "anomalias": 4.0
+    }
+    
+    await guardiao.atualizar_metricas(metricas_criticas)
+    saude = await guardiao.avaliar_saude_cognitiva()
+    assert len(saude["alertas"]) > 0
 
 def test_monitorar_recursos():
     """Testa o monitoramento de recursos."""

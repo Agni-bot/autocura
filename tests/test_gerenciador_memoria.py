@@ -6,17 +6,342 @@ import json
 import os
 from datetime import datetime, timedelta
 from typing import Dict, Any
+import asyncio
+from unittest.mock import Mock, patch
+from pathlib import Path
 
-from src.memoria.gerenciador_memoria import GerenciadorMemoria
+from src.memoria.gerenciador_memoria import GerenciadorMemoria, EntidadeMemoria
 
 @pytest.fixture
-def gerenciador():
-    """Fixture que fornece uma instância do gerenciador de memória para os testes."""
-    gerenciador = GerenciadorMemoria()
-    yield gerenciador
-    # Limpar arquivo de memória após os testes
-    if os.path.exists(gerenciador.arquivo_memoria):
-        os.remove(gerenciador.arquivo_memoria)
+def config():
+    """Fornece configuração básica para os testes."""
+    return {
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }
+
+@pytest.fixture
+def gerenciador(config):
+    """Fornece uma instância do gerenciador de memória para testes."""
+    with patch("redis.Redis") as mock_redis:
+        gerenciador = GerenciadorMemoria(config)
+        gerenciador.redis = mock_redis
+        yield gerenciador
+
+@pytest.fixture
+def entidade_exemplo():
+    """Fornece uma entidade de exemplo para testes."""
+    return {
+        "tipo": "conhecimento",
+        "dados": {
+            "titulo": "Teste",
+            "conteudo": "Conteúdo de teste"
+        },
+        "tags": ["teste", "exemplo"]
+    }
+
+@pytest.mark.asyncio
+async def test_inicializacao(gerenciador):
+    """Testa a inicialização do gerenciador de memória."""
+    assert gerenciador.config["redis_host"] == "localhost"
+    assert gerenciador.config["redis_port"] == 6379
+    assert gerenciador.config["redis_db"] == 0
+    assert isinstance(gerenciador.cache_local, dict)
+    assert len(gerenciador.tipos_entidade) == 4
+    assert "conhecimento" in gerenciador.tipos_entidade
+    assert "evento" in gerenciador.tipos_entidade
+    assert "metricas" in gerenciador.tipos_entidade
+    assert "configuracao" in gerenciador.tipos_entidade
+
+@pytest.mark.asyncio
+async def test_criar_entidade(gerenciador, entidade_exemplo):
+    """Testa a criação de entidades."""
+    # Mock do Redis
+    gerenciador.redis.set = Mock()
+    
+    # Cria entidade
+    entidade = await gerenciador.criar_entidade(
+        tipo=entidade_exemplo["tipo"],
+        dados=entidade_exemplo["dados"],
+        tags=entidade_exemplo["tags"]
+    )
+    
+    assert entidade is not None
+    assert entidade.tipo == entidade_exemplo["tipo"]
+    assert entidade.dados == entidade_exemplo["dados"]
+    assert entidade.tags == entidade_exemplo["tags"]
+    assert entidade.versao == "1.0"
+    assert len(entidade.relacionamentos) == 0
+    
+    # Verifica se foi salvo no Redis
+    gerenciador.redis.set.assert_called_once()
+    
+    # Verifica se foi adicionado ao cache local
+    assert entidade.id in gerenciador.cache_local
+    assert gerenciador.cache_local[entidade.id] == entidade
+
+@pytest.mark.asyncio
+async def test_criar_entidade_tipo_invalido(gerenciador, entidade_exemplo):
+    """Testa a criação de entidade com tipo inválido."""
+    entidade = await gerenciador.criar_entidade(
+        tipo="tipo_invalido",
+        dados=entidade_exemplo["dados"],
+        tags=entidade_exemplo["tags"]
+    )
+    
+    assert entidade is None
+
+@pytest.mark.asyncio
+async def test_criar_entidade_tamanho_excedido(gerenciador):
+    """Testa a criação de entidade que excede o tamanho máximo."""
+    # Cria dados grandes
+    dados_grandes = {
+        "conteudo": "x" * (1024 * 1024 + 1)  # 1MB + 1 byte
+    }
+    
+    entidade = await gerenciador.criar_entidade(
+        tipo="conhecimento",
+        dados=dados_grandes,
+        tags=["teste"]
+    )
+    
+    assert entidade is None
+
+@pytest.mark.asyncio
+async def test_atualizar_entidade(gerenciador, entidade_exemplo):
+    """Testa a atualização de entidades."""
+    # Mock do Redis
+    gerenciador.redis.set = Mock()
+    
+    # Cria entidade
+    entidade = await gerenciador.criar_entidade(
+        tipo=entidade_exemplo["tipo"],
+        dados=entidade_exemplo["dados"],
+        tags=entidade_exemplo["tags"]
+    )
+    
+    # Atualiza dados
+    novos_dados = {
+        "titulo": "Teste Atualizado",
+        "conteudo": "Conteúdo atualizado"
+    }
+    
+    sucesso = await gerenciador.atualizar_entidade(entidade.id, novos_dados)
+    
+    assert sucesso is True
+    
+    # Verifica se foi atualizado
+    entidade_atualizada = gerenciador.cache_local[entidade.id]
+    assert entidade_atualizada.dados == novos_dados
+    assert entidade_atualizada.versao == "1.1"
+    
+    # Verifica se foi salvo no Redis
+    assert gerenciador.redis.set.call_count == 2  # Criar + Atualizar
+
+@pytest.mark.asyncio
+async def test_atualizar_entidade_inexistente(gerenciador):
+    """Testa a atualização de entidade inexistente."""
+    sucesso = await gerenciador.atualizar_entidade("id_inexistente", {})
+    assert sucesso is False
+
+@pytest.mark.asyncio
+async def test_obter_entidade(gerenciador, entidade_exemplo):
+    """Testa a obtenção de entidades."""
+    # Mock do Redis
+    gerenciador.redis.get = Mock(return_value=None)
+    
+    # Cria entidade
+    entidade = await gerenciador.criar_entidade(
+        tipo=entidade_exemplo["tipo"],
+        dados=entidade_exemplo["dados"],
+        tags=entidade_exemplo["tags"]
+    )
+    
+    # Obtém do cache local
+    entidade_obtida = await gerenciador.obter_entidade(entidade.id)
+    assert entidade_obtida == entidade
+    
+    # Limpa cache local
+    gerenciador.cache_local.clear()
+    
+    # Mock do Redis para retornar dados
+    dados_json = json.dumps(entidade.__dict__, default=str)
+    gerenciador.redis.get = Mock(return_value=dados_json)
+    
+    # Obtém do Redis
+    entidade_obtida = await gerenciador.obter_entidade(entidade.id)
+    assert entidade_obtida is not None
+    assert entidade_obtida.id == entidade.id
+    assert entidade_obtida.tipo == entidade.tipo
+    assert entidade_obtida.dados == entidade.dados
+
+@pytest.mark.asyncio
+async def test_obter_entidade_inexistente(gerenciador):
+    """Testa a obtenção de entidade inexistente."""
+    # Mock do Redis
+    gerenciador.redis.get = Mock(return_value=None)
+    
+    entidade = await gerenciador.obter_entidade("id_inexistente")
+    assert entidade is None
+
+@pytest.mark.asyncio
+async def test_buscar_entidades(gerenciador, entidade_exemplo):
+    """Testa a busca de entidades."""
+    # Mock do Redis
+    gerenciador.redis.scan_iter = Mock(return_value=["entidade:1", "entidade:2"])
+    gerenciador.redis.get = Mock(return_value=None)
+    
+    # Cria entidades
+    entidade1 = await gerenciador.criar_entidade(
+        tipo=entidade_exemplo["tipo"],
+        dados=entidade_exemplo["dados"],
+        tags=entidade_exemplo["tags"]
+    )
+    
+    entidade2 = await gerenciador.criar_entidade(
+        tipo="evento",
+        dados={"tipo": "teste"},
+        tags=["evento"]
+    )
+    
+    # Busca por tipo
+    entidades = await gerenciador.buscar_entidades(tipo="conhecimento")
+    assert len(entidades) == 1
+    assert entidades[0].id == entidade1.id
+    
+    # Busca por tags
+    entidades = await gerenciador.buscar_entidades(tags=["teste"])
+    assert len(entidades) == 1
+    assert entidades[0].id == entidade1.id
+    
+    # Busca por tipo e tags
+    entidades = await gerenciador.buscar_entidades(
+        tipo="conhecimento",
+        tags=["teste"]
+    )
+    assert len(entidades) == 1
+    assert entidades[0].id == entidade1.id
+
+@pytest.mark.asyncio
+async def test_adicionar_relacionamento(gerenciador, entidade_exemplo):
+    """Testa a adição de relacionamentos entre entidades."""
+    # Mock do Redis
+    gerenciador.redis.set = Mock()
+    
+    # Cria entidades
+    entidade1 = await gerenciador.criar_entidade(
+        tipo=entidade_exemplo["tipo"],
+        dados=entidade_exemplo["dados"],
+        tags=entidade_exemplo["tags"]
+    )
+    
+    entidade2 = await gerenciador.criar_entidade(
+        tipo="evento",
+        dados={"tipo": "teste"},
+        tags=["evento"]
+    )
+    
+    # Adiciona relacionamento
+    sucesso = await gerenciador.adicionar_relacionamento(entidade1.id, entidade2.id)
+    assert sucesso is True
+    
+    # Verifica relacionamentos
+    assert entidade2.id in entidade1.relacionamentos
+    assert entidade1.id in entidade2.relacionamentos
+    
+    # Verifica se foi salvo no Redis
+    assert gerenciador.redis.set.call_count == 4  # Criar + Criar + Relacionar + Relacionar
+
+@pytest.mark.asyncio
+async def test_adicionar_relacionamento_inexistente(gerenciador, entidade_exemplo):
+    """Testa a adição de relacionamento com entidade inexistente."""
+    # Cria entidade
+    entidade = await gerenciador.criar_entidade(
+        tipo=entidade_exemplo["tipo"],
+        dados=entidade_exemplo["dados"],
+        tags=entidade_exemplo["tags"]
+    )
+    
+    # Tenta adicionar relacionamento com entidade inexistente
+    sucesso = await gerenciador.adicionar_relacionamento(entidade.id, "id_inexistente")
+    assert sucesso is False
+
+@pytest.mark.asyncio
+async def test_obter_relacionamentos(gerenciador, entidade_exemplo):
+    """Testa a obtenção de relacionamentos."""
+    # Mock do Redis
+    gerenciador.redis.set = Mock()
+    
+    # Cria entidades
+    entidade1 = await gerenciador.criar_entidade(
+        tipo=entidade_exemplo["tipo"],
+        dados=entidade_exemplo["dados"],
+        tags=entidade_exemplo["tags"]
+    )
+    
+    entidade2 = await gerenciador.criar_entidade(
+        tipo="evento",
+        dados={"tipo": "teste"},
+        tags=["evento"]
+    )
+    
+    # Adiciona relacionamento
+    await gerenciador.adicionar_relacionamento(entidade1.id, entidade2.id)
+    
+    # Obtém relacionamentos
+    relacionamentos = await gerenciador.obter_relacionamentos(entidade1.id)
+    assert len(relacionamentos) == 1
+    assert relacionamentos[0].id == entidade2.id
+
+@pytest.mark.asyncio
+async def test_obter_relacionamentos_inexistente(gerenciador):
+    """Testa a obtenção de relacionamentos de entidade inexistente."""
+    relacionamentos = await gerenciador.obter_relacionamentos("id_inexistente")
+    assert len(relacionamentos) == 0
+
+@pytest.mark.asyncio
+async def test_limpar_cache(gerenciador, entidade_exemplo):
+    """Testa a limpeza do cache local."""
+    # Cria entidade
+    entidade = await gerenciador.criar_entidade(
+        tipo=entidade_exemplo["tipo"],
+        dados=entidade_exemplo["dados"],
+        tags=entidade_exemplo["tags"]
+    )
+    
+    assert len(gerenciador.cache_local) > 0
+    
+    # Limpa cache
+    await gerenciador.limpar_cache()
+    assert len(gerenciador.cache_local) == 0
+
+@pytest.mark.asyncio
+async def test_obter_estatisticas(gerenciador, entidade_exemplo):
+    """Testa a obtenção de estatísticas."""
+    # Cria entidades
+    entidade1 = await gerenciador.criar_entidade(
+        tipo=entidade_exemplo["tipo"],
+        dados=entidade_exemplo["dados"],
+        tags=entidade_exemplo["tags"]
+    )
+    
+    entidade2 = await gerenciador.criar_entidade(
+        tipo="evento",
+        dados={"tipo": "teste"},
+        tags=["evento"]
+    )
+    
+    # Obtém estatísticas
+    stats = await gerenciador.obter_estatisticas()
+    
+    assert "timestamp" in stats
+    assert stats["total_entidades"] == 2
+    assert stats["por_tipo"]["conhecimento"] == 1
+    assert stats["por_tipo"]["evento"] == 1
+    assert stats["por_tag"]["teste"] == 1
+    assert stats["por_tag"]["evento"] == 1
+    assert stats["tamanho_total"] > 0
 
 def test_salvar_carregar_memoria():
     """Testa o salvamento e carregamento da memória."""
