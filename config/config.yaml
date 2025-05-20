@@ -1,0 +1,103 @@
+# Configurações Globais
+sistema:
+  nome: "Autocura"
+  versao: "1.0.0"
+  ambiente: "desenvolvimento"
+  log_level: "INFO"
+
+# Configurações de Módulos
+modulos:
+  monitoramento:
+    intervalo: 60
+    metricas:
+      - throughput
+      - latencia
+      - taxa_erro
+      - uso_recursos
+    alertas:
+      threshold_critico: 0.9
+      threshold_alerta: 0.7
+
+  diagnostico:
+    modelo: "neural"
+    threshold: 0.8
+    batch_size: 32
+    retencao_historico: "30d"
+
+  gerador:
+    max_acoes: 10
+    prioridade:
+      - critica
+      - alta
+      - media
+      - baixa
+    timeout: 300
+
+  guardiao:
+    nivel_alerta: 0.7
+    protocolos:
+      - monitoramento_intensificado
+      - acoes_corretivas
+      - shutdown_gradual
+    check_interval: 30
+
+  observabilidade:
+    retencao_dados: "30d"
+    dashboard:
+      refresh: "5s"
+      graficos:
+        - metricas_operacionais
+        - metricas_cognitivas
+        - metricas_eticas
+
+  etica:
+    categorias:
+      - privacidade
+      - transparencia
+      - equidade
+      - seguranca
+    limites:
+      vies: 0.1
+      explicabilidade: 0.8
+
+  memoria:
+    cache:
+      tamanho: "1GB"
+      ttl: "1h"
+    persistencia:
+      tipo: "sqlite"
+      path: "/app/memoria/db"
+
+# Configurações de Infraestrutura
+infraestrutura:
+  kubernetes:
+    namespace: "autocura"
+    replicas:
+      min: 3
+      max: 10
+    recursos:
+      cpu:
+        request: "100m"
+        limit: "500m"
+      memoria:
+        request: "128Mi"
+        limit: "512Mi"
+
+  monitoramento:
+    prometheus:
+      scrape_interval: "15s"
+      retention: "15d"
+    grafana:
+      refresh: "5s"
+      retention: "30d"
+
+# Configurações de Segurança
+seguranca:
+  autenticacao:
+    tipo: "jwt"
+    expiracao: "24h"
+  criptografia:
+    algoritmo: "AES-256"
+    chave_rotacao: "7d"
+  auditoria:
+    retencao_logs: "365d" 

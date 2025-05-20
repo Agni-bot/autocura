@@ -117,4 +117,9 @@ volumes:
   observabilidade_data:
   monitoramento_data:
   executor_data:
-  guardiao_cognitivo_data: 
+  guardiao_cognitivo_data:
+
+  redis_data:
+  postgres_data:
+  prometheus_data:
+  grafana_data: 

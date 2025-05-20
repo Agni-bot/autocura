@@ -1,0 +1,283 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autocura
+  namespace: autocura
+  labels:
+    app: autocura
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: autocura
+  template:
+    metadata:
+      labels:
+        app: autocura
+    spec:
+      containers:
+      - name: api
+        image: autocura/api:latest
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        env:
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: ENVIRONMENT
+          value: "production"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+        - name: memoria
+          mountPath: /app/memoria
+      - name: monitor
+        image: autocura/monitor:latest
+        ports:
+        - containerPort: 9090
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+        env:
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: ENVIRONMENT
+          value: "production"
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+      - name: diagnostico
+        image: autocura/diagnostico:latest
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        env:
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: ENVIRONMENT
+          value: "production"
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+        - name: modelos
+          mountPath: /app/modelos
+      - name: gerador
+        image: autocura/gerador:latest
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        env:
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: ENVIRONMENT
+          value: "production"
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+      - name: guardiao
+        image: autocura/guardiao:latest
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+        env:
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: ENVIRONMENT
+          value: "production"
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+      - name: observador
+        image: autocura/observador:latest
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+        env:
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: ENVIRONMENT
+          value: "production"
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+      - name: validador
+        image: autocura/validador:latest
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+        env:
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: ENVIRONMENT
+          value: "production"
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+      volumes:
+      - name: config
+        configMap:
+          name: autocura-config
+      - name: memoria
+        persistentVolumeClaim:
+          claimName: autocura-memoria
+      - name: modelos
+        persistentVolumeClaim:
+          claimName: autocura-modelos
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: autocura-api
+  namespace: autocura
+spec:
+  selector:
+    app: autocura
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8000
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+  - name: dashboard
+    port: 8080
+    targetPort: 8080
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: autocura-config
+  namespace: autocura
+data:
+  config.yaml: |
+    monitoramento:
+      intervalo: 60
+      metricas:
+        - throughput
+        - latencia
+        - taxa_erro
+        - uso_recursos
+    diagnostico:
+      modelo: "neural"
+      threshold: 0.8
+      batch_size: 32
+    gerador:
+      max_acoes: 10
+      prioridade:
+        - critica
+        - alta
+        - media
+        - baixa
+    guardiao:
+      nivel_alerta: 0.7
+      protocolos:
+        - monitoramento_intensificado
+        - acoes_corretivas
+        - shutdown_gradual
+    observabilidade:
+      retencao_dados: 30d
+      dashboard:
+        refresh: 5s
+        graficos:
+          - metricas_operacionais
+          - metricas_cognitivas
+          - metricas_eticas
+    etica:
+      categorias:
+        - privacidade
+        - transparencia
+        - equidade
+        - seguranca
+      limites:
+        vies: 0.1
+        explicabilidade: 0.8
+    memoria:
+      cache:
+        tamanho: 1GB
+        ttl: 1h
+      persistencia:
+        tipo: sqlite
+        path: /app/memoria/db
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: autocura-memoria
+  namespace: autocura
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: autocura-modelos
+  namespace: autocura
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: autocura-hpa
+  namespace: autocura
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: autocura
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70 
