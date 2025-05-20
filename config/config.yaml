@@ -100,4 +100,132 @@ seguranca:
     algoritmo: "AES-256"
     chave_rotacao: "7d"
   auditoria:
-    retencao_logs: "365d" 
+    retencao_logs: "365d"
+
+# Configurações de Logging
+logging:
+  nivel: INFO
+  formato: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  arquivo: "logs/sistema.log"
+  max_bytes: 10485760  # 10MB
+  backup_count: 5
+
+# Configurações de Memória
+memoria:
+  caminho: "memoria_compartilhada.json"
+  backup_intervalo: 3600  # 1 hora
+  retencao_dias: 30
+
+# Configurações de Autonomia
+autonomia:
+  nivel_inicial: 1
+  intervalo_verificacao: 300  # 5 minutos
+  criterios_avanco:
+    precisao_minima: 0.95
+    falsos_negativos_maximos: 0
+    tempo_operacao_minimo: 90  # dias
+    incidentes_maximos: 0
+    validacao_etica_requerida: true
+
+# Configurações de Monitoramento
+monitoramento:
+  intervalo: 60  # 1 minuto
+  metricas:
+    cpu:
+      limite_alerta: 80
+      limite_critico: 90
+    memoria:
+      limite_alerta: 75
+      limite_critico: 85
+    latencia:
+      limite_alerta: 500
+      limite_critico: 1000
+
+# Configurações de Validação Ética
+etica:
+  principios:
+    - transparencia
+    - privacidade
+    - nao_maleficencia
+    - justica
+    - autonomia
+  validacao_obrigatoria: true
+  relatorio_intervalo: 86400  # 24 horas
+
+# Configurações de Ações
+acoes:
+  max_pendentes: 10
+  timeout_execucao: 300  # 5 minutos
+  retry_intervalo: 60  # 1 minuto
+  max_retries: 3
+
+# Configurações de Salvaguardas
+salvaguardas:
+  reducao_autonomia:
+    nivel_emergencia: 1
+    duracao_minima: 3600  # 1 hora
+  suspensao_operacoes:
+    duracao_maxima: 86400  # 24 horas
+    notificacao_obrigatoria: true
+
+# Configurações de Aprendizado
+aprendizado:
+  coleta_intervalo: 300  # 5 minutos
+  analise_intervalo: 3600  # 1 hora
+  padroes_minimos: 3
+  confianca_minima: 0.8
+
+# Configurações de API
+api:
+  host: "0.0.0.0"
+  porta: 8000
+  debug: false
+  cors:
+    origens_permitidas:
+      - "http://localhost:3000"
+      - "https://app.autocura.com"
+    metodos_permitidos:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+    headers_permitidos:
+      - Content-Type
+      - Authorization
+
+# Configurações de Backup
+backup:
+  intervalo: 86400  # 24 horas
+  retencao: 7  # dias
+  destino: "backups/"
+  compressao: true
+
+# Configurações de Notificações
+notificacoes:
+  email:
+    servidor: "smtp.gmail.com"
+    porta: 587
+    tls: true
+    remetente: "sistema@autocura.com"
+  slack:
+    webhook_url: "https://hooks.slack.com/services/xxx/yyy/zzz"
+    canal: "#alertas-sistema"
+  telegram:
+    bot_token: "123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
+    chat_id: "-1001234567890"
+
+# Configurações de Integração
+integracao:
+  prometheus:
+    habilitado: true
+    porta: 9090
+    path: "/metrics"
+  grafana:
+    habilitado: true
+    porta: 3000
+    path: "/grafana"
+  elasticsearch:
+    habilitado: true
+    hosts:
+      - "http://localhost:9200"
+    indice_prefixo: "autocura-" 

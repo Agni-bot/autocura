@@ -1,72 +1,29 @@
 # Sistema de Autocura Cognitiva
 
-Um sistema avançado de autocura cognitiva que integra monitoramento, diagnóstico, geração de ações e validação ética para garantir a saúde e evolução contínua do sistema.
+Sistema de Inteligência Artificial com capacidade de autocura e evolução contínua, baseado em princípios éticos e salvaguardas de segurança.
 
 ## 🎯 Visão Geral
 
-O Sistema de Autocura Cognitiva é uma arquitetura modular que implementa capacidades de auto-monitoramento, auto-diagnóstico e auto-correção, mantendo um equilíbrio entre autonomia e controle humano, sempre guiado por princípios éticos.
-
-### Principais Características
-
-- **Monitoramento Multidimensional**: Coleta e analisa métricas operacionais, cognitivas e éticas
-- **Diagnóstico Neural**: Utiliza redes neurais para identificar anomalias e padrões
-- **Geração de Ações**: Cria e prioriza planos de ação baseados em diagnósticos
-- **Validação Ética**: Garante conformidade com princípios éticos e regulamentações
-- **Observabilidade 4D**: Fornece visualização e controle em múltiplas dimensões
-- **Orquestração Kubernetes**: Gerencia infraestrutura com auto-scaling e auto-healing
-- **Memória Persistente**: Armazena e recupera informações de forma eficiente
+O Sistema de Autocura Cognitiva é uma arquitetura avançada que combina monitoramento contínuo, validação ética, geração de ações e salvaguardas de segurança para criar um sistema de IA que pode se adaptar, corrigir e evoluir de forma segura e ética.
 
 ## 🏗️ Arquitetura
 
-O sistema é composto pelos seguintes módulos principais:
+O sistema é composto por vários módulos principais:
 
-### 1. Monitoramento (`src/monitoramento/`)
-- Coleta métricas em tempo real
-- Detecta anomalias
-- Analisa tendências
-- Gera alertas
+### 🧠 Núcleo Cognitivo
+- **Orquestrador**: Coordena todos os componentes do sistema
+- **Memória Compartilhada**: Gerencia o estado global e histórico do sistema
+- **Guardião Cognitivo**: Monitora a saúde e aplica salvaguardas
 
-### 2. Diagnóstico (`src/diagnostico/`)
-- Processa métricas coletadas
-- Identifica padrões e anomalias
-- Gera diagnósticos
-- Fornece recomendações
+### ⚖️ Camada Ética
+- **Validador Ético**: Avalia decisões e ações contra princípios éticos
+- **Monitor de Impacto**: Analisa consequências de mudanças
+- **Auditoria**: Mantém registros de validações e violações
 
-### 3. Gerador de Ações (`src/gerador/`)
-- Cria planos de ação
-- Prioriza ações
-- Executa correções
-- Avalia resultados
-
-### 4. Guardião Cognitivo (`src/guardiaoCognitivo/`)
-- Monitora saúde cognitiva
-- Implementa salvaguardas
-- Ativa protocolos de emergência
-- Mantém estabilidade
-
-### 5. Observabilidade (`src/observabilidade/`)
-- Fornece dashboard
-- Visualiza métricas
-- Projeta tendências
-- Notifica mudanças
-
-### 6. Orquestração (`src/kubernetes/`)
-- Gerencia infraestrutura
-- Implementa auto-scaling
-- Realiza auto-healing
-- Distribui carga
-
-### 7. Ética (`src/etica/`)
-- Valida decisões
-- Garante conformidade
-- Monitora impactos
-- Gera relatórios
-
-### 8. Memória (`src/memoria/`)
-- Armazena informações
-- Recupera dados
-- Mantém cache
-- Gera estatísticas
+### 🔄 Camada de Autocura
+- **Gerador de Ações**: Cria e executa ações corretivas
+- **Monitor de Saúde**: Verifica métricas de desempenho
+- **Sistema de Aprendizado**: Coleta e analisa padrões
 
 ## 🚀 Instalação
 
@@ -94,70 +51,64 @@ cp .env.example .env
 # Edite o arquivo .env com suas configurações
 ```
 
-## 💻 Uso
+## 🛠️ Uso
 
 1. Inicie o sistema:
 ```bash
-python src/main.py
+python src/core/orquestrador.py
 ```
 
-2. Acesse o dashboard:
-```
-http://localhost:8000
+2. Acesse a API:
+```bash
+curl http://localhost:8000/api/v1/status
 ```
 
 3. Monitore o sistema:
-```
-http://localhost:8000/metrics
-```
-
-4. Consulte a API:
-```
-http://localhost:8000/docs
-```
-
-## 🧪 Testes
-
-Execute os testes:
 ```bash
-pytest
+# Acesse o dashboard em http://localhost:3000
 ```
 
-Gere relatório de cobertura:
-```bash
-pytest --cov=src tests/
-```
+## 📊 Monitoramento
 
-## 📚 Documentação
+O sistema inclui integração com:
+- Prometheus para métricas
+- Grafana para visualização
+- Elasticsearch para logs
+- OpenTelemetry para rastreamento
+
+## 🔒 Segurança
+
+- Autenticação JWT
+- Criptografia de dados sensíveis
+- Validação de entrada
+- Rate limiting
+- Logs de auditoria
+
+## 📝 Documentação
 
 A documentação completa está disponível em:
-```
-http://localhost:8000/docs
-```
-
-Para gerar a documentação localmente:
 ```bash
 mkdocs serve
 ```
 
 ## 🤝 Contribuindo
 
-1. Faça um fork do projeto
+1. Fork o projeto
 2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
 3. Commit suas mudanças (`git commit -am 'Adiciona nova feature'`)
 4. Push para a branch (`git push origin feature/nova-feature`)
 5. Crie um Pull Request
 
-## 📝 Licença
+## 📄 Licença
 
 Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
 
+## 🎓 Autores
+
+- Seu Nome - [@seu-usuario](https://github.com/seu-usuario)
+
 ## 🙏 Agradecimentos
 
-- Equipe de desenvolvimento
-- Contribuidores
+- Todos os contribuidores
 - Comunidade open source
-
-## 📞 Suporte
-
-Para suporte, envie um email para suporte@autocura.com ou abra uma issue no GitHub. 
+- Projetos inspiradores 

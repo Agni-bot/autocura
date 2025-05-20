@@ -6,20 +6,29 @@ Implementação do gerador de ações do sistema.
 import asyncio
 import logging
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from pathlib import Path
 import json
 import random
 
+from ..memoria.gerenciador_memoria import GerenciadorMemoria
+from ..etica.validador_etico import ValidadorEtico
+
 # Configuração de logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("gerador_acoes")
 
 class GeradorAcoes:
-    def __init__(self):
+    """Gerador de Ações - Responsável pela geração e execução de ações do sistema"""
+    
+    def __init__(self, gerenciador_memoria: GerenciadorMemoria, validador_etico: ValidadorEtico):
+        self.gerenciador_memoria = gerenciador_memoria
+        self.validador_etico = validador_etico
+        self.acoes_pendentes = []
+        self.acoes_executadas = []
         self.base_dir = Path(__file__).parent.parent.parent
         self.memoria_path = self.base_dir / 'memoria' / 'memoria_compartilhada.json'
         self.estado: Dict[str, Any] = {
@@ -100,6 +109,7 @@ class GeradorAcoes:
                 }
             ]
         }
+        logger.info("Gerador de Ações inicializado")
     
     async def carregar_memoria(self):
         """Carrega o estado atual da memória compartilhada."""
@@ -283,10 +293,243 @@ class GeradorAcoes:
             except Exception as e:
                 logger.error(f"Erro no ciclo contínuo de geração: {str(e)}")
                 await asyncio.sleep(intervalo)  # Aguarda antes de tentar novamente
+    
+    def gerar_acao(self, contexto: Dict[str, Any]) -> Dict[str, Any]:
+        """Gera uma nova ação baseada no contexto"""
+        # Analisar contexto
+        tipo_acao = self._determinar_tipo_acao(contexto)
+        prioridade = self._calcular_prioridade(contexto)
+        
+        # Criar ação
+        acao = {
+            "id": f"acao_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            "tipo": tipo_acao,
+            "prioridade": prioridade,
+            "contexto": contexto,
+            "estado": "pendente",
+            "timestamp_criacao": datetime.now().isoformat(),
+            "dependencias": self._identificar_dependencias(contexto),
+            "recursos_necessarios": self._calcular_recursos(contexto),
+            "estimativa_duracao": self._estimar_duracao(contexto),
+            "riscos": self._avaliar_riscos(contexto)
+        }
+        
+        # Validar ação
+        validacao = self.validador_etico.validar_acao(acao)
+        if not validacao["aprovada"]:
+            logger.warning(f"Ação {acao['id']} não aprovada pela validação ética")
+            acao["estado"] = "rejeitada"
+            acao["motivo_rejeicao"] = "falha_validacao_etica"
+        else:
+            self.acoes_pendentes.append(acao)
+            logger.info(f"Nova ação gerada: {acao['id']}")
+        
+        # Registrar ação
+        self.gerenciador_memoria.registrar_acao(acao)
+        
+        return acao
+    
+    def _determinar_tipo_acao(self, contexto: Dict[str, Any]) -> str:
+        """Determina o tipo de ação baseado no contexto"""
+        if contexto.get("tipo") == "correcao":
+            return "hotfix"
+        elif contexto.get("tipo") == "melhoria":
+            return "refatoracao"
+        elif contexto.get("tipo") == "evolucao":
+            return "redesign"
+        else:
+            return "manutencao"
+    
+    def _calcular_prioridade(self, contexto: Dict[str, Any]) -> int:
+        """Calcula a prioridade da ação (1-5)"""
+        fatores = {
+            "impacto": contexto.get("impacto", 1),
+            "urgencia": contexto.get("urgencia", 1),
+            "complexidade": contexto.get("complexidade", 1)
+        }
+        
+        # Fórmula de prioridade: (impacto * urgencia) / complexidade
+        prioridade = (fatores["impacto"] * fatores["urgencia"]) / fatores["complexidade"]
+        
+        # Normalizar para escala 1-5
+        return min(max(round(prioridade), 1), 5)
+    
+    def _identificar_dependencias(self, contexto: Dict[str, Any]) -> List[str]:
+        """Identifica dependências da ação"""
+        return contexto.get("dependencias", [])
+    
+    def _calcular_recursos(self, contexto: Dict[str, Any]) -> Dict[str, Any]:
+        """Calcula recursos necessários para a ação"""
+        return {
+            "cpu": contexto.get("recursos_cpu", 1),
+            "memoria": contexto.get("recursos_memoria", 1),
+            "armazenamento": contexto.get("recursos_armazenamento", 1),
+            "rede": contexto.get("recursos_rede", 1)
+        }
+    
+    def _estimar_duracao(self, contexto: Dict[str, Any]) -> int:
+        """Estima a duração da ação em minutos"""
+        complexidade = contexto.get("complexidade", 1)
+        return complexidade * 30  # 30 minutos por nível de complexidade
+    
+    def _avaliar_riscos(self, contexto: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Avalia os riscos associados à ação"""
+        riscos = []
+        
+        # Risco de falha
+        if contexto.get("complexidade", 1) > 3:
+            riscos.append({
+                "tipo": "falha",
+                "nivel": "alto",
+                "descricao": "Alta complexidade pode levar a falhas"
+            })
+        
+        # Risco de impacto
+        if contexto.get("impacto", 1) > 3:
+            riscos.append({
+                "tipo": "impacto",
+                "nivel": "alto",
+                "descricao": "Alto impacto em caso de falha"
+            })
+        
+        # Risco de dependência
+        if len(contexto.get("dependencias", [])) > 2:
+            riscos.append({
+                "tipo": "dependencia",
+                "nivel": "medio",
+                "descricao": "Múltiplas dependências podem causar atrasos"
+            })
+        
+        return riscos
+    
+    def executar_acao(self, acao_id: str) -> Dict[str, Any]:
+        """Executa uma ação pendente"""
+        # Encontrar ação
+        acao = next((a for a in self.acoes_pendentes if a["id"] == acao_id), None)
+        if not acao:
+            raise ValueError(f"Ação {acao_id} não encontrada")
+        
+        # Verificar dependências
+        if not self._verificar_dependencias(acao):
+            logger.warning(f"Ação {acao_id} não pode ser executada: dependências não atendidas")
+            return acao
+        
+        # Atualizar estado
+        acao["estado"] = "em_execucao"
+        acao["timestamp_inicio"] = datetime.now().isoformat()
+        
+        try:
+            # Executar ação
+            resultado = self._executar_acao_especifica(acao)
+            
+            # Atualizar estado
+            acao["estado"] = "concluida"
+            acao["timestamp_fim"] = datetime.now().isoformat()
+            acao["resultado"] = resultado
+            
+            # Registrar sucesso
+            logger.info(f"Ação {acao_id} executada com sucesso")
+            
+        except Exception as e:
+            # Registrar falha
+            acao["estado"] = "falha"
+            acao["timestamp_fim"] = datetime.now().isoformat()
+            acao["erro"] = str(e)
+            logger.error(f"Falha na execução da ação {acao_id}: {str(e)}")
+        
+        # Atualizar memória
+        self.gerenciador_memoria.registrar_acao(acao)
+        
+        # Remover da lista de pendentes
+        self.acoes_pendentes.remove(acao)
+        self.acoes_executadas.append(acao)
+        
+        return acao
+    
+    def _verificar_dependencias(self, acao: Dict[str, Any]) -> bool:
+        """Verifica se todas as dependências da ação foram atendidas"""
+        for dep_id in acao["dependencias"]:
+            dep = next((a for a in self.acoes_executadas if a["id"] == dep_id), None)
+            if not dep or dep["estado"] != "concluida":
+                return False
+        return True
+    
+    def _executar_acao_especifica(self, acao: Dict[str, Any]) -> Dict[str, Any]:
+        """Executa uma ação específica baseada em seu tipo"""
+        tipo_acao = acao["tipo"]
+        
+        if tipo_acao == "hotfix":
+            return self._executar_hotfix(acao)
+        elif tipo_acao == "refatoracao":
+            return self._executar_refatoracao(acao)
+        elif tipo_acao == "redesign":
+            return self._executar_redesign(acao)
+        else:
+            return self._executar_manutencao(acao)
+    
+    def _executar_hotfix(self, acao: Dict[str, Any]) -> Dict[str, Any]:
+        """Executa uma ação do tipo hotfix"""
+        # Implementação específica para hotfix
+        return {
+            "tipo": "hotfix",
+            "status": "sucesso",
+            "alteracoes": acao["contexto"].get("alteracoes", [])
+        }
+    
+    def _executar_refatoracao(self, acao: Dict[str, Any]) -> Dict[str, Any]:
+        """Executa uma ação do tipo refatoração"""
+        # Implementação específica para refatoração
+        return {
+            "tipo": "refatoracao",
+            "status": "sucesso",
+            "melhorias": acao["contexto"].get("melhorias", [])
+        }
+    
+    def _executar_redesign(self, acao: Dict[str, Any]) -> Dict[str, Any]:
+        """Executa uma ação do tipo redesign"""
+        # Implementação específica para redesign
+        return {
+            "tipo": "redesign",
+            "status": "sucesso",
+            "evolucoes": acao["contexto"].get("evolucoes", [])
+        }
+    
+    def _executar_manutencao(self, acao: Dict[str, Any]) -> Dict[str, Any]:
+        """Executa uma ação do tipo manutenção"""
+        # Implementação específica para manutenção
+        return {
+            "tipo": "manutencao",
+            "status": "sucesso",
+            "tarefas": acao["contexto"].get("tarefas", [])
+        }
+    
+    def obter_acoes_pendentes(self) -> List[Dict[str, Any]]:
+        """Retorna a lista de ações pendentes"""
+        return self.acoes_pendentes
+    
+    def obter_acoes_executadas(self) -> List[Dict[str, Any]]:
+        """Retorna a lista de ações executadas"""
+        return self.acoes_executadas
+    
+    def obter_estatisticas(self) -> Dict[str, Any]:
+        """Retorna estatísticas sobre as ações"""
+        total_acoes = len(self.acoes_executadas)
+        acoes_sucesso = sum(1 for a in self.acoes_executadas if a["estado"] == "concluida")
+        acoes_falha = sum(1 for a in self.acoes_executadas if a["estado"] == "falha")
+        
+        return {
+            "total_acoes": total_acoes,
+            "acoes_sucesso": acoes_sucesso,
+            "acoes_falha": acoes_falha,
+            "taxa_sucesso": acoes_sucesso / total_acoes if total_acoes > 0 else 0,
+            "acoes_pendentes": len(self.acoes_pendentes)
+        }
 
 async def main():
     """Função principal."""
-    gerador = GeradorAcoes()
+    gerenciador_memoria = GerenciadorMemoria()
+    validador_etico = ValidadorEtico()
+    gerador = GeradorAcoes(gerenciador_memoria, validador_etico)
     await gerador.executar_continuamente()
 
 if __name__ == '__main__':

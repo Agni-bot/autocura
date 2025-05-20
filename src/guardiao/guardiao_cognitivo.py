@@ -12,6 +12,10 @@ import numpy as np
 import requests
 import flask
 from kubernetes import client, config # Adicionado para interagir com Kubernetes
+from datetime import datetime
+from pathlib import Path
+
+from ..memoria.gerenciador_memoria import GerenciadorMemoria
 
 # Configuração de logging
 logging.basicConfig(
@@ -81,7 +85,12 @@ CONFIG_GUARDIAN = {
 }
 
 class GuardiaoCognitivo:
-    def __init__(self):
+    """Guardião Cognitivo - Responsável pelo monitoramento de saúde e salvaguardas do sistema"""
+    
+    def __init__(self, gerenciador_memoria: GerenciadorMemoria):
+        self.gerenciador_memoria = gerenciador_memoria
+        self.alertas_ativos = []
+        self.incidentes = []
         self.historico_diagnosticos = deque(maxlen=CONFIG_GUARDIAN["historico_diagnosticos_max_tamanho"])
         self.historico_planos_acao = deque(maxlen=CONFIG_GUARDIAN["historico_planos_acao_max_tamanho"])
         self.lock = threading.Lock()
@@ -300,6 +309,162 @@ class GuardiaoCognitivo:
                     return
             self.historico_planos_acao.append(plano)
         logger.debug(f"Novo plano de ação registrado no Guardião: {plano.id}")
+
+    def monitorar_saude_sistema(self) -> Dict[str, Any]:
+        """Monitora a saúde geral do sistema"""
+        estado = self.gerenciador_memoria.obter_estado_sistema()
+        metricas = estado.get("metricas_desempenho", {})
+        
+        # Análise de métricas críticas
+        alertas = []
+        if metricas.get("cpu_uso", 0) > 90:
+            alertas.append({
+                "tipo": "critico",
+                "componente": "cpu",
+                "mensagem": "Uso de CPU acima do limite",
+                "valor": metricas["cpu_uso"]
+            })
+        
+        if metricas.get("memoria_uso", 0) > 85:
+            alertas.append({
+                "tipo": "critico",
+                "componente": "memoria",
+                "mensagem": "Uso de memória acima do limite",
+                "valor": metricas["memoria_uso"]
+            })
+        
+        if metricas.get("latencia", 0) > 1000:
+            alertas.append({
+                "tipo": "critico",
+                "componente": "latencia",
+                "mensagem": "Latência acima do limite",
+                "valor": metricas["latencia"]
+            })
+        
+        # Atualizar estado do sistema
+        if alertas:
+            self.gerenciador_memoria.atualizar_estado_sistema({
+                "alertas_ativos": alertas,
+                "status": "alerta"
+            })
+        
+        return {
+            "status": "alerta" if alertas else "normal",
+            "alertas": alertas,
+            "metricas": metricas
+        }
+    
+    def verificar_integridade_etica(self) -> Dict[str, Any]:
+        """Verifica a integridade ética do sistema"""
+        validacoes = self.gerenciador_memoria.obter_validacoes_eticas()
+        violacoes = []
+        
+        for validacao in validacoes:
+            if not validacao.get("aprovada", False):
+                violacoes.append({
+                    "tipo": "violacao_etica",
+                    "componente": validacao.get("componente"),
+                    "mensagem": validacao.get("mensagem"),
+                    "timestamp": validacao.get("timestamp")
+                })
+        
+        if violacoes:
+            self.gerenciador_memoria.atualizar_estado_sistema({
+                "status": "violacao_etica",
+                "incidentes": violacoes
+            })
+        
+        return {
+            "status": "violacao" if violacoes else "normal",
+            "violacoes": violacoes
+        }
+    
+    def verificar_autonomia(self) -> Dict[str, Any]:
+        """Verifica o estado atual de autonomia do sistema"""
+        estado = self.gerenciador_memoria.obter_estado_sistema()
+        nivel_atual = estado.get("nivel_autonomia", 1)
+        transicoes = self.gerenciador_memoria.obter_transicoes_autonomia()
+        
+        # Verificar se há transições pendentes
+        transicoes_pendentes = [
+            t for t in transicoes
+            if t.get("estado") == "pendente"
+        ]
+        
+        if transicoes_pendentes:
+            self.gerenciador_memoria.atualizar_estado_sistema({
+                "status": "transicao_pendente",
+                "transicao_atual": transicoes_pendentes[0]
+            })
+        
+        return {
+            "nivel_atual": nivel_atual,
+            "transicoes_pendentes": transicoes_pendentes
+        }
+    
+    def aplicar_salvaguardas(self, incidente: Dict[str, Any]) -> None:
+        """Aplica salvaguardas baseadas no tipo de incidente"""
+        tipo_incidente = incidente.get("tipo")
+        
+        if tipo_incidente == "critico":
+            # Reduzir autonomia para nível mínimo
+            self.gerenciador_memoria.atualizar_estado_sistema({
+                "nivel_autonomia": 1,
+                "status": "emergencia"
+            })
+            logger.warning("Autonomia reduzida para nível mínimo devido a incidente crítico")
+        
+        elif tipo_incidente == "violacao_etica":
+            # Suspender operações autônomas
+            self.gerenciador_memoria.atualizar_estado_sistema({
+                "status": "suspenso",
+                "motivo": "violacao_etica"
+            })
+            logger.warning("Operações suspensas devido a violação ética")
+        
+        # Registrar incidente
+        self.gerenciador_memoria.registrar_acao({
+            "tipo": "salvaguarda",
+            "incidente": incidente,
+            "acao": "aplicada",
+            "timestamp": datetime.now().isoformat()
+        })
+    
+    def verificar_aprendizado(self) -> Dict[str, Any]:
+        """Verifica o estado do aprendizado do sistema"""
+        aprendizados = self.gerenciador_memoria.obter_aprendizados_recentes()
+        
+        # Análise de padrões de aprendizado
+        padroes = []
+        for aprendizado in aprendizados:
+            if aprendizado.get("tipo") == "padrao":
+                padroes.append(aprendizado)
+        
+        return {
+            "total_aprendizados": len(aprendizados),
+            "padroes_detectados": len(padroes),
+            "ultimo_aprendizado": aprendizados[-1] if aprendizados else None
+        }
+    
+    def executar_ciclo_monitoramento(self) -> Dict[str, Any]:
+        """Executa um ciclo completo de monitoramento"""
+        resultados = {
+            "saude": self.monitorar_saude_sistema(),
+            "etica": self.verificar_integridade_etica(),
+            "autonomia": self.verificar_autonomia(),
+            "aprendizado": self.verificar_aprendizado()
+        }
+        
+        # Verificar necessidade de salvaguardas
+        if resultados["saude"]["status"] == "alerta":
+            for alerta in resultados["saude"]["alertas"]:
+                self.aplicar_salvaguardas(alerta)
+        
+        if resultados["etica"]["status"] == "violacao":
+            for violacao in resultados["etica"]["violacoes"]:
+                self.aplicar_salvaguardas(violacao)
+        
+        return resultados
 
 app = flask.Flask(__name__)
 guardiao_singleton = GuardiaoCognitivo()

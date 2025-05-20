@@ -3,11 +3,46 @@
   "estado_sistema": {
     "versao": "1.0.0",
     "modulos_ativos": [],
-    "ultima_atualizacao": "2025-05-20T00:00:00"
+    "ultima_atualizacao": "2025-05-20T00:00:00",
+    "nivel_autonomia": 1,
+    "status": "inicializado",
+    "metricas_desempenho": {},
+    "alertas_ativos": [],
+    "incidentes": []
   },
   "log_eventos": [],
   "parametros_gerais": {
     "modo_diagnostico": true,
     "limite_agentes": 10
+  },
+  "memoria_operacional": {
+    "decisoes": [],
+    "acoes": [],
+    "validacoes": [],
+    "auditorias": []
+  },
+  "memoria_etica": {
+    "principios": [],
+    "violacoes": [],
+    "ajustes": [],
+    "relatorios": []
+  },
+  "memoria_tecnica": {
+    "configuracoes": {},
+    "dependencias": {},
+    "logs": [],
+    "metricas": {}
+  },
+  "memoria_cognitiva": {
+    "aprendizados": [],
+    "padroes": [],
+    "heuristicas": [],
+    "adaptacoes": []
+  },
+  "memoria_autonomia": {
+    "transicoes": [],
+    "niveis": {},
+    "criterios": {},
+    "validacoes": []
   }
 }
