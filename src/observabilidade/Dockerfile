@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
 # Copy requirements first for better caching
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir gunicorn && \
+    pip install --no-cache-dir uvicorn && \
     pip install --no-cache-dir -r requirements.txt
 
 # Final stage
@@ -36,10 +36,11 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Configura o ambiente Python
 ENV PYTHONUNBUFFERED=1
-ENV FLASK_APP=app.py
-ENV FLASK_RUN_HOST=0.0.0.0
 ENV LOG_LEVEL=INFO
 ENV LOG_FILE=/app/logs/observabilidade.log
+ENV MONITORAMENTO_URL=http://monitoramento:8081
+ENV DIAGNOSTICO_URL=http://diagnostico:5002
+ENV GERADOR_URL=http://gerador:5003
 
 # Copy application code
 COPY . .
@@ -61,5 +62,5 @@ EXPOSE 5003
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5003/health || exit 1
 
-# Command to run the application using Gunicorn
-CMD ["gunicorn", "--workers", "4", "--bind", "0.0.0.0:5003", "--access-logfile", "-", "app:app"]
+# Command to run the application using Uvicorn
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "5003", "--reload"]

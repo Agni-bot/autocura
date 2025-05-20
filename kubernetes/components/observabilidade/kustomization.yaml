@@ -20,6 +20,8 @@ resources:
   - ingress.yaml
   - prometheus-server-pvc.yaml
   - storage-prometheus-alertmanager-0.yaml
+  - grafana-serviceaccount.yaml
+  - autocura-sa.yaml
 
 labels:
 - pairs:
