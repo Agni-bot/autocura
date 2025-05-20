@@ -1,31 +1,17 @@
-# Sistema de Autocura Cognitiva
+# Sistema Autocura
 
-Sistema de Inteligência Artificial com capacidade de autocura e evolução contínua, baseado em princípios éticos e salvaguardas de segurança.
-
-## 🎯 Visão Geral
-
-O Sistema de Autocura Cognitiva é uma arquitetura avançada que combina monitoramento contínuo, validação ética, geração de ações e salvaguardas de segurança para criar um sistema de IA que pode se adaptar, corrigir e evoluir de forma segura e ética.
-
-## 🏗️ Arquitetura
-
-O sistema é composto por vários módulos principais:
-
-### 🧠 Núcleo Cognitivo
-- **Orquestrador**: Coordena todos os componentes do sistema
-- **Memória Compartilhada**: Gerencia o estado global e histórico do sistema
-- **Guardião Cognitivo**: Monitora a saúde e aplica salvaguardas
-
-### ⚖️ Camada Ética
-- **Validador Ético**: Avalia decisões e ações contra princípios éticos
-- **Monitor de Impacto**: Analisa consequências de mudanças
-- **Auditoria**: Mantém registros de validações e violações
-
-### 🔄 Camada de Autocura
-- **Gerador de Ações**: Cria e executa ações corretivas
-- **Monitor de Saúde**: Verifica métricas de desempenho
-- **Sistema de Aprendizado**: Coleta e analisa padrões
+Sistema de Inteligência Artificial com capacidades de autocura e evolução contínua.
 
 ## 🚀 Instalação
+
+### Pré-requisitos
+
+- Python 3.8+
+- Docker e Docker Compose
+- PowerShell (Windows) ou Bash (Linux/macOS)
+- Git
+
+### Instalação Local
 
 1. Clone o repositório:
 ```bash
@@ -33,82 +19,99 @@ git clone https://github.com/seu-usuario/autocura.git
 cd autocura
 ```
 
-2. Crie um ambiente virtual:
-```bash
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
+2. Instale as dependências:
+```powershell
+# Windows (PowerShell)
+.\scripts\autocura.ps1 -Action install
+
+# Linux/macOS (Bash)
+./scripts/autocura.sh install
 ```
 
-3. Instale as dependências:
-```bash
-pip install -r requirements.txt
-```
-
-4. Configure as variáveis de ambiente:
+3. Configure as variáveis de ambiente:
 ```bash
 cp .env.example .env
 # Edite o arquivo .env com suas configurações
 ```
 
+### Instalação via Docker
+
+```bash
+docker-compose up -d
+```
+
 ## 🛠️ Uso
 
-1. Inicie o sistema:
-```bash
-python src/core/orquestrador.py
+### Comandos Básicos
+
+```powershell
+# Windows (PowerShell)
+.\scripts\autocura.ps1 -Action <ação>
+
+# Linux/macOS (Bash)
+./scripts/autocura.sh <ação>
 ```
 
-2. Acesse a API:
-```bash
-curl http://localhost:8000/api/v1/status
-```
+Ações disponíveis:
+- `install`: Instala dependências
+- `test`: Executa testes
+- `lint`: Verifica código
+- `build`: Constrói imagens Docker
+- `clean`: Limpa arquivos temporários
+- `monitor`: Inicia monitoramento
+- `backup`: Realiza backup
+- `restore`: Restaura backup
 
-3. Monitore o sistema:
-```bash
-# Acesse o dashboard em http://localhost:3000
-```
-
-## 📊 Monitoramento
+### Monitoramento
 
 O sistema inclui integração com:
-- Prometheus para métricas
-- Grafana para visualização
-- Elasticsearch para logs
-- OpenTelemetry para rastreamento
+- Prometheus (métricas)
+- Grafana (visualização)
+- Logs estruturados
+
+Acesse:
+- Grafana: http://localhost:3000
+- Prometheus: http://localhost:9090
+
+## 🧪 Testes
+
+```bash
+# Executar todos os testes
+pytest
+
+# Executar com cobertura
+pytest --cov=src tests/ --cov-report=html
+```
+
+## 📚 Documentação
+
+A documentação completa está disponível em:
+- [Arquitetura](docs/arquitetura_integrada.txt)
+- [Módulos](docs/modulos_funcionais.md)
+- [Ética](docs/detalhamento_modulos_eticos.md)
+- [Interfaces](docs/interfaces_tecnologias.md)
 
 ## 🔒 Segurança
 
-- Autenticação JWT
-- Criptografia de dados sensíveis
-- Validação de entrada
-- Rate limiting
-- Logs de auditoria
-
-## 📝 Documentação
-
-A documentação completa está disponível em:
-```bash
-mkdocs serve
-```
+O sistema implementa:
+- Validação de entrada/saída
+- Logging seguro
+- Anonimização de dados
+- Controle de acesso
+- Criptografia em trânsito e repouso
 
 ## 🤝 Contribuindo
 
 1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
+2. Crie sua branch (`git checkout -b feature/nova-feature`)
 3. Commit suas mudanças (`git commit -am 'Adiciona nova feature'`)
 4. Push para a branch (`git push origin feature/nova-feature`)
 5. Crie um Pull Request
 
-## 📄 Licença
+## 📝 Licença
 
 Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
 
-## 🎓 Autores
+## 🆘 Suporte
 
-- Seu Nome - [@seu-usuario](https://github.com/seu-usuario)
-
-## 🙏 Agradecimentos
-
-- Todos os contribuidores
-- Comunidade open source
-- Projetos inspiradores 
+Para suporte, abra uma issue no GitHub ou contate a equipe de desenvolvimento. 

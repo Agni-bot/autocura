@@ -1,125 +1,120 @@
 version: '3.8'
 
 services:
-  # Serviço de Autocorreção
-  autocorrection:
+  autocura:
     build:
       context: .
-      dockerfile: src/autocorrection/Dockerfile
+      dockerfile: Dockerfile
     ports:
-      - "5000:5000"
-    volumes:
-      - ./logs:/app/logs
-      - ./config:/app/config
+      - "8000:8000"
     environment:
-      - PYTHONPATH=/app
-      - LOG_LEVEL=INFO
+      - ENVIRONMENT=development
+      - LOG_LEVEL=DEBUG
+      - PROMETHEUS_MULTIPROC_DIR=/tmp
+    volumes:
+      - ./src:/app/src
+      - ./config:/app/config
+      - ./data:/app/data
+      - ./logs:/app/logs
     depends_on:
-      - diagnostico
-      - gerador_acoes
+      - prometheus
+      - grafana
     networks:
-      - autocura_network
+      - autocura-network
 
-  # Serviço de Diagnóstico
-  diagnostico:
-    build:
-      context: .
-      dockerfile: src/diagnostico/Dockerfile
+  prometheus:
+    image: prom/prometheus:v2.45.0
     ports:
-      - "5001:5001"
+      - "9090:9090"
     volumes:
-      - ./logs:/app/logs
-      - ./config:/app/config
-    environment:
-      - PYTHONPATH=/app
-      - LOG_LEVEL=INFO
+      - ./prometheus:/etc/prometheus
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
     networks:
-      - autocura_network
+      - autocura-network
 
-  # Serviço Gerador de Ações
-  gerador_acoes:
-    build:
-      context: .
-      dockerfile: src/GeradorAcoes/Dockerfile
+  alertmanager:
+    image: prom/alertmanager:v0.25.0
     ports:
-      - "5002:5002"
+      - "9093:9093"
     volumes:
-      - ./logs:/app/logs
-      - ./config:/app/config
-    environment:
-      - PYTHONPATH=/app
-      - LOG_LEVEL=INFO
+      - ./prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
     networks:
-      - autocura_network
+      - autocura-network
 
-  # Serviço de Monitoramento
-  monitoramento:
-    build:
-      context: .
-      dockerfile: src/monitoramento/Dockerfile
+  grafana:
+    image: grafana/grafana:10.0.0
     ports:
-      - "5003:5003"
+      - "3000:3000"
     volumes:
-      - ./logs:/app/logs
-      - ./config:/app/config
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
     environment:
-      - PYTHONPATH=/app
-      - LOG_LEVEL=INFO
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
     networks:
-      - autocura_network
+      - autocura-network
 
-  # Serviço de Observabilidade
-  observabilidade:
-    build:
-      context: .
-      dockerfile: src/observabilidade/Dockerfile
+  node-exporter:
+    image: prom/node-exporter:v1.6.0
     ports:
-      - "5004:5004"
+      - "9100:9100"
     volumes:
-      - ./logs:/app/logs
-      - ./config:/app/config
-    environment:
-      - PYTHONPATH=/app
-      - LOG_LEVEL=INFO
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
     networks:
-      - autocura_network
+      - autocura-network
 
-  # Serviço de Portal
-  portal:
-    build:
-      context: .
-      dockerfile: src/portal/Dockerfile
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.0
     ports:
-      - "5005:5005"
+      - "8080:8080"
     volumes:
-      - ./logs:/app/logs
-      - ./config:/app/config
-    environment:
-      - PYTHONPATH=/app
-      - LOG_LEVEL=INFO
-    depends_on:
-      - autocorrection
-      - diagnostico
-      - gerador_acoes
-      - monitoramento
-      - observabilidade
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
     networks:
-      - autocura_network
+      - autocura-network
 
-networks:
-  autocura_network:
-    driver: bridge
+  loki:
+    image: grafana/loki:2.8.0
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki:/etc/loki
+      - loki-data:/loki
+    networks:
+      - autocura-network
+
+  promtail:
+    image: grafana/promtail:2.8.0
+    volumes:
+      - ./logs:/var/log
+      - ./promtail:/etc/promtail
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - autocura-network
 
 volumes:
-  will_data:
-  diagnostico_data:
-  gerador_acoes_data:
-  observabilidade_data:
-  monitoramento_data:
-  executor_data:
-  guardiao_cognitivo_data:
+  prometheus-data:
+  grafana-data:
+  loki-data:
 
-  redis_data:
-  postgres_data:
-  prometheus_data:
-  grafana_data: 
+networks:
+  autocura-network:
+    driver: bridge 

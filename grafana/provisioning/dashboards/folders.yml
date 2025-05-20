@@ -1,0 +1,7 @@
+apiVersion: 1
+
+folders:
+  - id: 1
+    title: Autocura
+    uid: autocura
+    url: /dashboards/f/autocura/autocura 

@@ -1,24 +1,9 @@
 """
-Módulo de Monitoramento
-
-Este módulo é responsável por coletar e analisar métricas do sistema.
-Ele integra:
-1. Coleta de métricas
-2. Análise estatística
-3. Geração de alertas
-4. Armazenamento de dados
+Módulo de monitoramento do sistema de autocura.
+Responsável pela coleta e análise de métricas do sistema.
 """
 
-from .monitoramento import (
-    ColetorMetricas,
-    AnalisadorMetricas,
-    GeradorAlertas,
-    MetricaDimensional
-)
+from .metricas import MetricasSistema, MonitoramentoMultidimensional
 
-__all__ = [
-    'ColetorMetricas',
-    'AnalisadorMetricas',
-    'GeradorAlertas',
-    'MetricaDimensional'
-] 
+__all__ = ['MetricasSistema', 'MonitoramentoMultidimensional']
+__version__ = "0.1.0" 

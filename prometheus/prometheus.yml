@@ -1,16 +1,16 @@
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
+  scrape_timeout: 10s
 
 alerting:
   alertmanagers:
     - static_configs:
         - targets:
-          # - alertmanager:9093
+          - alertmanager:9093
 
 rule_files:
-  # - "first_rules.yml"
-  # - "second_rules.yml"
+  - "rules/*.yml"
 
 scrape_configs:
   - job_name: "prometheus"
@@ -18,8 +18,14 @@ scrape_configs:
       - targets: ["localhost:9090"]
 
   - job_name: "autocura"
+    metrics_path: "/metrics"
     static_configs:
-      - targets: ["api:8000", "monitor:9090", "observador:8080"]
+      - targets: ["autocura:8000"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: "(.*):.*"
+        replacement: "$1"
 
   - job_name: "node-exporter"
     static_configs:
@@ -27,4 +33,8 @@ scrape_configs:
 
   - job_name: "cadvisor"
     static_configs:
-      - targets: ["cadvisor:8080"] 
+      - targets: ["cadvisor:8080"]
+
+  - job_name: "grafana"
+    static_configs:
+      - targets: ["grafana:3000"] 
