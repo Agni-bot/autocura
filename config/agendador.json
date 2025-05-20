@@ -1,0 +1,33 @@
+{
+    "tarefas": {
+        "coleta_metricas": {
+            "intervalo": 60,
+            "horario_inicio": "00:00",
+            "horario_fim": "23:59",
+            "dias_semana": [1, 2, 3, 4, 5, 6, 7],
+            "timezone": "America/Sao_Paulo"
+        },
+        "diagnostico": {
+            "intervalo": 300,
+            "horario_inicio": "00:00",
+            "horario_fim": "23:59",
+            "dias_semana": [1, 2, 3, 4, 5, 6, 7],
+            "timezone": "America/Sao_Paulo"
+        },
+        "limpeza_logs": {
+            "intervalo": 86400,
+            "horario_inicio": "00:00",
+            "horario_fim": "23:59",
+            "dias_semana": [1],
+            "timezone": "America/Sao_Paulo"
+        }
+    },
+    "configuracoes": {
+        "max_tarefas_concorrentes": 5,
+        "timeout_tarefa": 300,
+        "retry": {
+            "max_tentativas": 3,
+            "intervalo_entre_tentativas": 60
+        }
+    }
+} 

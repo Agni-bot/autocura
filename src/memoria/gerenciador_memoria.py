@@ -44,7 +44,10 @@ class GerenciadorMemoria:
                 "decisoes": [],
                 "acoes": [],
                 "validacoes": [],
-                "auditorias": []
+                "auditorias": [],
+                "diagnosticos": [],
+                "correcoes": [],
+                "anomalias": []
             },
             "memoria_etica": {
                 "principios": [],
@@ -136,6 +139,42 @@ class GerenciadorMemoria:
         self._salvar_memoria(self.memoria)
         logger.info("Nova transição de autonomia registrada")
     
+    def registrar_diagnostico(self, diagnostico: Dict[str, Any]) -> None:
+        """Registra um novo diagnóstico do sistema"""
+        if "diagnosticos" not in self.memoria["memoria_operacional"]:
+            self.memoria["memoria_operacional"]["diagnosticos"] = []
+        
+        self.memoria["memoria_operacional"]["diagnosticos"].append({
+            **diagnostico,
+            "timestamp": datetime.now().isoformat()
+        })
+        self._salvar_memoria(self.memoria)
+        logger.info("Novo diagnóstico registrado")
+
+    def registrar_correcao(self, correcao: Dict[str, Any]) -> None:
+        """Registra uma nova correção automática"""
+        if "correcoes" not in self.memoria["memoria_operacional"]:
+            self.memoria["memoria_operacional"]["correcoes"] = []
+        
+        self.memoria["memoria_operacional"]["correcoes"].append({
+            **correcao,
+            "timestamp": datetime.now().isoformat()
+        })
+        self._salvar_memoria(self.memoria)
+        logger.info("Nova correção registrada")
+
+    def registrar_anomalia(self, anomalia: Dict[str, Any]) -> None:
+        """Registra uma nova anomalia detectada"""
+        if "anomalias" not in self.memoria["memoria_operacional"]:
+            self.memoria["memoria_operacional"]["anomalias"] = []
+        
+        self.memoria["memoria_operacional"]["anomalias"].append({
+            **anomalia,
+            "timestamp": datetime.now().isoformat()
+        })
+        self._salvar_memoria(self.memoria)
+        logger.info("Nova anomalia registrada")
+
     def obter_estado_sistema(self) -> Dict[str, Any]:
         """Retorna o estado atual do sistema"""
         return self.memoria["estado_sistema"]
@@ -159,6 +198,43 @@ class GerenciadorMemoria:
     def obter_transicoes_autonomia(self, limite: int = 10) -> List[Dict[str, Any]]:
         """Retorna as transições de autonomia mais recentes"""
         return self.memoria["memoria_autonomia"]["transicoes"][-limite:]
+    
+    def obter_diagnosticos_recentes(self, limite: int = 10) -> List[Dict[str, Any]]:
+        """Retorna os diagnósticos mais recentes"""
+        return self.memoria["memoria_operacional"]["diagnosticos"][-limite:]
+    
+    def obter_correcoes_recentes(self, limite: int = 10) -> List[Dict[str, Any]]:
+        """Retorna as correções mais recentes"""
+        return self.memoria["memoria_operacional"]["correcoes"][-limite:]
+    
+    def obter_anomalias_recentes(self, limite: int = 10) -> List[Dict[str, Any]]:
+        """Retorna as anomalias mais recentes"""
+        return self.memoria["memoria_operacional"]["anomalias"][-limite:]
+    
+    def registrar_metricas_desempenho(self, metricas: Dict[str, Any]) -> None:
+        """Registra novas métricas de desempenho"""
+        self.memoria["estado_sistema"]["metricas_desempenho"].update(metricas)
+        self.memoria["estado_sistema"]["ultima_atualizacao"] = datetime.now().isoformat()
+        self._salvar_memoria(self.memoria)
+        logger.info("Métricas de desempenho atualizadas")
+
+    def registrar_alerta(self, alerta: Dict[str, Any]) -> None:
+        """Registra um novo alerta"""
+        self.memoria["estado_sistema"]["alertas_ativos"].append({
+            **alerta,
+            "timestamp": datetime.now().isoformat()
+        })
+        self._salvar_memoria(self.memoria)
+        logger.info("Novo alerta registrado")
+
+    def registrar_incidente(self, incidente: Dict[str, Any]) -> None:
+        """Registra um novo incidente"""
+        self.memoria["estado_sistema"]["incidentes"].append({
+            **incidente,
+            "timestamp": datetime.now().isoformat()
+        })
+        self._salvar_memoria(self.memoria)
+        logger.info("Novo incidente registrado")
     
     def limpar_memoria_antiga(self, dias: int = 30) -> None:
         """Limpa registros antigos da memória"""

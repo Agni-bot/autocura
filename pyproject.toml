@@ -1,0 +1,59 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "autocura"
+version = "0.1.0"
+description = "Sistema de autocura e diagnóstico avançado"
+authors = ["Your Name <your.email@example.com>"]
+readme = "README.md"
+packages = [{include = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+numpy = "^1.21.0"
+scikit-learn = "^1.0.0"
+pandas = "^1.3.0"
+psutil = "^5.8.0"
+python-telegram-bot = "^13.7"
+slack-sdk = "^3.11.0"
+schedule = "^1.1.0"
+pytz = "^2021.1"
+python-dotenv = "^0.19.0"
+requests = "^2.26.0"
+aiohttp = "^3.8.0"
+asyncio = "^3.4.3"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^6.2.5"
+pytest-cov = "^2.12.1"
+black = "^21.7b0"
+flake8 = "^3.9.2"
+mypy = "^0.910"
+isort = "^5.9.3"
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+line_length = 88
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "--cov=src --cov-report=term-missing" 

@@ -1,0 +1,25 @@
+{
+    "configuracoes": {
+        "intervalo_analise": 300,
+        "janela_historico": 86400,
+        "min_amostras": 100,
+        "threshold_anomalia": 0.95
+    },
+    "metricas": {
+        "cpu": ["percent", "load"],
+        "memoria": ["percent", "used"],
+        "disco": ["percent", "io"],
+        "rede": ["bytes", "packets"],
+        "aplicacao": ["latencia", "erros", "requisicoes"]
+    },
+    "correlacao": {
+        "min_correlacao": 0.7,
+        "max_lag": 300,
+        "janela_analise": 3600
+    },
+    "predicao": {
+        "horizonte": 3600,
+        "intervalo_predicao": 300,
+        "min_confianca": 0.8
+    }
+} 

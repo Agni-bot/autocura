@@ -1,0 +1,66 @@
+{
+    "metricas_desempenho": {
+        "latencia_maxima": 200,
+        "cpu_maxima": 80,
+        "memoria_maxima": 80,
+        "erros_maximos": 5,
+        "taxa_requisicoes": 1000,
+        "tempo_resposta_medio": 150,
+        "taxa_cache_hit": 0.8,
+        "taxa_erro": 0.01
+    },
+    "regras_anomalia": {
+        "variacao_latencia": 50,
+        "variacao_cpu": 20,
+        "variacao_memoria": 20,
+        "taxa_erro": 0.01,
+        "variacao_requisicoes": 200,
+        "variacao_tempo_resposta": 30,
+        "variacao_cache_hit": 0.1
+    },
+    "acoes_correcao": {
+        "alta_latencia": [
+            "otimizar_cache",
+            "escalar_horizontal",
+            "otimizar_consultas"
+        ],
+        "alta_cpu": [
+            "otimizar_processamento",
+            "escalar_horizontal",
+            "reduzir_carga"
+        ],
+        "alta_memoria": [
+            "limpar_cache",
+            "escalar_horizontal",
+            "otimizar_alocacao"
+        ],
+        "alta_taxa_erro": [
+            "revisar_logs",
+            "reduzir_carga",
+            "aumentar_timeout"
+        ],
+        "alta_taxa_requisicoes": [
+            "escalar_horizontal",
+            "otimizar_cache",
+            "implementar_rate_limiting"
+        ],
+        "baixa_taxa_cache_hit": [
+            "otimizar_cache",
+            "ajustar_ttl",
+            "revisar_politica_cache"
+        ]
+    },
+    "politicas_autocura": {
+        "max_tentativas_correcao": 3,
+        "intervalo_entre_tentativas": 300,
+        "nivel_autonomia_correcao": 2,
+        "requer_confirmacao_humana": true,
+        "notificar_administrador": true
+    },
+    "limites_seguranca": {
+        "max_acoes_concorrentes": 5,
+        "max_recursos_por_acao": 3,
+        "timeout_acao": 300,
+        "max_rollbacks": 2
+    }
+} 

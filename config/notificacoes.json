@@ -1,0 +1,51 @@
+{
+    "email": {
+        "smtp_server": "smtp.gmail.com",
+        "smtp_port": 587,
+        "username": "",
+        "password": "",
+        "from_email": "",
+        "to_emails": []
+    },
+    "slack": {
+        "webhook_url": "",
+        "channel": "#alertas"
+    },
+    "telegram": {
+        "bot_token": "",
+        "chat_id": ""
+    },
+    "niveis_notificacao": {
+        "baixa": ["email"],
+        "media": ["email", "slack"],
+        "alta": ["email", "slack", "telegram"]
+    },
+    "templates": {
+        "alerta": {
+            "titulo": "🚨 ALERTA: {tipo}",
+            "corpo": "Severidade: {severidade}\nValor: {valor}\nLimite: {limite}\nTimestamp: {timestamp}\n\nDetalhes:\n{detalhes}"
+        },
+        "incidente": {
+            "titulo": "⚠️ INCIDENTE DETECTADO",
+            "corpo": "Tipo: {tipo}\nDescrição: {descricao}\nImpacto: {impacto}\nStatus: {status}\nTimestamp: {timestamp}\n\nDetalhes:\n{detalhes}"
+        }
+    },
+    "agendamento": {
+        "intervalo_verificacao": 300,
+        "horario_inicio": "08:00",
+        "horario_fim": "18:00",
+        "dias_semana": [1, 2, 3, 4, 5],
+        "timezone": "America/Sao_Paulo"
+    },
+    "filtros": {
+        "ignorar_alertas": [],
+        "ignorar_incidentes": [],
+        "min_severidade": "media",
+        "max_notificacoes_por_hora": 10
+    },
+    "retry": {
+        "max_tentativas": 3,
+        "intervalo_entre_tentativas": 60,
+        "timeout": 30
+    }
+} 

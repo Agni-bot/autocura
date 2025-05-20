@@ -1,0 +1,22 @@
+{
+    "configuracoes": {
+        "max_tamanho": 1000,
+        "ttl_padrao": 3600,
+        "limpeza_intervalo": 300,
+        "politica_limpeza": "lru"
+    },
+    "tipos_cache": {
+        "metricas": {
+            "ttl": 300,
+            "max_tamanho": 100
+        },
+        "diagnosticos": {
+            "ttl": 3600,
+            "max_tamanho": 50
+        },
+        "configuracoes": {
+            "ttl": 86400,
+            "max_tamanho": 20
+        }
+    }
+} 
