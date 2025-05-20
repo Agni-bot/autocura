@@ -1,7 +1,25 @@
 from typing import List, Dict
 from dataclasses import dataclass
-from diagnostico import Diagnostico
-from monitoramento import MetricasSistema
+from src.diagnostico import Diagnostico
+from src.monitoramento import MetricasSistema
+from enum import Enum
+
+@dataclass
+class MetricaDimensional:
+    nome: str
+    valor: float
+    unidade: str = ""
+
+@dataclass
+class PadraoAnomalia:
+    nome: str
+    descricao: str
+    severidade: int
+
+class TipoAcao(Enum):
+    HOTFIX = "hotfix"
+    REFATORACAO = "refatoracao"
+    REDESIGN = "redesign"
 
 @dataclass
 class Acao:
@@ -83,8 +101,8 @@ class GeradorAcoes:
 
 # Exemplo de uso
 if __name__ == "__main__":
-    from monitoramento import MonitoramentoMultidimensional
-    from diagnostico import RedeNeuralDiagnostico
+    from src.monitoramento import MonitoramentoMultidimensional
+    from src.diagnostico import RedeNeuralDiagnostico
     
     # Simula o fluxo completo
     monitor = MonitoramentoMultidimensional()

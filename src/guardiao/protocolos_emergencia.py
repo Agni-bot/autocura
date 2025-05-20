@@ -11,6 +11,8 @@ from pathlib import Path
 import json
 import shutil
 import os
+from dataclasses import dataclass
+from enum import Enum
 
 # Configuração de logging
 logging.basicConfig(
@@ -18,6 +20,24 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+class NivelEmergencia(Enum):
+    NORMAL = 0
+    ALERTA = 1
+    CRITICO = 2
+    EMERGENCIA = 3
+
+@dataclass
+class ProtocoloEmergencia:
+    id: str
+    nome: str
+    nivel: NivelEmergencia
+    descricao: str
+    acoes: List[str]
+    prioridade: int
+    ativo: bool = True
+    ultima_execucao: datetime = None
+    resultado: str = None
 
 class ProtocolosEmergencia:
     def __init__(self):

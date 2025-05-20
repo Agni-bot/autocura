@@ -16,6 +16,15 @@ class GerenciadorMemoria:
         self.memoria = self._carregar_memoria()
         logger.info("Gerenciador de Memória inicializado")
     
+    def initialize(self) -> None:
+        """Inicializa o gerenciador de memória"""
+        try:
+            self.memoria = self._carregar_memoria()
+            logger.info("Gerenciador de Memória inicializado com sucesso")
+        except Exception as e:
+            logger.error(f"Erro ao inicializar gerenciador de memória: {str(e)}")
+            raise
+    
     def _carregar_memoria(self) -> Dict[str, Any]:
         """Carrega a memória compartilhada do arquivo"""
         try:

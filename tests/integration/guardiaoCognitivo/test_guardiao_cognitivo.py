@@ -4,12 +4,7 @@ import time
 from unittest.mock import patch, MagicMock
 
 # Importa a app Flask e a instância do GuardiaoCognitivo do módulo principal
-# Assumindo que o guardiao_cognitivo.py está em src/guardiao_cognitivo
-# e os testes estão em tests/integration/guardiao_cognitivo
-# Ajuste o sys.path ou a forma de importação conforme a estrutura do seu projeto
-import sys
-sys.path.append("/home/ubuntu/Autocura_project/Autocura/src/guardiaoCognitivo")
-from guardiao_cognitivo import app, guardiao_singleton, DiagnosticoInfo, PlanoAcaoInfo, CONFIG_GUARDIAN
+from src.guardiao.guardiao_cognitivo import app, guardiao_singleton, DiagnosticoInfo, PlanoAcaoInfo, CONFIG_GUARDIAN
 
 @pytest.fixture
 def client():

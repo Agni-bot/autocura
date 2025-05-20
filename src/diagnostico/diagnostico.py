@@ -1,7 +1,21 @@
 import numpy as np
 from typing import Dict, List, Tuple
 from dataclasses import dataclass
-from monitoramento import MetricasSistema
+from enum import Enum
+from src.monitoramento import MetricasSistema
+
+class TipoDiagnostico(Enum):
+    NORMAL = "normal"
+    ERRO_SISTEMA = "erro_sistema"
+    LATENCIA_ALTA = "latencia_alta"
+    SOBRECARGA = "sobrecarga"
+    RECURSOS_INSUFICIENTES = "recursos_insuficientes"
+
+class SeveridadeDiagnostico(Enum):
+    BAIXA = 1
+    MEDIA = 2
+    ALTA = 3
+    CRITICA = 4
 
 @dataclass
 class Diagnostico:

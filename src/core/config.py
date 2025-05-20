@@ -3,8 +3,17 @@ Módulo de configuração base do sistema de autocura.
 """
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional
+
+def _get_default_endpoints() -> Dict[str, str]:
+    """Retorna os endpoints padrão do sistema."""
+    return {
+        "monitoramento": os.getenv("ENDPOINT_MONITORAMENTO", "http://localhost:8000/monitoramento"),
+        "diagnostico": os.getenv("ENDPOINT_DIAGNOSTICO", "http://localhost:8000/diagnostico"),
+        "acoes": os.getenv("ENDPOINT_ACOES", "http://localhost:8000/acoes"),
+        "guardiao": os.getenv("ENDPOINT_GUARDIAO", "http://localhost:8000/guardiao")
+    }
 
 @dataclass
 class ConfiguracaoBase:
@@ -36,12 +45,7 @@ class ConfiguracaoBase:
     TOKEN_JWT: Optional[str] = os.getenv("TOKEN_JWT")
     
     # Configurações de integração
-    ENDPOINTS: Dict[str, str] = {
-        "monitoramento": os.getenv("ENDPOINT_MONITORAMENTO", "http://localhost:8000/monitoramento"),
-        "diagnostico": os.getenv("ENDPOINT_DIAGNOSTICO", "http://localhost:8000/diagnostico"),
-        "acoes": os.getenv("ENDPOINT_ACOES", "http://localhost:8000/acoes"),
-        "guardiao": os.getenv("ENDPOINT_GUARDIAO", "http://localhost:8000/guardiao")
-    }
+    ENDPOINTS: Dict[str, str] = field(default_factory=_get_default_endpoints)
     
     # Configurações de Kubernetes
     KUBERNETES_NAMESPACE: str = os.getenv("KUBERNETES_NAMESPACE", "default")
@@ -49,7 +53,7 @@ class ConfiguracaoBase:
     
     # Configurações de notificação
     NOTIFICACOES_ATIVAS: bool = os.getenv("NOTIFICACOES_ATIVAS", "True").lower() == "true"
-    CANAIS_NOTIFICACAO: List[str] = os.getenv("CANAIS_NOTIFICACAO", "telegram,slack").split(",")
+    CANAIS_NOTIFICACAO: List[str] = field(default_factory=lambda: os.getenv("CANAIS_NOTIFICACAO", "telegram,slack").split(","))
     
     def __post_init__(self):
         """Validação pós-inicialização."""

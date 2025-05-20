@@ -466,8 +466,15 @@ class GuardiaoCognitivo:
         
         return resultados
 
+# Criar instância do gerenciador de memória
+gerenciador_memoria = GerenciadorMemoria()
+gerenciador_memoria.initialize()
+
+# Criar instância do guardião
+guardiao_singleton = GuardiaoCognitivo(gerenciador_memoria)
+
+# Inicializar Flask app
 app = flask.Flask(__name__)
-guardiao_singleton = GuardiaoCognitivo()
 
 @app.route("/health", methods=["GET"])
 def health_check():
