@@ -8,9 +8,52 @@ from typing import List, Dict, Any
 import pytest
 from pathlib import Path
 import re
+import logging
+import sys
+from dataclasses import dataclass, asdict
+from enum import Enum
 
 # Carregar variáveis de ambiente
 load_dotenv()
+
+# Configuração de logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('testes.log', encoding='utf-8'),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger('OtimizadorTestes')
+
+class StatusTeste(Enum):
+    PASSED = "PASSED"
+    FAILED = "FAILED"
+    ERROR = "ERROR"
+    SKIPPED = "SKIPPED"
+    XFAIL = "XFAIL"
+    XPASS = "XPASS"
+
+    def __str__(self):
+        return self.value
+
+@dataclass
+class ResultadoTeste:
+    nome: str
+    status: StatusTeste
+    duracao: float
+    mensagem_erro: str = ""
+    traceback: str = ""
+
+    def to_dict(self):
+        return {
+            "nome": self.nome,
+            "status": str(self.status),
+            "duracao": self.duracao,
+            "mensagem_erro": self.mensagem_erro,
+            "traceback": self.traceback
+        }
 
 class OtimizadorTestes:
     def __init__(self):
@@ -21,14 +64,25 @@ class OtimizadorTestes:
         self.modelo = os.getenv('AI_API_PRIMARY_MODEL')
         self.resultados = []
         self.memoria_path = Path('memoria_compartilhada.json')
+        self.testes_detalhados = []
 
     def executar_testes(self) -> Dict[str, Any]:
         """Executa os testes e coleta os resultados."""
-        print("🚀 Iniciando execução dos testes...")
+        logger.info("Iniciando execução dos testes...")
         
-        # Executar pytest com cobertura
+        # Executar pytest com cobertura e relatório detalhado
         resultado = subprocess.run(
-            ["pytest", "tests/", "-v", "--cov=src", "--cov-report=term-missing"],
+            [
+                "pytest", 
+                "tests/", 
+                "-v", 
+                "--cov=src", 
+                "--cov-report=term-missing",
+                "--cov-report=html",
+                "--cov-report=xml",
+                "--junitxml=test-results.xml",
+                "--tb=long"
+            ],
             capture_output=True,
             text=True
         )
@@ -36,10 +90,14 @@ class OtimizadorTestes:
         # Processar a saída para extrair informações relevantes
         saida_processada = self._processar_saida_teste(resultado.stdout)
         
+        # Registrar resultados detalhados
+        self._registrar_resultados_detalhados(resultado.stdout)
+        
         return {
             "exit_code": resultado.returncode,
             "resumo": saida_processada,
-            "erros": resultado.stderr if resultado.stderr else "Nenhum erro encontrado"
+            "erros": resultado.stderr if resultado.stderr else "Nenhum erro encontrado",
+            "testes_detalhados": [teste.to_dict() for teste in self.testes_detalhados]
         }
 
     def _processar_saida_teste(self, saida: str) -> Dict[str, Any]:
@@ -49,36 +107,104 @@ class OtimizadorTestes:
             "total_testes": 0,
             "testes_passaram": 0,
             "testes_falharam": 0,
-            "cobertura": {},
-            "testes_falhos": []
+            "testes_erro": 0,
+            "testes_pulados": 0,
+            "cobertura": {
+                "total": "0%",
+                "detalhes": []
+            },
+            "testes_falhos": [],
+            "duracao_total": 0.0
         }
         
-        # Padrão para encontrar o número total de testes
+        # Padrões para extração de informações
         padrao_total = re.compile(r'collected (\d+) items')
+        padrao_duracao = re.compile(r'(\d+\.\d+)s')
+        padrao_cobertura = re.compile(r'TOTAL.*?(\d+)%')
         
         for linha in linhas:
             # Verificar total de testes
             match_total = padrao_total.search(linha)
             if match_total:
                 resumo["total_testes"] = int(match_total.group(1))
+                logger.info(f"Total de testes coletados: {resumo['total_testes']}")
             
-            # Verificar testes passados/falhados
-            if "PASSED" in linha:
-                resumo["testes_passaram"] += 1
-            elif "FAILED" in linha:
-                resumo["testes_falharam"] += 1
-                resumo["testes_falhos"].append(linha)
+            # Verificar duração
+            match_duracao = padrao_duracao.search(linha)
+            if match_duracao:
+                resumo["duracao_total"] = float(match_duracao.group(1))
             
             # Verificar cobertura
-            if "TOTAL" in linha and "COVERAGE" in linha:
+            match_cobertura = padrao_cobertura.search(linha)
+            if match_cobertura:
+                resumo["cobertura"]["total"] = f"{match_cobertura.group(1)}%"
+                logger.info(f"Cobertura total: {resumo['cobertura']['total']}")
+            
+            # Processar resultados de testes individuais
+            if any(status.value in linha for status in StatusTeste):
                 partes = linha.split()
                 if len(partes) >= 2:
-                    resumo["cobertura"] = {
-                        "total": partes[-1],
-                        "detalhes": []
-                    }
+                    nome_teste = partes[0]
+                    status = next(s for s in StatusTeste if s.value in linha)
+                    
+                    # Corrigir parser de duração
+                    duracao = 0.0
+                    if len(partes) > 1 and partes[-1].endswith('s'):
+                        try:
+                            duracao = float(partes[-1].replace('s', ''))
+                        except ValueError:
+                            duracao = 0.0
+                    
+                    resultado = ResultadoTeste(
+                        nome=nome_teste,
+                        status=status,
+                        duracao=duracao
+                    )
+                    
+                    if status == StatusTeste.FAILED:
+                        resumo["testes_falharam"] += 1
+                        resumo["testes_falhos"].append({
+                            "nome": nome_teste,
+                            "status": str(status),
+                            "duracao": resultado.duracao
+                        })
+                    elif status == StatusTeste.PASSED:
+                        resumo["testes_passaram"] += 1
+                    elif status == StatusTeste.ERROR:
+                        resumo["testes_erro"] += 1
+                    elif status == StatusTeste.SKIPPED:
+                        resumo["testes_pulados"] += 1
+                    
+                    self.testes_detalhados.append(resultado)
         
         return resumo
+
+    def _registrar_resultados_detalhados(self, saida: str):
+        """Registra resultados detalhados dos testes."""
+        try:
+            # Criar backup do arquivo atual
+            if self.memoria_path.exists():
+                backup_path = self.memoria_path.with_suffix('.json.bak')
+                self.memoria_path.rename(backup_path)
+            
+            # Criar novo arquivo com os resultados
+            memoria = {
+                "memoria_tecnica": {
+                    "testes": {
+                        "ultima_execucao": {
+                            "timestamp": datetime.now().isoformat(),
+                            "resultados": [teste.to_dict() for teste in self.testes_detalhados]
+                        }
+                    }
+                }
+            }
+            
+            with open(self.memoria_path, 'w', encoding='utf-8') as f:
+                json.dump(memoria, f, indent=2, ensure_ascii=False)
+            
+            logger.info("Resultados detalhados registrados na memória compartilhada")
+        except Exception as e:
+            logger.error(f"Erro ao registrar resultados detalhados: {str(e)}")
 
     def analisar_resultados(self, resultados: Dict[str, Any]) -> Dict[str, Any]:
         """Utiliza a API de IA para analisar os resultados dos testes."""
@@ -87,7 +213,10 @@ class OtimizadorTestes:
             "total_testes": resultados["resumo"]["total_testes"],
             "testes_passaram": resultados["resumo"]["testes_passaram"],
             "testes_falharam": resultados["resumo"]["testes_falharam"],
+            "testes_erro": resultados["resumo"]["testes_erro"],
+            "testes_pulados": resultados["resumo"]["testes_pulados"],
             "cobertura": resultados["resumo"]["cobertura"],
+            "duracao_total": resultados["resumo"]["duracao_total"],
             "erros_principais": resultados["resumo"]["testes_falhos"][:5] if resultados["resumo"]["testes_falhos"] else []
         }
 
@@ -118,7 +247,7 @@ class OtimizadorTestes:
                 "timestamp": datetime.now().isoformat()
             }
         except Exception as e:
-            print(f"❌ Erro ao analisar resultados: {str(e)}")
+            logger.error(f"Erro ao analisar resultados: {str(e)}")
             return {
                 "erro": str(e),
                 "timestamp": datetime.now().isoformat()
@@ -127,49 +256,49 @@ class OtimizadorTestes:
     def registrar_analise(self, analise: Dict[str, Any]):
         """Registra a análise na memória compartilhada."""
         try:
-            with open(self.memoria_path, 'r+', encoding='utf-8') as f:
-                memoria = json.load(f)
-                
-                # Adicionar evento de análise
-                memoria['log_eventos'].append({
+            # Criar backup do arquivo atual
+            if self.memoria_path.exists():
+                backup_path = self.memoria_path.with_suffix('.json.bak')
+                self.memoria_path.rename(backup_path)
+            
+            # Criar novo arquivo com a análise
+            memoria = {
+                "log_eventos": [{
                     "data": analise['timestamp'],
                     "evento": "Análise de Testes com IA",
                     "detalhes": analise.get('analise', analise.get('erro', 'Erro desconhecido'))
-                })
-                
-                # Atualizar métricas de teste
-                if 'memoria_tecnica' not in memoria:
-                    memoria['memoria_tecnica'] = {}
-                if 'metricas' not in memoria['memoria_tecnica']:
-                    memoria['memoria_tecnica']['metricas'] = {}
-                
-                memoria['memoria_tecnica']['metricas']['ultima_analise_testes'] = analise
-                
-                f.seek(0)
+                }],
+                "memoria_tecnica": {
+                    "metricas": {
+                        "ultima_analise_testes": analise
+                    }
+                }
+            }
+            
+            with open(self.memoria_path, 'w', encoding='utf-8') as f:
                 json.dump(memoria, f, indent=2, ensure_ascii=False)
-                f.truncate()
-                
-            print("✅ Análise registrada na memória compartilhada")
+            
+            logger.info("Análise registrada na memória compartilhada")
         except Exception as e:
-            print(f"❌ Erro ao registrar análise: {str(e)}")
+            logger.error(f"Erro ao registrar análise: {str(e)}")
 
     def executar_otimizacao(self):
         """Executa o processo completo de otimização de testes."""
-        print("🔄 Iniciando processo de otimização de testes...")
+        logger.info("Iniciando processo de otimização de testes...")
         
         # Executar testes
         resultados = self.executar_testes()
         
         # Analisar resultados com IA
-        print("🤖 Analisando resultados com IA...")
+        logger.info("Analisando resultados com IA...")
         analise = self.analisar_resultados(resultados)
         
         # Registrar análise
         self.registrar_analise(analise)
         
         # Exibir resultados
-        print("\n📊 Resultados da Análise:")
-        print(analise.get('analise', analise.get('erro', 'Erro na análise')))
+        logger.info("\nResultados da Análise:")
+        logger.info(analise.get('analise', analise.get('erro', 'Erro na análise')))
         
         return analise
 
