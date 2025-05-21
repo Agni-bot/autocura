@@ -1,9 +1,13 @@
+"""
+Validador Ético - Responsável pela validação ética de decisões e ações do sistema
+"""
 import logging
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 from pathlib import Path
 
 from ..memoria.gerenciador_memoria import GerenciadorMemoria
+from ..ia.cliente_ia import ClienteIA
 
 # Configuração de logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -15,200 +19,162 @@ class ValidadorEtico:
     def __init__(self, gerenciador_memoria: GerenciadorMemoria):
         self.gerenciador_memoria = gerenciador_memoria
         self.principios_eticos = self._carregar_principios_eticos()
+        self.cliente_ia = ClienteIA()
         logger.info("Validador Ético inicializado")
-    
-    def _carregar_principios_eticos(self) -> List[Dict[str, Any]]:
-        """Carrega os princípios éticos do sistema"""
-        return [
-            {
-                "id": "transparencia",
-                "nome": "Transparência",
-                "descricao": "O sistema deve ser transparente em suas decisões e ações",
-                "criterios": [
-                    "documentacao_clara",
-                    "rastreabilidade",
-                    "explicabilidade"
-                ]
-            },
-            {
-                "id": "privacidade",
-                "nome": "Privacidade",
-                "descricao": "O sistema deve respeitar a privacidade dos dados",
-                "criterios": [
-                    "minimizacao_dados",
-                    "consentimento",
-                    "seguranca"
-                ]
-            },
-            {
-                "id": "nao_maleficencia",
-                "nome": "Não Maleficência",
-                "descricao": "O sistema não deve causar danos",
-                "criterios": [
-                    "prevencao_danos",
-                    "mitigacao_riscos",
-                    "salvaguardas"
-                ]
-            },
-            {
-                "id": "justica",
-                "nome": "Justiça",
-                "descricao": "O sistema deve ser justo em suas decisões",
-                "criterios": [
-                    "imparcialidade",
-                    "equidade",
-                    "nao_discriminacao"
-                ]
-            },
-            {
-                "id": "autonomia",
-                "nome": "Autonomia",
-                "descricao": "O sistema deve respeitar a autonomia humana",
-                "criterios": [
-                    "supervisao_humana",
-                    "controle_humano",
-                    "reversibilidade"
-                ]
-            }
-        ]
     
     def validar_decisao(self, decisao: Dict[str, Any]) -> Dict[str, Any]:
         """Valida uma decisão do sistema sob a perspectiva ética"""
-        resultados = []
-        
-        for principio in self.principios_eticos:
-            resultado = self._aplicar_principio(principio, decisao)
-            resultados.append(resultado)
-        
-        # Verificar se todos os princípios foram respeitados
-        aprovada = all(r["aprovado"] for r in resultados)
-        
-        # Registrar validação
-        validacao = {
-            "tipo": "decisao",
-            "decisao_id": decisao.get("id"),
-            "timestamp": datetime.now().isoformat(),
-            "aprovada": aprovada,
-            "resultados": resultados
-        }
-        
-        self.gerenciador_memoria.registrar_validacao_etica(validacao)
-        
-        return validacao
+        try:
+            # Enriquece a decisão com contexto
+            decisao_enriquecida = self._enriquecer_decisao(decisao)
+            
+            # Usa a IA para validação ética avançada
+            resultado_ia = self.cliente_ia.validar_etica(decisao_enriquecida)
+            
+            # Se a IA aprovou, faz validações adicionais locais
+            if resultado_ia["aprovada"]:
+                resultado_local = self._validar_localmente(decisao)
+                if not resultado_local["aprovada"]:
+                    return resultado_local
+            
+            # Registra a validação
+            validacao = {
+                "tipo": "decisao",
+                "decisao_id": decisao.get("id"),
+                "timestamp": datetime.now().isoformat(),
+                "aprovada": resultado_ia["aprovada"],
+                "confianca": resultado_ia.get("confianca", 0.0),
+                "justificativa": resultado_ia.get("justificativa", ""),
+                "analise_ia": resultado_ia
+            }
+            
+            self.gerenciador_memoria.registrar_validacao_etica(validacao)
+            
+            return validacao
+            
+        except Exception as e:
+            logger.error(f"Erro ao validar decisão: {str(e)}")
+            return {
+                "aprovada": False,
+                "erro": str(e)
+            }
     
-    def validar_acao(self, acao: Dict[str, Any]) -> Dict[str, Any]:
-        """Valida uma ação do sistema sob a perspectiva ética"""
-        resultados = []
-        
-        for principio in self.principios_eticos:
-            resultado = self._aplicar_principio(principio, acao)
-            resultados.append(resultado)
-        
-        # Verificar se todos os princípios foram respeitados
-        aprovada = all(r["aprovado"] for r in resultados)
-        
-        # Registrar validação
-        validacao = {
-            "tipo": "acao",
-            "acao_id": acao.get("id"),
-            "timestamp": datetime.now().isoformat(),
-            "aprovada": aprovada,
-            "resultados": resultados
-        }
-        
-        self.gerenciador_memoria.registrar_validacao_etica(validacao)
-        
-        return validacao
+    def _enriquecer_decisao(self, decisao: Dict[str, Any]) -> Dict[str, Any]:
+        """Enriquece a decisão com contexto adicional."""
+        try:
+            decisao_enriquecida = decisao.copy()
+            
+            # Adiciona histórico recente
+            historico = self.gerenciador_memoria.obter_historico_por_tipo("decisao")
+            decisao_enriquecida["historico_recente"] = historico[:5]
+            
+            # Adiciona estado do sistema
+            estado = self.gerenciador_memoria.obter_estado_sistema()
+            decisao_enriquecida["estado_sistema"] = estado
+            
+            # Adiciona métricas relevantes
+            metricas = estado.get("metricas_desempenho", {})
+            decisao_enriquecida["metricas"] = metricas
+            
+            # Adiciona princípios éticos
+            decisao_enriquecida["principios"] = self.principios_eticos
+            
+            return decisao_enriquecida
+            
+        except Exception as e:
+            logger.error(f"Erro ao enriquecer decisão: {str(e)}")
+            return decisao
     
-    def _aplicar_principio(self, principio: Dict[str, Any], objeto: Dict[str, Any]) -> Dict[str, Any]:
-        """Aplica um princípio ético a um objeto (decisão ou ação)"""
-        resultados_criterios = []
-        
-        for criterio in principio["criterios"]:
-            resultado = self._verificar_criterio(criterio, objeto)
-            resultados_criterios.append(resultado)
-        
-        # Verificar se todos os critérios foram atendidos
-        aprovado = all(r["atendido"] for r in resultados_criterios)
-        
-        return {
-            "principio": principio["id"],
-            "aprovado": aprovado,
-            "criterios": resultados_criterios
-        }
+    def _validar_localmente(self, decisao: Dict[str, Any]) -> Dict[str, Any]:
+        """Realiza validações éticas locais adicionais."""
+        try:
+            resultados = []
+            
+            for principio in self.principios_eticos:
+                resultado = self._aplicar_principio(principio, decisao)
+                resultados.append(resultado)
+            
+            # Verifica se todos os princípios foram respeitados
+            aprovada = all(r["aprovado"] for r in resultados)
+            
+            return {
+                "aprovada": aprovada,
+                "resultados": resultados,
+                "tipo": "validacao_local"
+            }
+            
+        except Exception as e:
+            logger.error(f"Erro na validação local: {str(e)}")
+            return {
+                "aprovada": False,
+                "erro": str(e),
+                "tipo": "validacao_local"
+            }
     
-    def _verificar_criterio(self, criterio: str, objeto: Dict[str, Any]) -> Dict[str, Any]:
-        """Verifica se um critério ético foi atendido"""
-        # Implementação específica para cada critério
-        if criterio == "documentacao_clara":
-            atendido = bool(objeto.get("documentacao"))
-            mensagem = "Documentação presente" if atendido else "Documentação ausente"
-        
-        elif criterio == "rastreabilidade":
-            atendido = bool(objeto.get("rastreavel"))
-            mensagem = "Rastreabilidade garantida" if atendido else "Rastreabilidade não garantida"
-        
-        elif criterio == "explicabilidade":
-            atendido = bool(objeto.get("explicavel"))
-            mensagem = "Explicabilidade presente" if atendido else "Explicabilidade ausente"
-        
-        elif criterio == "minimizacao_dados":
-            atendido = bool(objeto.get("dados_minimizados"))
-            mensagem = "Minimização de dados aplicada" if atendido else "Minimização de dados não aplicada"
-        
-        elif criterio == "consentimento":
-            atendido = bool(objeto.get("consentimento"))
-            mensagem = "Consentimento obtido" if atendido else "Consentimento não obtido"
-        
-        elif criterio == "seguranca":
-            atendido = bool(objeto.get("seguro"))
-            mensagem = "Segurança garantida" if atendido else "Segurança não garantida"
-        
-        elif criterio == "prevencao_danos":
-            atendido = bool(objeto.get("prevencao_danos"))
-            mensagem = "Prevenção de danos aplicada" if atendido else "Prevenção de danos não aplicada"
-        
-        elif criterio == "mitigacao_riscos":
-            atendido = bool(objeto.get("mitigacao_riscos"))
-            mensagem = "Mitigação de riscos aplicada" if atendido else "Mitigação de riscos não aplicada"
-        
-        elif criterio == "salvaguardas":
-            atendido = bool(objeto.get("salvaguardas"))
-            mensagem = "Salvaguardas presentes" if atendido else "Salvaguardas ausentes"
-        
-        elif criterio == "imparcialidade":
-            atendido = bool(objeto.get("imparcial"))
-            mensagem = "Imparcialidade garantida" if atendido else "Imparcialidade não garantida"
-        
-        elif criterio == "equidade":
-            atendido = bool(objeto.get("equitativo"))
-            mensagem = "Equidade garantida" if atendido else "Equidade não garantida"
-        
-        elif criterio == "nao_discriminacao":
-            atendido = bool(objeto.get("nao_discriminatorio"))
-            mensagem = "Não discriminação garantida" if atendido else "Não discriminação não garantida"
-        
-        elif criterio == "supervisao_humana":
-            atendido = bool(objeto.get("supervisao_humana"))
-            mensagem = "Supervisão humana presente" if atendido else "Supervisão humana ausente"
-        
-        elif criterio == "controle_humano":
-            atendido = bool(objeto.get("controle_humano"))
-            mensagem = "Controle humano presente" if atendido else "Controle humano ausente"
-        
-        elif criterio == "reversibilidade":
-            atendido = bool(objeto.get("reversivel"))
-            mensagem = "Reversibilidade garantida" if atendido else "Reversibilidade não garantida"
-        
-        else:
-            atendido = False
-            mensagem = f"Critério {criterio} não implementado"
-        
-        return {
-            "criterio": criterio,
-            "atendido": atendido,
-            "mensagem": mensagem
-        }
+    def _carregar_principios_eticos(self) -> List[Dict[str, Any]]:
+        """Carrega os princípios éticos do sistema"""
+        try:
+            return [
+                {
+                    "id": "transparencia",
+                    "descricao": "Todas as decisões devem ser transparentes e explicáveis",
+                    "peso": 0.9
+                },
+                {
+                    "id": "privacidade",
+                    "descricao": "Dados sensíveis devem ser protegidos",
+                    "peso": 0.95
+                },
+                {
+                    "id": "equidade",
+                    "descricao": "Decisões devem ser justas e não discriminatórias",
+                    "peso": 0.9
+                },
+                {
+                    "id": "seguranca",
+                    "descricao": "A segurança do sistema e usuários é prioritária",
+                    "peso": 1.0
+                },
+                {
+                    "id": "responsabilidade",
+                    "descricao": "Deve haver responsabilização clara por cada decisão",
+                    "peso": 0.85
+                }
+            ]
+        except Exception as e:
+            logger.error(f"Erro ao carregar princípios éticos: {str(e)}")
+            return []
+    
+    def _aplicar_principio(self, principio: Dict[str, Any], decisao: Dict[str, Any]) -> Dict[str, Any]:
+        """Aplica um princípio ético específico"""
+        try:
+            # Implementação básica - em produção seria mais sofisticada
+            if principio["id"] == "transparencia":
+                aprovado = "justificativa" in decisao and "explicacao" in decisao
+            elif principio["id"] == "privacidade":
+                aprovado = not decisao.get("envolve_dados_sensiveis", False)
+            elif principio["id"] == "equidade":
+                aprovado = not decisao.get("impacto_diferencial", False)
+            elif principio["id"] == "seguranca":
+                aprovado = decisao.get("risco_seguranca", "alto") != "alto"
+            elif principio["id"] == "responsabilidade":
+                aprovado = "responsavel" in decisao
+            else:
+                aprovado = True
+            
+            return {
+                "principio": principio["id"],
+                "aprovado": aprovado,
+                "peso": principio["peso"]
+            }
+            
+        except Exception as e:
+            logger.error(f"Erro ao aplicar princípio {principio['id']}: {str(e)}")
+            return {
+                "principio": principio["id"],
+                "aprovado": False,
+                "erro": str(e)
+            }
     
     def gerar_relatorio_etica(self) -> Dict[str, Any]:
         """Gera um relatório sobre o estado ético do sistema"""
