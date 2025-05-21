@@ -1,0 +1,72 @@
+collectors:
+  enabled:
+    - cpu
+    - diskstats
+    - filesystem
+    - loadavg
+    - meminfo
+    - netdev
+    - netstat
+    - textfile
+    - time
+    - vmstat
+    - logind
+    - systemd
+    - tcpstat
+    - filefd
+    - netclass
+    - stat
+    - textfile
+    - time
+    - uname
+    - version
+    - vmstat
+    - zfs
+    - ntp
+    - perf
+    - process
+    - qdisc
+    - runit
+    - sockstat
+    - supervisord
+    - systemd
+    - tcpstat
+    - textfile
+    - time
+    - uname
+    - version
+    - vmstat
+    - zfs
+
+collectors:
+  disabled:
+    - wifi
+    - hwmon
+    - infiniband
+    - ipvs
+    - mdadm
+    - nfs
+    - ntp
+    - perf
+    - qdisc
+    - runit
+    - sockstat
+    - supervisord
+    - systemd
+    - tcpstat
+    - textfile
+    - time
+    - uname
+    - version
+    - vmstat
+    - zfs
+
+log_level: info
+log_format: json
+
+web:
+  listen_address: ":9100"
+  telemetry_path: /metrics
+  max_requests: 40
+  read_timeout: 5s
+  write_timeout: 5s 

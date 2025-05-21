@@ -15,7 +15,11 @@ from src.acoes.gerador_acoes import GeradorAcoes
 @pytest.fixture
 def orquestrador():
     """Fixture que fornece uma instância do orquestrador para os testes."""
-    gerenciador_memoria = GerenciadorMemoria()
+    gerenciador_memoria = GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    })
     validador_etico = ValidadorEtico()
     guardiao_cognitivo = GuardiaoCognitivo()
     gerador_acoes = GeradorAcoes()

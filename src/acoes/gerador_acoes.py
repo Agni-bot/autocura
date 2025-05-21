@@ -224,4 +224,8 @@ class GeradorAcoes(BaseComponent):
         
         logger.info(
             f"Histórico de ações limpo, mantendo apenas ações dos últimos {dias} dias"
-        ) 
+        )
+
+# Stub para evitar erro de importação
+class PlanoAcao:
+    pass 

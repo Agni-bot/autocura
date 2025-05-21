@@ -30,32 +30,28 @@ env/
 .vscode/
 *.swp
 *.swo
-.project
-.pydevproject
-.settings/
+.DS_Store
 
 # Logs
 logs/
 *.log
 
-# Environment
-.env
-.env.*
-!.env.example
+# Data
+data/
+*.db
+*.sqlite3
 
 # Docker
 .docker/
-docker-compose.override.yml
 
-# Testing
+# Test
 .coverage
 htmlcov/
 .pytest_cache/
-.tox/
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
+
+# Environment variables
+.env
+.env.*
 
 # Documentation
 docs/_build/
@@ -64,9 +60,53 @@ site/
 # Misc
 .DS_Store
 Thumbs.db
+
+# Arquivos de configuração local
+.env
+.env.local
+.env.*.local
+config.local.yaml
+
+# Arquivos de dados
+data/
+*.db
+*.sqlite3
+
+# Arquivos de cache
+.cache/
+.pytest_cache/
+__pycache__/
+
+# Arquivos de build
+dist/
+build/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Arquivos de documentação
+docs/_build/
+site/
+
+# Arquivos de backup
 *.bak
-*.tmp
-*.temp
+*.backup
+*~
+
+# Arquivos de lock
+package-lock.json
+yarn.lock
+Pipfile.lock
+poetry.lock
+
+# Arquivos de ambiente
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Arquivos de configuração sensíveis
 kubernetes/base/secrets.yaml
@@ -97,7 +137,6 @@ config/secrets/*
 *.swo
 
 # Diretórios de dados persistentes
-data/
 volumes/
 storage/
 

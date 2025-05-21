@@ -16,7 +16,7 @@ from typing import List, Optional
 from datetime import datetime
 import uuid
 
-from ..acao_necessaria import TelaAcaoNecessaria, AcaoNecessaria
+from ..executor.tela_acao import TelaAcaoNecessaria, AcaoNecessaria
 
 # Inicialização do router e componentes
 router = APIRouter()

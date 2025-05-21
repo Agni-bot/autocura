@@ -1,0 +1,92 @@
+# Configurações do sistema de autocura
+
+# Configurações gerais
+geral:
+  versao: "0.1.0"
+  modo_diagnostico: true
+  limite_agentes: 10
+  intervalo_evolucao: 3600  # segundos
+
+# Configurações de memória
+memoria:
+  caminho_arquivo: "memoria_compartilhada.json"
+  max_historico: 1000
+  compactacao_automatica: true
+  intervalo_compactacao: 86400  # segundos
+
+# Configurações de feedback
+feedback:
+  caminho_arquivo: "feedback_history.json"
+  max_historico: 5000
+  tipos_validos:
+    - "desempenho"
+    - "seguranca"
+    - "usabilidade"
+    - "conformidade"
+    - "geral"
+  peso_por_tipo:
+    desempenho: 1.0
+    seguranca: 2.0
+    usabilidade: 0.8
+    conformidade: 1.5
+    geral: 0.5
+
+# Configurações de monitoramento
+monitoramento:
+  prometheus:
+    porta: 9090
+    prefixo_metricas: "autocura_"
+  metricas:
+    caminho_arquivo: "metrics_history.json"
+    max_historico: 10000
+    intervalo_coleta: 60  # segundos
+  alertas:
+    cpu_alto: 80  # percentual
+    memoria_alta: 85  # percentual
+    latencia_alta: 1000  # milissegundos
+
+# Configurações do agente
+agente:
+  modelo: "groq/llama2-70b-4096"
+  temperatura: 0.7
+  max_tokens: 2048
+  top_p: 0.9
+  frequencia_penalidade: 0.0
+  presenca_penalidade: 0.0
+  stop_sequences: []
+
+# Configurações de evolução
+evolucao:
+  criterios:
+    - "desempenho"
+    - "seguranca"
+    - "usabilidade"
+    - "conformidade"
+  pesos:
+    desempenho: 1.0
+    seguranca: 2.0
+    usabilidade: 0.8
+    conformidade: 1.5
+  limiares:
+    minimo_feedback: 10
+    minimo_evolucao: 0.1
+    maximo_evolucao: 0.5
+
+# Configurações de segurança
+seguranca:
+  validacao_entrada: true
+  sanitizacao_saida: true
+  max_tentativas: 3
+  timeout_segundos: 30
+  rate_limit:
+    requisicoes_por_minuto: 60
+    burst: 10
+
+# Configurações de logging
+logging:
+  nivel: "INFO"
+  formato: "json"
+  arquivo: "logs/autocura.log"
+  max_bytes: 10485760  # 10MB
+  backup_count: 5
+  rotacao: "diaria" 

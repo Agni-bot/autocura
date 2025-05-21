@@ -18,7 +18,11 @@ class Orquestrador:
     
     def __init__(self):
         # Inicializar componentes
-        self.gerenciador_memoria = GerenciadorMemoria()
+        self.gerenciador_memoria = GerenciadorMemoria({
+            "redis_host": "localhost",
+            "redis_port": 6379,
+            "redis_db": 0
+        })
         self.validador_etico = ValidadorEtico(self.gerenciador_memoria)
         self.guardiao = GuardiaoCognitivo(self.gerenciador_memoria)
         self.gerador_acoes = GeradorAcoes(self.gerenciador_memoria, self.validador_etico)

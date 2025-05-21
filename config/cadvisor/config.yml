@@ -1,0 +1,35 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['localhost:8080']
+    metrics_path: '/metrics'
+    params:
+      collect[]:
+        - cpu
+        - memory
+        - disk
+        - network
+        - filesystem
+        - process
+        - container
+        - container_cpu
+        - container_memory
+        - container_disk
+        - container_network
+        - container_filesystem
+        - container_process
+        - container_start_time
+        - container_threads
+        - container_context_switches
+        - container_cpu_seconds_total
+        - container_memory_bytes
+        - container_open_fds
+        - container_resident_memory_bytes
+        - container_start_time_seconds
+        - container_threads
+        - container_virtual_memory_bytes
+        - container_virtual_memory_max_bytes 

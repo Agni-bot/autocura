@@ -47,22 +47,22 @@ class GerenciadorConfig:
         # Métricas Prometheus
         self.metricas = {
             "configuracoes_criadas": Counter(
-                "configuracoes_criadas_total",
+                "configuracoes_criadas",
                 "Total de configurações criadas",
                 ["tipo", "ambiente"]
             ),
             "configuracoes_atualizadas": Counter(
-                "configuracoes_atualizadas_total",
+                "configuracoes_atualizadas",
                 "Total de configurações atualizadas",
                 ["tipo", "ambiente"]
             ),
             "configuracoes_carregadas": Counter(
-                "configuracoes_carregadas_total",
+                "configuracoes_carregadas",
                 "Total de configurações carregadas",
                 ["tipo", "ambiente"]
             ),
             "tempo_operacao": Histogram(
-                "tempo_operacao_config_seconds",
+                "tempo_operacao_config",
                 "Tempo de operações na configuração",
                 ["operacao"]
             )

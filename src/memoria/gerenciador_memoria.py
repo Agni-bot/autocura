@@ -34,6 +34,10 @@ class GerenciadorMemoria:
         self.config = config
         self.logger = logging.getLogger(__name__)
         
+        # Define o caminho do arquivo de memória
+        self.caminho_memoria = Path(config.get("memoria_path", "data/memoria_compartilhada.json"))
+        self.caminho_memoria.parent.mkdir(parents=True, exist_ok=True)
+        
         # Cliente Redis
         self.redis = redis.Redis(
             host=config.get("redis_host", "localhost"),
@@ -45,26 +49,36 @@ class GerenciadorMemoria:
         # Cache local
         self.cache_local: Dict[str, EntidadeMemoria] = {}
         
+        # Inicializa memória
+        self.memoria = self._carregar_memoria()
+        if not self.memoria:
+            self.memoria = self._criar_memoria_inicial()
+            self._salvar_memoria(self.memoria)
+        
         # Métricas Prometheus
         self.metricas = {
             "entidades_criadas": Counter(
                 "entidades_memoria_criadas_total",
                 "Total de entidades criadas",
-                ["tipo"]
+                ["tipo"],
+                registry=None
             ),
             "entidades_atualizadas": Counter(
                 "entidades_memoria_atualizadas_total",
                 "Total de entidades atualizadas",
-                ["tipo"]
+                ["tipo"],
+                registry=None
             ),
             "tamanho_memoria": Gauge(
                 "tamanho_memoria_bytes",
-                "Tamanho total da memória em bytes"
+                "Tamanho total da memória em bytes",
+                registry=None
             ),
             "tempo_operacao": Histogram(
                 "tempo_operacao_memoria_seconds",
                 "Tempo de operações na memória",
-                ["operacao"]
+                ["operacao"],
+                registry=None
             )
         }
         
@@ -497,6 +511,8 @@ class GerenciadorMemoria:
     
     def registrar_validacao_etica(self, validacao: Dict[str, Any]) -> None:
         """Registra uma nova validação ética"""
+        if "validacoes" not in self.memoria["memoria_etica"]:
+            self.memoria["memoria_etica"]["validacoes"] = []
         self.memoria["memoria_etica"]["validacoes"].append({
             **validacao,
             "timestamp": datetime.now().isoformat()

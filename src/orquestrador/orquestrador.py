@@ -22,7 +22,11 @@ class Orquestrador(BaseComponent):
         super().__init__(name)
         self.monitor = MonitoramentoMultidimensional()
         self.gerador_acoes = GeradorAcoes()
-        self.gerenciador_memoria = GerenciadorMemoria()
+        self.gerenciador_memoria = GerenciadorMemoria({
+            "redis_host": "localhost",
+            "redis_port": 6379,
+            "redis_db": 0
+        })
         self._thread_execucao = None
         self._rodando = False
         self._lock = threading.Lock()

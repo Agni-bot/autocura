@@ -1,0 +1,88 @@
+# Configurações de Testes
+testes:
+  # Configurações Gerais
+  ambiente: "test"
+  debug: true
+  log_level: "DEBUG"
+  
+  # Configurações de Banco de Dados
+  banco_dados:
+    tipo: "sqlite"
+    nome: "autocura_test.db"
+    path: "tests/data"
+    
+  # Configurações de Cache
+  cache:
+    tipo: "memory"
+    ttl: 300
+    
+  # Configurações de Cobertura
+  cobertura:
+    threshold: 80
+    excluir:
+      - "tests/*"
+      - "docs/*"
+      - "scripts/*"
+    relatorio:
+      formato: "html"
+      diretorio: "coverage"
+      
+  # Configurações de Fixtures
+  fixtures:
+    diretorio: "tests/fixtures"
+    carregar_automatico: true
+    
+  # Configurações de Mock
+  mock:
+    habilitado: true
+    timeout: 1
+    
+  # Configurações de Performance
+  performance:
+    timeout_por_teste: 5
+    timeout_total: 300
+    paralelismo: 4
+    
+  # Configurações de Relatórios
+  relatorios:
+    junit:
+      habilitado: true
+      arquivo: "test-results.xml"
+    html:
+      habilitado: true
+      diretorio: "test-reports"
+      
+  # Configurações de Validação
+  validacao:
+    schema:
+      habilitado: true
+      diretorio: "tests/schemas"
+    dados:
+      habilitado: true
+      diretorio: "tests/data"
+      
+  # Configurações de Integração
+  integracao:
+    prometheus:
+      porta: 9091
+    grafana:
+      porta: 3001
+    loki:
+      porta: 3101
+      
+  # Configurações de Segurança
+  seguranca:
+    jwt_secret: "test_secret_key"
+    jwt_algorithm: "HS256"
+    jwt_expiration: 3600
+    
+  # Configurações de Notificações
+  notificacoes:
+    email:
+      servidor: "smtp.gmail.com"
+      porta: 587
+      tls: true
+      remetente: "test@autocura.com"
+    slack:
+      webhook_url: "https://hooks.slack.com/services/test/test/test"
+      canal: "#test-alerts" 

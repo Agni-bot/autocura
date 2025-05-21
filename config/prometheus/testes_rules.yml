@@ -1,0 +1,38 @@
+groups:
+  - name: testes
+    rules:
+      - alert: CoberturaBaixa
+        expr: pytest_coverage_percentage < 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Cobertura de testes abaixo do limite"
+          description: "A cobertura de testes está em {{ $value }}%, abaixo do limite de 80%"
+
+      - alert: TestesFalhando
+        expr: pytest_tests_failed > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Testes falhando"
+          description: "{{ $value }} testes estão falhando"
+
+      - alert: TempoExecucaoAlto
+        expr: rate(pytest_execution_time_seconds_sum[5m]) / rate(pytest_execution_time_seconds_count[5m]) > 300
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Tempo de execução dos testes alto"
+          description: "O tempo médio de execução dos testes está em {{ $value }} segundos"
+
+      - alert: FalhasConsecutivas
+        expr: increase(pytest_tests_failed[1h]) > 3
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Múltiplas falhas consecutivas"
+          description: "{{ $value }} falhas consecutivas nos últimos 10 minutos" 

@@ -177,21 +177,10 @@ aprendizado:
 
 # Configurações de API
 api:
-  host: "0.0.0.0"
-  porta: 8000
-  debug: false
-  cors:
-    origens_permitidas:
-      - "http://localhost:3000"
-      - "https://app.autocura.com"
-    metodos_permitidos:
-      - GET
-      - POST
-      - PUT
-      - DELETE
-    headers_permitidos:
-      - Content-Type
-      - Authorization
+  host: 0.0.0.0
+  port: 8000
+  workers: 4
+  reload: true
 
 # Configurações de Backup
 backup:
@@ -228,4 +217,74 @@ integracao:
     habilitado: true
     hosts:
       - "http://localhost:9200"
-    indice_prefixo: "autocura-" 
+    indice_prefixo: "autocura-"
+
+# Configurações do Sistema
+system:
+  pythonpath: /app
+  pythonunbuffered: true
+
+# Configurações do Redis
+redis:
+  host: redis
+  port: 6379
+  db: 0
+
+# Configurações do Prometheus
+prometheus:
+  port: 9090
+
+# Configurações do Grafana
+grafana:
+  port: 3000
+  user: admin
+  password: admin
+
+# Configurações de Log
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: logs/autocura.log
+
+# Configurações de Segurança
+security:
+  secret_key: your-secret-key-here
+  allowed_hosts:
+    - localhost
+    - 127.0.0.1
+  cors_origins:
+    - http://localhost:3000
+    - http://localhost:8000
+
+# Configurações de Cache
+cache:
+  ttl: 3600
+  prefix: autocura
+
+# Configurações de Banco de Dados
+database:
+  url: sqlite:///data/autocura.db
+
+# Configurações de Monitoramento
+monitoring:
+  enable_metrics: true
+  enable_tracing: true
+  enable_profiling: true
+
+# Configurações de Feedback
+feedback:
+  threshold: 0.8
+  interval: 300
+  batch_size: 100
+
+# Configurações de Evolução
+evolution:
+  interval: 3600
+  threshold: 0.9
+  batch_size: 50
+
+# Configurações de Memória
+memory:
+  ttl: 86400
+  cleanup_interval: 3600
+  max_size: 1000 

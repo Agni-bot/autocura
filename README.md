@@ -1,17 +1,34 @@
-# Sistema Autocura
+# Sistema de Autocura
 
-Sistema de Inteligência Artificial com capacidades de autocura e evolução contínua.
+## Visão Geral
+O Sistema de Autocura é uma plataforma que permite evolução contínua e adaptativa baseada em feedback e monitoramento, utilizando técnicas avançadas de processamento de linguagem natural e aprendizado de máquina.
 
-## 🚀 Instalação
+## Funcionalidades
+- Evolução contínua
+- Monitoramento em tempo real
+- Processamento inteligente de feedback
+- Memória persistente
+- Observabilidade via Prometheus e Grafana
 
-### Pré-requisitos
+## Tecnologias
+- Python 3.10+
+- LangChain
+- Groq API
+- FastAPI
+- SQLAlchemy
+- Redis
+- Docker
+- Prometheus
+- Grafana
 
-- Python 3.8+
-- Docker e Docker Compose
-- PowerShell (Windows) ou Bash (Linux/macOS)
+## Pré-requisitos
+- Docker
+- Docker Compose
 - Git
 
-### Instalação Local
+## Instalação
+
+### Usando Docker (Recomendado)
 
 1. Clone o repositório:
 ```bash
@@ -19,99 +36,94 @@ git clone https://github.com/seu-usuario/autocura.git
 cd autocura
 ```
 
-2. Instale as dependências:
-```powershell
-# Windows (PowerShell)
-.\scripts\autocura.ps1 -Action install
-
-# Linux/macOS (Bash)
-./scripts/autocura.sh install
-```
-
-3. Configure as variáveis de ambiente:
+2. Inicie o sistema:
 ```bash
-cp .env.example .env
-# Edite o arquivo .env com suas configurações
+chmod +x scripts/start.sh
+./scripts/start.sh
 ```
 
-### Instalação via Docker
-
-```bash
-docker-compose up -d
-```
-
-## 🛠️ Uso
-
-### Comandos Básicos
-
-```powershell
-# Windows (PowerShell)
-.\scripts\autocura.ps1 -Action <ação>
-
-# Linux/macOS (Bash)
-./scripts/autocura.sh <ação>
-```
-
-Ações disponíveis:
-- `install`: Instala dependências
-- `test`: Executa testes
-- `lint`: Verifica código
-- `build`: Constrói imagens Docker
-- `clean`: Limpa arquivos temporários
-- `monitor`: Inicia monitoramento
-- `backup`: Realiza backup
-- `restore`: Restaura backup
-
-### Monitoramento
-
-O sistema inclui integração com:
-- Prometheus (métricas)
-- Grafana (visualização)
-- Logs estruturados
-
-Acesse:
-- Grafana: http://localhost:3000
+3. Acesse:
+- Grafana: http://localhost:3000 (usuário: admin, senha: admin)
 - Prometheus: http://localhost:9090
 
-## 🧪 Testes
+### Instalação Manual
 
+1. Clone o repositório:
 ```bash
-# Executar todos os testes
-pytest
-
-# Executar com cobertura
-pytest --cov=src tests/ --cov-report=html
+git clone https://github.com/seu-usuario/autocura.git
+cd autocura
 ```
 
-## 📚 Documentação
+2. Crie um ambiente virtual:
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+venv\Scripts\activate     # Windows
+```
 
-A documentação completa está disponível em:
-- [Arquitetura](docs/arquitetura_integrada.txt)
-- [Módulos](docs/modulos_funcionais.md)
-- [Ética](docs/detalhamento_modulos_eticos.md)
-- [Interfaces](docs/interfaces_tecnologias.md)
+3. Instale as dependências:
+```bash
+pip install -r requirements.txt
+```
 
-## 🔒 Segurança
+4. Configure as variáveis de ambiente:
+```bash
+cp config/config.yaml.example config/config.yaml
+# Edite o arquivo config/config.yaml com suas configurações
+```
 
-O sistema implementa:
-- Validação de entrada/saída
-- Logging seguro
-- Anonimização de dados
-- Controle de acesso
-- Criptografia em trânsito e repouso
+5. Execute o sistema:
+```bash
+python scripts/run_autocura.py
+```
 
-## 🤝 Contribuindo
+## Monitoramento
 
-1. Fork o projeto
-2. Crie sua branch (`git checkout -b feature/nova-feature`)
+### Métricas Disponíveis
+- Taxa de requisições
+- Taxa de erros
+- Tempo de resposta
+- Uso de memória
+- Uso de CPU
+
+### Dashboards
+O sistema inclui dashboards pré-configurados no Grafana:
+- Visão geral do sistema
+- Métricas de performance
+- Análise de erros
+- Tendências de uso
+
+## Testes
+```bash
+# Executar testes
+pytest
+
+# Gerar relatório de cobertura
+pytest --cov=src tests/
+```
+
+## Documentação
+A documentação completa está disponível no diretório `docs/`. Para servir a documentação localmente:
+```bash
+mkdocs serve
+```
+
+## Contribuindo
+1. Faça um fork do projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
 3. Commit suas mudanças (`git commit -am 'Adiciona nova feature'`)
 4. Push para a branch (`git push origin feature/nova-feature`)
 5. Crie um Pull Request
 
-## 📝 Licença
-
+## Licença
 Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
 
-## 🆘 Suporte
+## Autores
+- Seu Nome (@seu-usuario)
 
-Para suporte, abra uma issue no GitHub ou contate a equipe de desenvolvimento. 
+## Agradecimentos
+- [LangChain](https://github.com/hwchase17/langchain)
+- [Groq](https://groq.com/)
+- [FastAPI](https://fastapi.tiangolo.com/)
+- [Prometheus](https://prometheus.io/)
+- [Grafana](https://grafana.com/) 

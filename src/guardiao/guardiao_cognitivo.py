@@ -100,6 +100,7 @@ class GuardiaoCognitivo:
     """Guardião Cognitivo - Responsável pelo monitoramento de saúde e salvaguardas do sistema"""
     
     def __init__(self, gerenciador_memoria: GerenciadorMemoria):
+        self.logger = logging.getLogger("GuardiãoCognitivo")
         self.gerenciador_memoria = gerenciador_memoria
         self.alertas_ativos = []
         self.incidentes = []
@@ -766,8 +767,11 @@ class GuardiaoCognitivo:
         return relatorio
 
 # Criar instância do gerenciador de memória
-gerenciador_memoria = GerenciadorMemoria()
-gerenciador_memoria.initialize()
+gerenciador_memoria = GerenciadorMemoria({
+    "redis_host": "localhost",
+    "redis_port": 6379,
+    "redis_db": 0
+})
 
 # Criar instância do guardião
 guardiao_singleton = GuardiaoCognitivo(gerenciador_memoria)

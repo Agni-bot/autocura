@@ -1,0 +1,29 @@
+groups:
+  - name: dependencias
+    rules:
+      - alert: ProblemasFrequentesDependencias
+        expr: rate(dependencias_problemas_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Problemas frequentes com dependências detectados"
+          description: "Taxa de problemas com dependências está acima do normal ({{ $value }} por minuto)"
+
+      - alert: FalhaAutocuraDependencias
+        expr: rate(dependencias_autocuradas_total[5m]) < rate(dependencias_problemas_total[5m])
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Falha na autocura de dependências"
+          description: "Taxa de autocura ({{ $value }}) está menor que a taxa de problemas"
+
+      - alert: TempoVerificacaoAlto
+        expr: dependencias_tempo_verificacao_seconds > 30
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Tempo de verificação de dependências está alto"
+          description: "Tempo de verificação está em {{ $value }} segundos" 

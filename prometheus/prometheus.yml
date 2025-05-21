@@ -51,4 +51,18 @@ scrape_configs:
 
   - job_name: "grafana"
     static_configs:
-      - targets: ["grafana:3000"] 
+      - targets: ["grafana:3000"]
+
+  - job_name: "dependencias"
+    static_configs:
+      - targets: ["localhost:9092"]
+    metrics_path: "/metrics"
+    scrape_interval: 30s
+
+  - job_name: "loki"
+    static_configs:
+      - targets: ["loki:3100"]
+
+  - job_name: "alertmanager"
+    static_configs:
+      - targets: ["alertmanager:9093"] 

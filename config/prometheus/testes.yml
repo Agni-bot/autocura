@@ -1,0 +1,30 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'pytest'
+    static_configs:
+      - targets: ['localhost:9091']
+    metrics_path: '/metrics'
+    scheme: 'http'
+
+  - job_name: 'cobertura'
+    static_configs:
+      - targets: ['localhost:9092']
+    metrics_path: '/metrics'
+    scheme: 'http'
+
+  - job_name: 'performance'
+    static_configs:
+      - targets: ['localhost:9093']
+    metrics_path: '/metrics'
+    scheme: 'http'
+
+rule_files:
+  - "testes_rules.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['localhost:9093'] 

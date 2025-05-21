@@ -29,6 +29,100 @@ class Acao:
     tempo_estimado: str
     recursos_necessarios: List[str]
 
+@dataclass
+class AcaoCorretiva:
+    id: str
+    tipo: TipoAcao
+    descricao: str
+    comandos: List[str]
+    impacto_estimado: Dict[str, float]
+    tempo_estimado: int
+    recursos_necessarios: Dict[str, str]
+    risco: float = 0.0
+
+    def __post_init__(self):
+        if not 0 <= self.risco <= 1:
+            raise ValueError("Risco deve estar entre 0 e 1")
+        if self.tempo_estimado < 0:
+            raise ValueError("Tempo estimado não pode ser negativo")
+
+@dataclass
+class PlanoAcao:
+    id: str
+    acoes: List[AcaoCorretiva]
+    prioridade: int
+    descricao: str
+
+    def __post_init__(self):
+        if not self.acoes:
+            raise ValueError("Plano de ação deve conter pelo menos uma ação")
+        if self.prioridade < 1 or self.prioridade > 5:
+            raise ValueError("Prioridade deve estar entre 1 e 5")
+
+@dataclass
+class GeradorHotfix:
+    id: str
+    descricao: str
+    comandos: List[str]
+    impacto_estimado: Dict[str, float]
+    tempo_estimado: int
+    recursos_necessarios: Dict[str, str]
+    risco: float = 0.0
+
+    def __post_init__(self):
+        if not 0 <= self.risco <= 1:
+            raise ValueError("Risco deve estar entre 0 e 1")
+        if self.tempo_estimado < 0:
+            raise ValueError("Tempo estimado não pode ser negativo")
+
+@dataclass
+class MotorRefatoracao:
+    id: str
+    descricao: str
+    comandos: List[str]
+    impacto_estimado: Dict[str, float]
+    tempo_estimado: int
+    recursos_necessarios: Dict[str, str]
+    risco: float = 0.0
+
+    def __post_init__(self):
+        if not 0 <= self.risco <= 1:
+            raise ValueError("Risco deve estar entre 0 e 1")
+        if self.tempo_estimado < 0:
+            raise ValueError("Tempo estimado não pode ser negativo")
+
+@dataclass
+class ProjetorRedesign:
+    id: str
+    descricao: str
+    comandos: List[str]
+    impacto_estimado: Dict[str, float]
+    tempo_estimado: int
+    recursos_necessarios: Dict[str, str]
+    risco: float = 0.0
+
+    def __post_init__(self):
+        if not 0 <= self.risco <= 1:
+            raise ValueError("Risco deve estar entre 0 e 1")
+        if self.tempo_estimado < 0:
+            raise ValueError("Tempo estimado não pode ser negativo")
+
+@dataclass
+class OrquestradorAcoes:
+    id: str
+    descricao: str
+    comandos: List[str]
+    impacto_estimado: Dict[str, float]
+    tempo_estimado: int
+    recursos_necessarios: Dict[str, str]
+    risco: float = 0.0
+
+    def __post_init__(self):
+        if not 0 <= self.risco <= 1:
+            raise ValueError("Risco deve estar entre 0 e 1")
+        if self.tempo_estimado < 0:
+            raise ValueError("Tempo estimado não pode ser negativo")
+
 class GeradorAcoes:
     def __init__(self):
         self.acoes_base = {

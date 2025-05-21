@@ -1,0 +1,87 @@
+storage_driver: "influxdb"
+storage_driver_host: "influxdb:8086"
+storage_driver_db: "cadvisor"
+storage_driver_user: "root"
+storage_driver_password: "root"
+storage_driver_secure: false
+
+global:
+  housekeeping_interval: 10s
+  allow_dynamic_housekeeping: true
+  event_storage_age_limit: "2h"
+  event_storage_event_limit: 100000
+  max_housekeeping_interval: 1m0s
+  enable_load_reader: true
+  enable_metrics: true
+  enable_events: true
+  enable_containers: true
+  enable_docker: true
+  enable_events: true
+  enable_metrics: true
+  enable_containers: true
+  enable_docker: true
+  enable_events: true
+  enable_metrics: true
+  enable_containers: true
+  enable_docker: true
+
+http:
+  listen_address: ":8080"
+  max_procs: 4
+  max_requests: 100
+  max_requests_per_connection: 10
+  read_timeout: 5s
+  write_timeout: 5s
+  idle_timeout: 120s
+  tls_cert_file: ""
+  tls_key_file: ""
+  tls_client_ca_file: ""
+  tls_client_cert_file: ""
+  tls_client_key_file: ""
+  tls_min_version: "VersionTLS10"
+  tls_cipher_suites: []
+  tls_prefer_server_cipher_suites: false
+  tls_session_tickets: true
+  tls_session_ticket_key: ""
+  tls_session_cache_size: 0
+  tls_session_cache_buckets: 0
+  tls_session_cache_bucket_size: 0
+  tls_session_cache_timeout: 0
+  tls_session_cache_cleanup_interval: 0
+  tls_session_cache_max_entries: 0
+  tls_session_cache_max_age: 0
+  tls_session_cache_max_size: 0
+  tls_session_cache_max_entries_per_bucket: 0
+  tls_session_cache_max_age_per_bucket: 0
+  tls_session_cache_max_size_per_bucket: 0
+  tls_session_cache_max_entries_per_connection: 0
+  tls_session_cache_max_age_per_connection: 0
+  tls_session_cache_max_size_per_connection: 0
+  tls_session_cache_max_entries_per_ip: 0
+  tls_session_cache_max_age_per_ip: 0
+  tls_session_cache_max_size_per_ip: 0
+  tls_session_cache_max_entries_per_user: 0
+  tls_session_cache_max_age_per_user: 0
+  tls_session_cache_max_size_per_user: 0
+  tls_session_cache_max_entries_per_connection_per_ip: 0
+  tls_session_cache_max_age_per_connection_per_ip: 0
+  tls_session_cache_max_size_per_connection_per_ip: 0
+  tls_session_cache_max_entries_per_connection_per_user: 0
+  tls_session_cache_max_age_per_connection_per_user: 0
+  tls_session_cache_max_size_per_connection_per_user: 0
+  tls_session_cache_max_entries_per_ip_per_user: 0
+  tls_session_cache_max_age_per_ip_per_user: 0
+  tls_session_cache_max_size_per_ip_per_user: 0
+  tls_session_cache_max_entries_per_connection_per_ip_per_user: 0
+  tls_session_cache_max_age_per_connection_per_ip_per_user: 0
+  tls_session_cache_max_size_per_connection_per_ip_per_user: 0
+
+logging:
+  level: "info"
+  format: "json"
+  output: "stdout"
+  max_size: 100
+  max_age: 7
+  max_backups: 3
+  compress: true
+  local_time: true 

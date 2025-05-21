@@ -1,16 +1,27 @@
-FROM python:3.11-slim
+FROM python:3.10-slim
 
 WORKDIR /app
 
+# Instala dependências do sistema
+RUN apt-get update && apt-get install -y \
+    gcc \
+    make \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copia arquivos do projeto
 COPY requirements.txt .
+COPY src/ src/
+COPY scripts/ scripts/
+
+# Instala dependências Python
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY src/ src/
-COPY config/ config/
+# Cria diretórios necessários
+RUN mkdir -p logs memoria
 
-ENV PYTHONPATH=/app
-ENV PYTHONUNBUFFERED=1
+# Expõe porta do Prometheus
+EXPOSE 9092
 
-EXPOSE 9090
-
-CMD ["python", "src/monitoramento.py"] 
+# Executa o script de monitoramento
+CMD ["python", "scripts/monitor_dependencias.py"] 

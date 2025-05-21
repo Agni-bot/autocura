@@ -11,12 +11,20 @@ from src.memoria.gerenciador_memoria import GerenciadorMemoria
 @pytest.fixture
 def validador():
     """Fixture que fornece uma instância do validador ético para os testes."""
-    gerenciador_memoria = GerenciadorMemoria()
+    gerenciador_memoria = GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    })
     return ValidadorEtico(gerenciador_memoria)
 
 def test_validacao_decisao_manutencao():
     """Testa a validação ética de uma decisão de manutenção."""
-    validador = ValidadorEtico(GerenciadorMemoria())
+    validador = ValidadorEtico(GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }))
     
     # Simular decisão de manutenção
     decisao = {
@@ -41,7 +49,11 @@ def test_validacao_decisao_manutencao():
 
 def test_validacao_decisao_hotfix():
     """Testa a validação ética de uma decisão de hotfix."""
-    validador = ValidadorEtico(GerenciadorMemoria())
+    validador = ValidadorEtico(GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }))
     
     # Simular decisão de hotfix
     decisao = {
@@ -68,7 +80,11 @@ def test_validacao_decisao_hotfix():
 
 def test_validacao_decisao_refatoracao():
     """Testa a validação ética de uma decisão de refatoração."""
-    validador = ValidadorEtico(GerenciadorMemoria())
+    validador = ValidadorEtico(GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }))
     
     # Simular decisão de refatoração
     decisao = {
@@ -95,7 +111,11 @@ def test_validacao_decisao_refatoracao():
 
 def test_validacao_decisao_redesign():
     """Testa a validação ética de uma decisão de redesign."""
-    validador = ValidadorEtico(GerenciadorMemoria())
+    validador = ValidadorEtico(GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }))
     
     # Simular decisão de redesign
     decisao = {
@@ -123,7 +143,11 @@ def test_validacao_decisao_redesign():
 
 def test_rejeicao_decisao_sem_documentacao():
     """Testa a rejeição de uma decisão sem documentação."""
-    validador = ValidadorEtico(GerenciadorMemoria())
+    validador = ValidadorEtico(GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }))
     
     # Simular decisão sem documentação
     decisao = {
@@ -145,7 +169,11 @@ def test_rejeicao_decisao_sem_documentacao():
 
 def test_rejeicao_decisao_sem_rastreabilidade():
     """Testa a rejeição de uma decisão sem rastreabilidade."""
-    validador = ValidadorEtico(GerenciadorMemoria())
+    validador = ValidadorEtico(GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }))
     
     # Simular decisão sem rastreabilidade
     decisao = {
@@ -167,7 +195,11 @@ def test_rejeicao_decisao_sem_rastreabilidade():
 
 def test_rejeicao_decisao_sem_explicabilidade():
     """Testa a rejeição de uma decisão sem explicabilidade."""
-    validador = ValidadorEtico(GerenciadorMemoria())
+    validador = ValidadorEtico(GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }))
     
     # Simular decisão sem explicabilidade
     decisao = {
@@ -189,7 +221,11 @@ def test_rejeicao_decisao_sem_explicabilidade():
 
 def test_validacao_impacto_alto():
     """Testa a validação de uma decisão com impacto alto."""
-    validador = ValidadorEtico(GerenciadorMemoria())
+    validador = ValidadorEtico(GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }))
     
     # Simular decisão com impacto alto
     decisao = {
@@ -217,7 +253,11 @@ def test_validacao_impacto_alto():
 
 def test_validacao_impacto_baixo():
     """Testa a validação de uma decisão com impacto baixo."""
-    validador = ValidadorEtico(GerenciadorMemoria())
+    validador = ValidadorEtico(GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }))
     
     # Simular decisão com impacto baixo
     decisao = {
@@ -242,7 +282,11 @@ def test_validacao_impacto_baixo():
 
 def test_validacao_urgencia():
     """Testa a validação de uma decisão com urgencia."""
-    validador = ValidadorEtico(GerenciadorMemoria())
+    validador = ValidadorEtico(GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }))
     
     # Simular decisão com urgencia
     decisao = {
@@ -269,7 +313,11 @@ def test_validacao_urgencia():
 
 def test_validacao_reversibilidade():
     """Testa a validação de uma decisão com reversibilidade."""
-    validador = ValidadorEtico(GerenciadorMemoria())
+    validador = ValidadorEtico(GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }))
     
     # Simular decisão com reversibilidade
     decisao = {
@@ -296,7 +344,11 @@ def test_validacao_reversibilidade():
 
 def test_validacao_testes():
     """Testa a validação de uma decisão com testes."""
-    validador = ValidadorEtico(GerenciadorMemoria())
+    validador = ValidadorEtico(GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }))
     
     # Simular decisão com testes
     decisao = {
@@ -323,7 +375,11 @@ def test_validacao_testes():
 
 def test_validacao_revisao():
     """Testa a validação de uma decisão com revisão."""
-    validador = ValidadorEtico(GerenciadorMemoria())
+    validador = ValidadorEtico(GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }))
     
     # Simular decisão com revisão
     decisao = {
@@ -350,7 +406,11 @@ def test_validacao_revisao():
 
 def test_validacao_aprovacao():
     """Testa a validação de uma decisão com aprovação."""
-    validador = ValidadorEtico(GerenciadorMemoria())
+    validador = ValidadorEtico(GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }))
     
     # Simular decisão com aprovação
     decisao = {
@@ -378,7 +438,11 @@ def test_validacao_aprovacao():
 
 def test_validacao_preservacao_vida():
     """Testa a validação ética do pilar de preservação da vida."""
-    validador = ValidadorEtico(GerenciadorMemoria())
+    validador = ValidadorEtico(GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }))
     
     # Simular decisão que afeta preservação da vida
     decisao = {
@@ -411,7 +475,11 @@ def test_validacao_preservacao_vida():
 
 def test_validacao_equidade_global():
     """Testa a validação ética do pilar de equidade global."""
-    validador = ValidadorEtico(GerenciadorMemoria())
+    validador = ValidadorEtico(GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }))
     
     # Simular decisão que afeta equidade global
     decisao = {
@@ -446,7 +514,11 @@ def test_validacao_equidade_global():
 
 def test_validacao_transparencia_radical():
     """Testa a validação ética do pilar de transparência radical."""
-    validador = ValidadorEtico(GerenciadorMemoria())
+    validador = ValidadorEtico(GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }))
     
     # Simular decisão que requer transparência radical
     decisao = {
@@ -481,7 +553,11 @@ def test_validacao_transparencia_radical():
 
 def test_validacao_sustentabilidade():
     """Testa a validação ética do pilar de sustentabilidade."""
-    validador = ValidadorEtico(GerenciadorMemoria())
+    validador = ValidadorEtico(GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }))
     
     # Simular decisão que afeta sustentabilidade
     decisao = {
@@ -516,7 +592,11 @@ def test_validacao_sustentabilidade():
 
 def test_validacao_controle_humano():
     """Testa a validação ética do pilar de controle humano residual."""
-    validador = ValidadorEtico(GerenciadorMemoria())
+    validador = ValidadorEtico(GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }))
     
     # Simular decisão que requer controle humano
     decisao = {
@@ -551,7 +631,11 @@ def test_validacao_controle_humano():
 
 def test_validacao_lgpd_gdpr():
     """Testa a validação de conformidade com LGPD/GDPR."""
-    validador = ValidadorEtico(GerenciadorMemoria())
+    validador = ValidadorEtico(GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }))
     
     # Simular decisão que lida com dados pessoais
     decisao = {
@@ -588,7 +672,11 @@ def test_validacao_lgpd_gdpr():
 
 def test_validacao_viés_equidade():
     """Testa a validação de viés e equidade nas decisões."""
-    validador = ValidadorEtico(GerenciadorMemoria())
+    validador = ValidadorEtico(GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }))
     
     # Simular decisão que requer análise de viés
     decisao = {
@@ -624,7 +712,11 @@ def test_validacao_viés_equidade():
 
 def test_validacao_decisao_financeira():
     """Testa a validação ética de decisões financeiras."""
-    validador = ValidadorEtico(GerenciadorMemoria())
+    validador = ValidadorEtico(GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }))
     
     # Simular decisão financeira
     decisao = {
@@ -660,7 +752,11 @@ def test_validacao_decisao_financeira():
 
 def test_validacao_cenario_extremo():
     """Testa a validação ética em cenário extremo."""
-    validador = ValidadorEtico(GerenciadorMemoria())
+    validador = ValidadorEtico(GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    }))
     
     # Simular decisão em cenário extremo
     decisao = {

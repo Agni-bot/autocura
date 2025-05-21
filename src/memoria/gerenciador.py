@@ -37,7 +37,7 @@ class EntradaMemoria:
     relacionamentos: List[str]
 
 class GerenciadorMemoria:
-    def __init__(self, diretorio_base: str = "memoria"):
+    def __init__(self, diretorio_base: str = "memoria", config: Dict[str, Any] = None):
         self.logger = logging.getLogger(__name__)
         self.diretorio_base = Path(diretorio_base)
         self.db_path = self.diretorio_base / "memoria.db"
@@ -49,6 +49,11 @@ class GerenciadorMemoria:
         
         # Inicializa banco de dados
         self._inicializar_db()
+        
+        # Configura o Redis
+        self.redis_host = config.get("redis_host", "localhost")
+        self.redis_port = config.get("redis_port", 6379)
+        self.redis_db = config.get("redis_db", 0)
         
     def _inicializar_db(self):
         """Inicializa o banco de dados SQLite"""
@@ -332,7 +337,11 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     
     # Cria instância do gerenciador
-    gerenciador = GerenciadorMemoria()
+    gerenciador = GerenciadorMemoria({
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 0
+    })
     
     # Armazena algumas entradas
     id1 = gerenciador.armazenar(

@@ -1,0 +1,56 @@
+server.name: kibana
+server.host: "0.0.0.0"
+elasticsearch.hosts: [ "http://elasticsearch:9200" ]
+monitoring.ui.container.elasticsearch.enabled: true
+
+# Configurações de segurança
+elasticsearch.username: ${ELASTICSEARCH_USERNAME}
+elasticsearch.password: ${ELASTICSEARCH_PASSWORD}
+xpack.security.enabled: false
+xpack.reporting.enabled: true
+xpack.encryptedSavedObjects.encryptionKey: "something_at_least_32_characters_long"
+
+# Configurações de logging
+logging:
+  appenders:
+    file:
+      type: file
+      fileName: /usr/share/kibana/logs/kibana.log
+      layout:
+        type: pattern
+  root:
+    appenders: [file]
+    level: info
+
+# Configurações de telemetria
+telemetry.enabled: false
+telemetry.allowChangingOptInStatus: false
+
+# Configurações de cache
+optimize.bundleFilter: "!tests"
+optimize.useBundleCache: true
+optimize.bundleDir: /usr/share/kibana/optimize/bundles
+
+# Configurações de timeout
+elasticsearch.requestTimeout: 30000
+elasticsearch.pingTimeout: 30000
+elasticsearch.startupTimeout: 30000
+
+# Configurações de retenção
+xpack.reporting.queue.timeout: 120000
+xpack.reporting.csv.maxSizeBytes: 10485760
+xpack.reporting.csv.scroll.size: 500
+xpack.reporting.csv.scroll.duration: 30s
+
+# Configurações de visualização
+visualization:colorMapping:
+  "0 to 100": "#F1D8A9"
+  "100 to 200": "#F1A9A9"
+  "200 to 300": "#A9F1A9"
+  "300 to 400": "#A9F1F1"
+  "400 to 500": "#A9A9F1"
+  "500 to 600": "#F1A9F1"
+  "600 to 700": "#F1F1A9"
+  "700 to 800": "#A9A9A9"
+  "800 to 900": "#F1F1F1"
+  "900 to 1000": "#000000" 
