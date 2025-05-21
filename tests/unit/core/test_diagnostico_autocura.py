@@ -32,6 +32,24 @@ def diagnostico_exemplo() -> Dict[str, Any]:
 def gerenciador():
     """Fornece uma instância do gerenciador de diagnóstico para testes."""
     with patch("src.core.diagnostico_autocura.GerenciadorMemoria") as mock_memoria:
+        # Configura todos os métodos como AsyncMock
+        mock_memoria.criar_entidade = AsyncMock(return_value=True)
+        mock_memoria.atualizar_entidade = AsyncMock(return_value=True)
+        mock_memoria.obter_entidade = AsyncMock(return_value={
+            "id": "test-id",
+            "tipo": TipoDiagnostico.SISTEMA.value,
+            "descricao": "Teste",
+            "severidade": Severidade.ALTA.value,
+            "metricas": {},
+            "status": StatusDiagnostico.ABERTO.value,
+            "data_criacao": datetime.now().isoformat(),
+            "data_analise": None,
+            "data_resolucao": None,
+            "resolucao": None,
+            "acoes_tomadas": []
+        })
+        mock_memoria.listar_entidades = AsyncMock(return_value=[{"id": "test-id"}])
+        
         gerenciador = GerenciadorDiagnostico()
         gerenciador.memoria = mock_memoria
         yield gerenciador
@@ -39,7 +57,6 @@ def gerenciador():
 @pytest.mark.asyncio
 async def test_criar_diagnostico(gerenciador, diagnostico_exemplo):
     """Testa a criação de um diagnóstico."""
-    # Mock do método de memória
     gerenciador.memoria.criar_entidade = AsyncMock()
     
     # Cria diagnóstico

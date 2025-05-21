@@ -1,111 +1,142 @@
-<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="6" time="3.812" timestamp="2025-05-21T13:06:21.415308-03:00" hostname="OA1"><testcase classname="tests.unit.core.test_acoes_correcao" name="test_criar_acao" time="0.015" /><testcase classname="tests.unit.core.test_acoes_correcao" name="test_executar_acao" time="0.008" /><testcase classname="tests.unit.core.test_acoes_correcao" name="test_finalizar_acao" time="0.006" /><testcase classname="tests.unit.core.test_acoes_correcao" name="test_obter_acao" time="0.007"><failure message="AssertionError: assert 'correcao' == &lt;TipoAcao.CORRECAO: 'correcao'&gt;&#10; +  where 'correcao' = &lt;src.core.acoes_correcao.AcaoCorrecao object at 0x0000025A77F6EBE0&gt;.tipo&#10; +  and   &lt;TipoAcao.CORRECAO: 'correcao'&gt; = &lt;src.core.acoes_correcao.AcaoCorrecao object at 0x0000025A77F6C050&gt;.tipo">gerenciador = &lt;src.core.acoes_correcao.GerenciadorAcoes object at 0x0000025A77EDB950&gt;
-acao_exemplo = {'descricao': 'Corrigir falha no sistema', 'parametros': {'componente': 'api', 'severidade': 'alta'}, 'tipo': &lt;TipoAcao.CORRECAO: 'correcao'&gt;}
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="4" time="3.761" timestamp="2025-05-21T13:58:50.571705-03:00" hostname="OA1"><testcase classname="tests.unit.core.test_diagnostico_autocura" name="test_criar_diagnostico" time="0.007" /><testcase classname="tests.unit.core.test_diagnostico_autocura" name="test_analisar_diagnostico" time="0.004"><failure message="TypeError: object MagicMock can't be used in 'await' expression">gerenciador = &lt;src.core.diagnostico_autocura.GerenciadorDiagnostico object at 0x000001DCF86F8A50&gt;
+diagnostico_exemplo = {'descricao': 'Falha no sistema de autocura', 'metricas': {'cpu': 95.0, 'latencia': 500, 'memoria': 85.0}, 'severidade': &lt;Severidade.ALTA: 'alta'&gt;, 'tipo': &lt;TipoDiagnostico.SISTEMA: 'sistema'&gt;}
 
     @pytest.mark.asyncio
-    async def test_obter_acao(gerenciador, acao_exemplo):
-        """Testa a obtenção de uma ação de correção."""
-        # Configura os mocks
-        acao_id = "123"
-        acao_dados = {
-            "id": acao_id,
-            "tipo": acao_exemplo["tipo"].value,
-            "descricao": acao_exemplo["descricao"],
-            "parametros": acao_exemplo["parametros"],
-            "status": StatusAcao.PENDENTE.value,
-            "data_criacao": None,
-            "data_inicio": None,
-            "data_fim": None,
-            "sucesso": None,
-            "validada": False,
-            "data_validacao": None
-        }
-    
-        gerenciador.memoria.criar_entidade.return_value = acao_id
-        gerenciador.memoria.obter_entidade.return_value = acao_dados
-    
-        # Cria ação
-        acao = await gerenciador.criar_acao(
-            tipo=acao_exemplo["tipo"],
-            descricao=acao_exemplo["descricao"],
-            parametros=acao_exemplo["parametros"]
-        )
-    
-        # Obtém ação
-        acao_obtida = await gerenciador.obter_acao(acao.id)
-    
-        assert acao_obtida is not None
-        assert acao_obtida.id == acao_id
-&gt;       assert acao_obtida.tipo == acao.tipo
-E       AssertionError: assert 'correcao' == &lt;TipoAcao.CORRECAO: 'correcao'&gt;
-E        +  where 'correcao' = &lt;src.core.acoes_correcao.AcaoCorrecao object at 0x0000025A77F6EBE0&gt;.tipo
-E        +  and   &lt;TipoAcao.CORRECAO: 'correcao'&gt; = &lt;src.core.acoes_correcao.AcaoCorrecao object at 0x0000025A77F6C050&gt;.tipo
-
-tests\unit\core\test_acoes_correcao.py:161: AssertionError</failure></testcase><testcase classname="tests.unit.core.test_acoes_correcao" name="test_listar_acoes" time="0.004"><failure message="assert 0 == 3&#10; +  where 0 = len([])">gerenciador = &lt;src.core.acoes_correcao.GerenciadorAcoes object at 0x0000025A77FC0510&gt;
-acao_exemplo = {'descricao': 'Corrigir falha no sistema', 'parametros': {'componente': 'api', 'severidade': 'alta'}, 'tipo': &lt;TipoAcao.CORRECAO: 'correcao'&gt;}
-
-    @pytest.mark.asyncio
-    async def test_listar_acoes(gerenciador, acao_exemplo):
-        """Testa a listagem de ações de correção."""
+    async def test_analisar_diagnostico(gerenciador, diagnostico_exemplo):
+        """Testa a análise de um diagnóstico."""
         # Mock do método de memória
-        gerenciador.memoria.buscar_entidades = AsyncMock()
+        gerenciador.memoria.atualizar_entidade = AsyncMock()
     
-        # Cria algumas ações
-        for i in range(3):
-            await gerenciador.criar_acao(
-                tipo=acao_exemplo["tipo"],
-                descricao=f"{acao_exemplo['descricao']} {i}",
-                parametros=acao_exemplo["parametros"]
-            )
-    
-        # Lista ações
-        acoes = await gerenciador.listar_acoes()
-    
-&gt;       assert len(acoes) == 3
-E       assert 0 == 3
-E        +  where 0 = len([])
+        # Cria e analisa diagnóstico
+&gt;       diagnostico = await gerenciador.criar_diagnostico(
+            tipo=diagnostico_exemplo["tipo"],
+            descricao=diagnostico_exemplo["descricao"],
+            severidade=diagnostico_exemplo["severidade"],
+            metricas=diagnostico_exemplo["metricas"]
+        )
 
-tests\unit\core\test_acoes_correcao.py:184: AssertionError</failure></testcase><testcase classname="tests.unit.core.test_acoes_correcao" name="test_validar_acao" time="0.004"><failure message="TypeError: AsyncMock.keys() returned a non-iterable (type coroutine)">gerenciador = &lt;src.core.acoes_correcao.GerenciadorAcoes object at 0x0000025A77FD9010&gt;
-acao_exemplo = {'descricao': 'Corrigir falha no sistema', 'parametros': {'componente': 'api', 'severidade': 'alta'}, 'tipo': &lt;TipoAcao.CORRECAO: 'correcao'&gt;}
+tests\unit\core\test_diagnostico_autocura.py:71: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
-    @pytest.mark.asyncio
-    async def test_validar_acao(gerenciador, acao_exemplo):
-        """Testa a validação de uma ação de correção."""
-        # Cria ação
-        acao = await gerenciador.criar_acao(
-            tipo=acao_exemplo["tipo"],
-            descricao=acao_exemplo["descricao"],
-            parametros=acao_exemplo["parametros"]
+self = &lt;src.core.diagnostico_autocura.GerenciadorDiagnostico object at 0x000001DCF86F8A50&gt;
+tipo = &lt;TipoDiagnostico.SISTEMA: 'sistema'&gt;
+descricao = 'Falha no sistema de autocura'
+severidade = &lt;Severidade.ALTA: 'alta'&gt;
+metricas = {'cpu': 95.0, 'latencia': 500, 'memoria': 85.0}
+
+    async def criar_diagnostico(
+        self,
+        tipo: TipoDiagnostico,
+        descricao: str,
+        severidade: Severidade,
+        metricas: Dict[str, Any]
+    ) -&gt; Optional[DiagnosticoAutocura]:
+        """Cria um novo diagnóstico"""
+        if not tipo or not descricao:
+            return None
+    
+        diagnostico = DiagnosticoAutocura(
+            tipo=tipo,
+            descricao=descricao,
+            severidade=severidade,
+            metricas=metricas
         )
     
-        # Valida ação
-&gt;       resultado = await gerenciador.validar_acao(acao.id)
+&gt;       await self.memoria.criar_entidade("diagnosticos", diagnostico.__dict__)
+E       TypeError: object MagicMock can't be used in 'await' expression
 
-tests\unit\core\test_acoes_correcao.py:198: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src\core\diagnostico_autocura.py:92: TypeError</failure></testcase><testcase classname="tests.unit.core.test_diagnostico_autocura" name="test_finalizar_diagnostico" time="0.003"><failure message="TypeError: object MagicMock can't be used in 'await' expression">gerenciador = &lt;src.core.diagnostico_autocura.GerenciadorDiagnostico object at 0x000001DCF86F87D0&gt;
+diagnostico_exemplo = {'descricao': 'Falha no sistema de autocura', 'metricas': {'cpu': 95.0, 'latencia': 500, 'memoria': 85.0}, 'severidade': &lt;Severidade.ALTA: 'alta'&gt;, 'tipo': &lt;TipoDiagnostico.SISTEMA: 'sistema'&gt;}
 
-self = &lt;src.core.acoes_correcao.GerenciadorAcoes object at 0x0000025A77FD9010&gt;
-acao_id = '4874d06e-5600-497f-8a04-2d6553269bac'
+    @pytest.mark.asyncio
+    async def test_finalizar_diagnostico(gerenciador, diagnostico_exemplo):
+        """Testa a finalização de um diagnóstico."""
+        # Mock do método de memória
+        gerenciador.memoria.atualizar_entidade = AsyncMock()
+    
+        # Cria, analisa e finaliza diagnóstico
+&gt;       diagnostico = await gerenciador.criar_diagnostico(
+            tipo=diagnostico_exemplo["tipo"],
+            descricao=diagnostico_exemplo["descricao"],
+            severidade=diagnostico_exemplo["severidade"],
+            metricas=diagnostico_exemplo["metricas"]
+        )
 
-    async def validar_acao(self, acao_id: str) -&gt; bool:
-        """Valida uma ação de correção"""
-&gt;       acao = await self.obter_acao(acao_id)
+tests\unit\core\test_diagnostico_autocura.py:94: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
-src\core\acoes_correcao.py:134: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+self = &lt;src.core.diagnostico_autocura.GerenciadorDiagnostico object at 0x000001DCF86F87D0&gt;
+tipo = &lt;TipoDiagnostico.SISTEMA: 'sistema'&gt;
+descricao = 'Falha no sistema de autocura'
+severidade = &lt;Severidade.ALTA: 'alta'&gt;
+metricas = {'cpu': 95.0, 'latencia': 500, 'memoria': 85.0}
 
-self = &lt;src.core.acoes_correcao.GerenciadorAcoes object at 0x0000025A77FD9010&gt;
-acao_id = '4874d06e-5600-497f-8a04-2d6553269bac'
-
-    async def obter_acao(self, acao_id: str) -&gt; Optional[AcaoCorrecao]:
-        """Obtém uma ação de correção pelo ID"""
-        if not self.memoria:
+    async def criar_diagnostico(
+        self,
+        tipo: TipoDiagnostico,
+        descricao: str,
+        severidade: Severidade,
+        metricas: Dict[str, Any]
+    ) -&gt; Optional[DiagnosticoAutocura]:
+        """Cria um novo diagnóstico"""
+        if not tipo or not descricao:
             return None
     
-        dados = await self.memoria.obter_entidade("acoes", acao_id)
-        if not dados:
+        diagnostico = DiagnosticoAutocura(
+            tipo=tipo,
+            descricao=descricao,
+            severidade=severidade,
+            metricas=metricas
+        )
+    
+&gt;       await self.memoria.criar_entidade("diagnosticos", diagnostico.__dict__)
+E       TypeError: object MagicMock can't be used in 'await' expression
+
+src\core\diagnostico_autocura.py:92: TypeError</failure></testcase><testcase classname="tests.unit.core.test_diagnostico_autocura" name="test_obter_diagnostico" time="0.003"><failure message="TypeError: object MagicMock can't be used in 'await' expression">gerenciador = &lt;src.core.diagnostico_autocura.GerenciadorDiagnostico object at 0x000001DCF8740FC0&gt;
+diagnostico_exemplo = {'descricao': 'Falha no sistema de autocura', 'metricas': {'cpu': 95.0, 'latencia': 500, 'memoria': 85.0}, 'severidade': &lt;Severidade.ALTA: 'alta'&gt;, 'tipo': &lt;TipoDiagnostico.SISTEMA: 'sistema'&gt;}
+
+    @pytest.mark.asyncio
+    async def test_obter_diagnostico(gerenciador, diagnostico_exemplo):
+        """Testa a obtenção de um diagnóstico."""
+        # Mock do método de memória
+        gerenciador.memoria.obter_entidade = AsyncMock()
+    
+        # Cria diagnóstico
+&gt;       diagnostico = await gerenciador.criar_diagnostico(
+            tipo=diagnostico_exemplo["tipo"],
+            descricao=diagnostico_exemplo["descricao"],
+            severidade=diagnostico_exemplo["severidade"],
+            metricas=diagnostico_exemplo["metricas"]
+        )
+
+tests\unit\core\test_diagnostico_autocura.py:124: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = &lt;src.core.diagnostico_autocura.GerenciadorDiagnostico object at 0x000001DCF8740FC0&gt;
+tipo = &lt;TipoDiagnostico.SISTEMA: 'sistema'&gt;
+descricao = 'Falha no sistema de autocura'
+severidade = &lt;Severidade.ALTA: 'alta'&gt;
+metricas = {'cpu': 95.0, 'latencia': 500, 'memoria': 85.0}
+
+    async def criar_diagnostico(
+        self,
+        tipo: TipoDiagnostico,
+        descricao: str,
+        severidade: Severidade,
+        metricas: Dict[str, Any]
+    ) -&gt; Optional[DiagnosticoAutocura]:
+        """Cria um novo diagnóstico"""
+        if not tipo or not descricao:
             return None
     
-&gt;       return AcaoCorrecao(**dados)
-E       TypeError: AsyncMock.keys() returned a non-iterable (type coroutine)
+        diagnostico = DiagnosticoAutocura(
+            tipo=tipo,
+            descricao=descricao,
+            severidade=severidade,
+            metricas=metricas
+        )
+    
+&gt;       await self.memoria.criar_entidade("diagnosticos", diagnostico.__dict__)
+E       TypeError: object MagicMock can't be used in 'await' expression
 
-src\core\acoes_correcao.py:122: TypeError</failure></testcase></testsuite></testsuites>
+src\core\diagnostico_autocura.py:92: TypeError</failure></testcase></testsuite></testsuites>

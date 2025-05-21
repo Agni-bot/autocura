@@ -32,11 +32,11 @@ class AcaoCorrecao:
     
     def __init__(
         self,
-        tipo: TipoAcao,
+        tipo: 'TipoAcao',
         descricao: str,
         parametros: Dict[str, Any],
         id: Optional[str] = None,
-        status: StatusAcao = StatusAcao.PENDENTE,
+        status: 'StatusAcao' = StatusAcao.PENDENTE,
         data_criacao: Optional[datetime] = None,
         data_inicio: Optional[datetime] = None,
         data_fim: Optional[datetime] = None,
@@ -44,6 +44,12 @@ class AcaoCorrecao:
         validada: bool = False,
         data_validacao: Optional[datetime] = None
     ):
+        from src.core.acoes_correcao import TipoAcao, StatusAcao
+        # Conversão automática de string para Enum
+        if isinstance(tipo, str):
+            tipo = TipoAcao(tipo)
+        if isinstance(status, str):
+            status = StatusAcao(status)
         self.id = id or str(uuid4())
         self.tipo = tipo
         self.descricao = descricao
