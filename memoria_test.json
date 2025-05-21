@@ -1,0 +1,147 @@
+{
+  "estado_sistema": {
+    "nivel_autonomia": 1,
+    "status": "inicializado",
+    "ultima_atualizacao": "2025-05-20T22:24:12.911360",
+    "metricas_desempenho": {},
+    "alertas_ativos": [],
+    "incidentes": []
+  },
+  "memoria_operacional": {
+    "decisoes": [],
+    "acoes": [],
+    "validacoes": [],
+    "auditorias": [],
+    "diagnosticos": [],
+    "correcoes": [],
+    "anomalias": [],
+    "entidades": {}
+  },
+  "memoria_etica": {
+    "principios": {
+      "privacidade": 0.9,
+      "transparencia": 0.85,
+      "justica": 0.95,
+      "seguranca": 0.88
+    },
+    "violacoes": [
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "principio_violado": "privacidade",
+        "descricao": "Teste de violação",
+        "severidade": "alta",
+        "timestamp": "2025-05-20T22:24:24.177267"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "principio_violado": "privacidade",
+        "descricao": "Teste de violação",
+        "timestamp": "2025-05-20T22:24:24.211962"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "principio_violado": "privacidade",
+        "descricao": "Teste de violação",
+        "timestamp": "2025-05-20T22:24:24.242157"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "principio_violado": "privacidade",
+        "descricao": "Teste de violação",
+        "timestamp": "2025-05-20T22:24:24.243090"
+      }
+    ],
+    "ajustes": [],
+    "relatorios": [],
+    "validacoes": [
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "nivel_confianca": 0.95,
+        "timestamp": "2025-05-20T22:24:24.116404"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "processamento_dados",
+        "resultado": "aprovado",
+        "justificativa": "Decisão validada",
+        "nivel_confianca": 1.0,
+        "timestamp": "2025-05-20T22:24:24.143113"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-20T22:24:24.210201"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-20T22:24:24.236508"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-20T22:24:24.238002"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-20T22:24:24.238965"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-20T22:24:24.240000"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-20T22:24:24.241191"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "processamento_dados",
+        "resultado": "aprovado",
+        "justificativa": "Decisão validada",
+        "nivel_confianca": 1.0,
+        "timestamp": "2025-05-20T22:24:24.263956"
+      }
+    ]
+  },
+  "memoria_tecnica": {
+    "configuracoes": {},
+    "dependencias": {},
+    "logs": [],
+    "metricas": {}
+  },
+  "memoria_cognitiva": {
+    "aprendizados": [],
+    "padroes": [],
+    "heuristicas": [],
+    "adaptacoes": []
+  },
+  "memoria_autonomia": {
+    "transicoes": [],
+    "niveis": {},
+    "criterios": {},
+    "validacoes": []
+  }
+}

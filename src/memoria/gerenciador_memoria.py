@@ -4,8 +4,10 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 from pathlib import Path
 import redis
-from prometheus_client import Counter, Gauge, Histogram
+from prometheus_client import Counter, Gauge, Histogram, CollectorRegistry
 from dataclasses import dataclass
+import os
+import uuid
 
 # Configuração de logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -25,62 +27,48 @@ class EntidadeMemoria:
 class GerenciadorMemoria:
     """Módulo Gerenciador de Memória para gerenciar a memória compartilhada do sistema."""
     
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(
+        self,
+        config: Optional[Dict[str, Any]] = None,
+        memoria_path: Optional[str] = None,
+        redis_host: str = "localhost",
+        redis_port: int = 6379,
+        redis_db: int = 0,
+        registry: Optional[CollectorRegistry] = None,
+        logger: Optional[logging.Logger] = None
+    ):
         """Inicializa o gerenciador de memória.
         
         Args:
-            config: Configuração do gerenciador
+            config: Configuração do gerenciador (opcional)
+            memoria_path: Caminho do arquivo de memória (opcional)
+            redis_host: Host do Redis (padrão: localhost)
+            redis_port: Porta do Redis (padrão: 6379)
+            redis_db: Banco de dados do Redis (padrão: 0)
+            registry: Registry do Prometheus (opcional)
+            logger: Logger customizado (opcional)
         """
-        self.config = config
-        self.logger = logging.getLogger(__name__)
+        self.config = config or {}
+        self.logger = logger or logging.getLogger(__name__)
         
         # Define o caminho do arquivo de memória
-        self.caminho_memoria = Path(config.get("memoria_path", "data/memoria_compartilhada.json"))
+        self.caminho_memoria = Path(memoria_path or self.config.get("memoria_path", "data/memoria_compartilhada.json"))
         self.caminho_memoria.parent.mkdir(parents=True, exist_ok=True)
         
         # Cliente Redis
         self.redis = redis.Redis(
-            host=config.get("redis_host", "localhost"),
-            port=config.get("redis_port", 6379),
-            db=config.get("redis_db", 0),
+            host=redis_host,
+            port=redis_port,
+            db=redis_db,
             decode_responses=True
         )
         
         # Cache local
         self.cache_local: Dict[str, EntidadeMemoria] = {}
         
-        # Inicializa memória
-        self.memoria = self._carregar_memoria()
-        if not self.memoria:
-            self.memoria = self._criar_memoria_inicial()
-            self._salvar_memoria(self.memoria)
-        
-        # Métricas Prometheus
-        self.metricas = {
-            "entidades_criadas": Counter(
-                "entidades_memoria_criadas_total",
-                "Total de entidades criadas",
-                ["tipo"],
-                registry=None
-            ),
-            "entidades_atualizadas": Counter(
-                "entidades_memoria_atualizadas_total",
-                "Total de entidades atualizadas",
-                ["tipo"],
-                registry=None
-            ),
-            "tamanho_memoria": Gauge(
-                "tamanho_memoria_bytes",
-                "Tamanho total da memória em bytes",
-                registry=None
-            ),
-            "tempo_operacao": Histogram(
-                "tempo_operacao_memoria_seconds",
-                "Tempo de operações na memória",
-                ["operacao"],
-                registry=None
-            )
-        }
+        # Inicializa métricas Prometheus
+        self.registry = registry or CollectorRegistry()
+        self.metricas = self._inicializar_metricas()
         
         # Configuração de tipos de entidade
         self.tipos_entidade = {
@@ -102,149 +90,117 @@ class GerenciadorMemoria:
             }
         }
         
+        # Inicializa memória
+        self.memoria = self._carregar_memoria()
+        if not self.memoria:
+            self.memoria = self._criar_memoria_inicial()
+            self._salvar_memoria(self.memoria)
+        
         self.logger.info("Gerenciador de Memória inicializado")
     
-    async def criar_entidade(self, tipo: str, dados: Dict[str, Any], tags: List[str] = None) -> Optional[EntidadeMemoria]:
-        """Cria uma nova entidade na memória.
-        
-        Args:
-            tipo: Tipo da entidade
-            dados: Dados da entidade
-            tags: Tags da entidade
-            
-        Returns:
-            Entidade criada ou None em caso de erro
-        """
-        if tipo not in self.tipos_entidade:
-            self.logger.error(f"Tipo de entidade desconhecido: {tipo}")
-            return None
-        
+    def _inicializar_metricas(self) -> Dict[str, Any]:
+        """Inicializa as métricas do Prometheus."""
         try:
-            with self.metricas["tempo_operacao"].labels(operacao="criar").time():
-                # Gera ID único
-                entidade_id = f"{tipo}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-                
-                # Cria entidade
-                entidade = EntidadeMemoria(
-                    id=entidade_id,
-                    tipo=tipo,
-                    dados=dados,
-                    timestamp=datetime.now(),
-                    versao="1.0",
-                    tags=tags or [],
-                    relacionamentos=[]
+            # Verifica se as métricas já existem no registro
+            if hasattr(self.registry, '_names_to_collectors'):
+                for name in self.registry._names_to_collectors:
+                    if name.startswith('entidades_memoria_'):
+                        return self.metricas
+
+            # Inicializa novas métricas
+            self.metricas = {
+                "entidades_criadas": Counter(
+                    "entidades_memoria_criadas",
+                    "Número de entidades criadas na memória",
+                    ["tipo"],
+                    registry=self.registry
+                ),
+                "entidades_atualizadas": Counter(
+                    "entidades_memoria_atualizadas",
+                    "Número de entidades atualizadas na memória",
+                    ["tipo"],
+                    registry=self.registry
+                ),
+                "entidades_removidas": Counter(
+                    "entidades_memoria_removidas",
+                    "Número de entidades removidas da memória",
+                    ["tipo"],
+                    registry=self.registry
+                ),
+                "operacoes_redis": Counter(
+                    "operacoes_redis_total",
+                    "Número total de operações no Redis",
+                    ["operacao"],
+                    registry=self.registry
+                ),
+                "tempo_operacao": Histogram(
+                    "tempo_operacao_segundos",
+                    "Tempo de execução das operações",
+                    ["operacao"],
+                    registry=self.registry
                 )
-                
-                # Verifica tamanho
-                dados_json = json.dumps(entidade.__dict__, default=str)
-                if len(dados_json) > self.tipos_entidade[tipo]["max_size"]:
-                    self.logger.error(f"Entidade excede tamanho máximo: {len(dados_json)} bytes")
-                    return None
-                
-                # Salva no Redis
-                self.redis.set(
-                    f"entidade:{entidade_id}",
-                    dados_json,
-                    ex=int(self.tipos_entidade[tipo]["ttl"].total_seconds())
-                )
-                
-                # Atualiza cache local
-                self.cache_local[entidade_id] = entidade
-                
-                # Atualiza métricas
-                self.metricas["entidades_criadas"].labels(tipo=tipo).inc()
-                self.metricas["tamanho_memoria"].inc(len(dados_json))
-                
-                self.logger.info(f"Entidade criada: {entidade_id}")
-                return entidade
-                
+            }
+            return self.metricas
         except Exception as e:
-            self.logger.error(f"Erro ao criar entidade: {e}")
+            self.logger.error(f"Erro ao inicializar métricas: {str(e)}")
+            return {}
+    
+    async def criar_entidade(self, tipo: str, dados: Dict[str, Any], tags: List[str] = None) -> Optional[EntidadeMemoria]:
+        """Cria uma nova entidade na memória."""
+        try:
+            if "entidades" not in self.memoria["memoria_operacional"]:
+                self.memoria["memoria_operacional"]["entidades"] = {}
+            if tipo not in self.memoria["memoria_operacional"]["entidades"]:
+                self.memoria["memoria_operacional"]["entidades"][tipo] = []
+            entidade = EntidadeMemoria(
+                id=str(uuid.uuid4()),
+                tipo=tipo,
+                dados=dados,
+                tags=tags or [],
+                timestamp=datetime.now().isoformat(),
+                versao="1.0",
+                relacionamentos=[]
+            )
+            self.memoria["memoria_operacional"]["entidades"][tipo].append(entidade.__dict__)
+            self._salvar_memoria(self.memoria)
+            if "entidades_criadas" in self.metricas:
+                self.metricas["entidades_criadas"].labels(tipo=tipo).inc()
+            self.logger.info(f"Nova entidade do tipo {tipo} criada")
+            return entidade
+        except Exception as e:
+            self.logger.error(f"Erro ao criar entidade: {str(e)}")
             return None
     
-    async def atualizar_entidade(self, entidade_id: str, dados: Dict[str, Any]) -> bool:
-        """Atualiza uma entidade existente.
-        
-        Args:
-            entidade_id: ID da entidade
-            dados: Novos dados
-            
-        Returns:
-            True se atualizado com sucesso
-        """
+    async def atualizar_entidade(self, id: str, dados: Dict[str, Any]) -> bool:
+        """Atualiza uma entidade na memória."""
         try:
-            with self.metricas["tempo_operacao"].labels(operacao="atualizar").time():
-                # Obtém entidade
-                entidade = await self.obter_entidade(entidade_id)
-                if not entidade:
-                    return False
-                
-                # Incrementa versão
-                versao_atual = float(entidade.versao)
-                nova_versao = f"{versao_atual + 0.1:.1f}"
-                
-                # Atualiza entidade
-                entidade.dados = dados
-                entidade.timestamp = datetime.now()
-                entidade.versao = nova_versao
-                
-                # Verifica tamanho
-                dados_json = json.dumps(entidade.__dict__, default=str)
-                if len(dados_json) > self.tipos_entidade[entidade.tipo]["max_size"]:
-                    self.logger.error(f"Entidade excede tamanho máximo: {len(dados_json)} bytes")
-                    return False
-                
-                # Salva no Redis
-                self.redis.set(
-                    f"entidade:{entidade_id}",
-                    dados_json,
-                    ex=int(self.tipos_entidade[entidade.tipo]["ttl"].total_seconds())
-                )
-                
-                # Atualiza cache local
-                self.cache_local[entidade_id] = entidade
-                
-                # Atualiza métricas
-                self.metricas["entidades_atualizadas"].labels(tipo=entidade.tipo).inc()
-                
-                self.logger.info(f"Entidade atualizada: {entidade_id} (versão {nova_versao})")
-                return True
-                
+            for tipo in self.memoria["memoria_operacional"]["entidades"]:
+                for i, entidade in enumerate(self.memoria["memoria_operacional"]["entidades"][tipo]):
+                    if entidade["id"] == id:
+                        entidade["dados"].update(dados)
+                        entidade["timestamp"] = datetime.now().isoformat()
+                        self._salvar_memoria(self.memoria)
+                        
+                        if "entidades_atualizadas" in self.metricas:
+                            self.metricas["entidades_atualizadas"].labels(tipo=tipo).inc()
+                        
+                        self.logger.info(f"Entidade {id} atualizada")
+                        return True
+            return False
         except Exception as e:
-            self.logger.error(f"Erro ao atualizar entidade: {e}")
+            self.logger.error(f"Erro ao atualizar entidade: {str(e)}")
             return False
     
-    async def obter_entidade(self, entidade_id: str) -> Optional[EntidadeMemoria]:
-        """Obtém uma entidade pelo ID.
-        
-        Args:
-            entidade_id: ID da entidade
-            
-        Returns:
-            Entidade ou None se não encontrada
-        """
+    async def obter_entidade(self, id: str) -> Optional[EntidadeMemoria]:
+        """Obtém uma entidade da memória pelo ID."""
         try:
-            with self.metricas["tempo_operacao"].labels(operacao="obter").time():
-                # Verifica cache local
-                if entidade_id in self.cache_local:
-                    return self.cache_local[entidade_id]
-                
-                # Tenta obter do Redis
-                dados_json = self.redis.get(f"entidade:{entidade_id}")
-                if not dados_json:
-                    return None
-                
-                # Converte para entidade
-                dados = json.loads(dados_json)
-                entidade = EntidadeMemoria(**dados)
-                
-                # Atualiza cache local
-                self.cache_local[entidade_id] = entidade
-                
-                return entidade
-                
+            for tipo in self.memoria["memoria_operacional"]["entidades"]:
+                for entidade in self.memoria["memoria_operacional"]["entidades"][tipo]:
+                    if entidade["id"] == id:
+                        return EntidadeMemoria(**entidade)
+            return None
         except Exception as e:
-            self.logger.error(f"Erro ao obter entidade: {e}")
+            self.logger.error(f"Erro ao obter entidade: {str(e)}")
             return None
     
     async def buscar_entidades(self, tipo: Optional[str] = None, tags: Optional[List[str]] = None) -> List[EntidadeMemoria]:
@@ -368,40 +324,25 @@ class GerenciadorMemoria:
         self.logger.info("Cache local limpo")
     
     async def obter_estatisticas(self) -> Dict[str, Any]:
-        """Obtém estatísticas da memória.
-        
-        Returns:
-            Dicionário com estatísticas
-        """
+        """Retorna estatísticas da memória."""
         try:
-            with self.metricas["tempo_operacao"].labels(operacao="estatisticas").time():
-                stats = {
-                    "timestamp": datetime.now(),
-                    "total_entidades": len(self.cache_local),
-                    "por_tipo": {},
-                    "por_tag": {},
-                    "tamanho_total": 0
-                }
-                
-                # Conta entidades por tipo e tag
-                for entidade in self.cache_local.values():
-                    if entidade.tipo not in stats["por_tipo"]:
-                        stats["por_tipo"][entidade.tipo] = 0
-                    stats["por_tipo"][entidade.tipo] += 1
-                    
-                    for tag in entidade.tags:
-                        if tag not in stats["por_tag"]:
-                            stats["por_tag"][tag] = 0
-                        stats["por_tag"][tag] += 1
-                    
-                    # Calcula tamanho total
-                    dados_json = json.dumps(entidade.__dict__, default=str)
-                    stats["tamanho_total"] += len(dados_json)
-                
-                return stats
-                
+            stats = {
+                "total_entidades": sum(
+                    len(entidades)
+                    for entidades in self.memoria["memoria_operacional"]["entidades"].values()
+                ),
+                "entidades_por_tipo": {
+                    tipo: len(entidades)
+                    for tipo, entidades in self.memoria["memoria_operacional"]["entidades"].items()
+                },
+                "total_acoes": len(self.memoria["memoria_operacional"]["acoes"]),
+                "total_validacoes": len(self.memoria["memoria_etica"].get("validacoes", [])),
+                "total_violacoes": len(self.memoria["memoria_etica"].get("violacoes", [])),
+                "ultima_atualizacao": datetime.now().isoformat()
+            }
+            return stats
         except Exception as e:
-            self.logger.error(f"Erro ao obter estatísticas: {e}")
+            self.logger.error(f"Erro ao obter estatísticas: {str(e)}")
             return {}
 
     def initialize(self) -> None:
@@ -418,7 +359,11 @@ class GerenciadorMemoria:
         try:
             if self.caminho_memoria.exists():
                 with open(self.caminho_memoria, 'r', encoding='utf-8') as f:
-                    return json.load(f)
+                    memoria = json.load(f)
+                # Garante que a estrutura de entidades exista
+                if "entidades" not in memoria["memoria_operacional"]:
+                    memoria["memoria_operacional"]["entidades"] = {}
+                return memoria
             else:
                 logger.warning("Arquivo de memória não encontrado. Criando novo.")
                 return self._criar_memoria_inicial()
@@ -444,7 +389,8 @@ class GerenciadorMemoria:
                 "auditorias": [],
                 "diagnosticos": [],
                 "correcoes": [],
-                "anomalias": []
+                "anomalias": [],
+                "entidades": {}  # Garante que sempre existe
             },
             "memoria_etica": {
                 "principios": [],
@@ -510,16 +456,153 @@ class GerenciadorMemoria:
         logger.info("Nova ação registrada")
     
     def registrar_validacao_etica(self, validacao: Dict[str, Any]) -> None:
-        """Registra uma nova validação ética"""
+        """Registra uma validação ética.
+        
+        Args:
+            validacao: Dados da validação ética
+        """
         if "validacoes" not in self.memoria["memoria_etica"]:
             self.memoria["memoria_etica"]["validacoes"] = []
+        
         self.memoria["memoria_etica"]["validacoes"].append({
             **validacao,
             "timestamp": datetime.now().isoformat()
         })
         self._salvar_memoria(self.memoria)
-        logger.info("Nova validação ética registrada")
-    
+        self.logger.info("Nova validação ética registrada")
+
+    async def validar_decisao_etica(self, decisao: Dict[str, Any]) -> Dict[str, Any]:
+        """Valida uma decisão sob aspectos éticos (async)."""
+        principios = self.memoria["memoria_etica"].get("principios", {})
+        resultado = {
+            "aprovado": True,
+            "justificativa": "Decisão validada",
+            "nivel_confianca": 1.0,
+            "avaliacao_principios": {}
+        }
+        if "principios_afetados" in decisao:
+            for principio in decisao["principios_afetados"]:
+                if principio in principios:
+                    resultado["avaliacao_principios"][principio] = principios[principio]
+                    if principios[principio] < 0.8:
+                        resultado["aprovado"] = False
+                        resultado["justificativa"] = f"Violou o princípio de {principio}"
+                        resultado["nivel_confianca"] = principios[principio]
+        self.registrar_validacao_etica({
+            "tipo": "decisao",
+            "contexto": decisao.get("contexto", "geral"),
+            "resultado": "aprovado" if resultado["aprovado"] else "reprovado",
+            "justificativa": resultado["justificativa"],
+            "nivel_confianca": resultado["nivel_confianca"]
+        })
+        return resultado
+
+    def registrar_violacao_etica(self, violacao: Dict[str, Any]) -> None:
+        """Registra uma violação ética.
+        
+        Args:
+            violacao: Dados da violação ética
+        """
+        if "violacoes" not in self.memoria["memoria_etica"]:
+            self.memoria["memoria_etica"]["violacoes"] = []
+        
+        self.memoria["memoria_etica"]["violacoes"].append({
+            **violacao,
+            "timestamp": datetime.now().isoformat()
+        })
+        self._salvar_memoria(self.memoria)
+        self.logger.info("Nova violação ética registrada")
+
+    def obter_validacoes_eticas(self, limite: int = 10) -> List[Dict[str, Any]]:
+        """Retorna as validações éticas mais recentes.
+        
+        Args:
+            limite: Número máximo de validações a retornar
+            
+        Returns:
+            Lista de validações éticas
+        """
+        validacoes = self.memoria["memoria_etica"].get("validacoes", [])
+        return validacoes[-limite:]
+
+    def obter_violacoes_eticas(self, limite: int = 10) -> List[Dict[str, Any]]:
+        """Retorna as violações éticas mais recentes.
+        
+        Args:
+            limite: Número máximo de violações a retornar
+            
+        Returns:
+            Lista de violações éticas
+        """
+        violacoes = self.memoria["memoria_etica"].get("violacoes", [])
+        return violacoes[-limite:]
+
+    def obter_historico_etico(self) -> Dict[str, List[Dict[str, Any]]]:
+        """Retorna o histórico ético completo.
+        
+        Returns:
+            Dicionário com histórico de validações e violações
+        """
+        return {
+            "validacoes": self.memoria["memoria_etica"].get("validacoes", []),
+            "violacoes": self.memoria["memoria_etica"].get("violacoes", [])
+        }
+
+    def analisar_tendencia_etica(self) -> Dict[str, Any]:
+        """Analisa a tendência ética do sistema.
+        
+        Returns:
+            Análise de tendência ética
+        """
+        validacoes = self.memoria["memoria_etica"].get("validacoes", [])
+        violacoes = self.memoria["memoria_etica"].get("violacoes", [])
+        
+        total_validacoes = len(validacoes)
+        total_violacoes = len(violacoes)
+        
+        if total_validacoes == 0:
+            return {
+                "taxa_aprovacao": 0.0,
+                "taxa_violacao": 0.0,
+                "tendencia": "neutra",
+                "recomendacoes": ["Iniciar monitoramento ético"]
+            }
+        
+        taxa_aprovacao = sum(1 for v in validacoes if v["resultado"] == "aprovado") / total_validacoes
+        taxa_violacao = total_violacoes / (total_validacoes + total_violacoes)
+        
+        # Determina tendência
+        if taxa_aprovacao > 0.9 and taxa_violacao < 0.1:
+            tendencia = "positiva"
+            recomendacoes = ["Manter práticas atuais"]
+        elif taxa_aprovacao < 0.7 or taxa_violacao > 0.3:
+            tendencia = "negativa"
+            recomendacoes = [
+                "Revisar princípios éticos",
+                "Implementar controles adicionais",
+                "Realizar auditoria ética"
+            ]
+        else:
+            tendencia = "neutra"
+            recomendacoes = ["Monitorar evolução"]
+        
+        return {
+            "taxa_aprovacao": taxa_aprovacao,
+            "taxa_violacao": taxa_violacao,
+            "tendencia": tendencia,
+            "recomendacoes": recomendacoes
+        }
+
+    def registrar_principios_eticos(self, principios: Dict[str, float]) -> None:
+        """Registra princípios éticos do sistema.
+        
+        Args:
+            principios: Dicionário com princípios e seus pesos
+        """
+        self.memoria["memoria_etica"]["principios"] = principios
+        self._salvar_memoria(self.memoria)
+        self.logger.info("Princípios éticos atualizados")
+
     def registrar_aprendizado(self, aprendizado: Dict[str, Any]) -> None:
         """Registra um novo aprendizado na memória cognitiva"""
         self.memoria["memoria_cognitiva"]["aprendizados"].append({
@@ -586,10 +669,6 @@ class GerenciadorMemoria:
         """Retorna as ações mais recentes"""
         return self.memoria["memoria_operacional"]["acoes"][-limite:]
     
-    def obter_validacoes_eticas(self, limite: int = 10) -> List[Dict[str, Any]]:
-        """Retorna as validações éticas mais recentes"""
-        return self.memoria["memoria_etica"]["validacoes"][-limite:]
-    
     def obter_aprendizados_recentes(self, limite: int = 10) -> List[Dict[str, Any]]:
         """Retorna os aprendizados mais recentes"""
         return self.memoria["memoria_cognitiva"]["aprendizados"][-limite:]
@@ -637,19 +716,33 @@ class GerenciadorMemoria:
     
     def limpar_memoria_antiga(self, dias: int = 30) -> None:
         """Limpa registros antigos da memória"""
-        data_limite = (datetime.now() - datetime.timedelta(days=dias)).isoformat()
+        data_limite = (datetime.now() - timedelta(days=dias)).isoformat()
         
-        for categoria in ["decisoes", "acoes", "validacoes", "auditorias"]:
-            self.memoria["memoria_operacional"][categoria] = [
-                item for item in self.memoria["memoria_operacional"][categoria]
-                if item["timestamp"] > data_limite
+        # Limpa entidades antigas
+        for tipo in self.memoria["memoria_operacional"]["entidades"]:
+            self.memoria["memoria_operacional"]["entidades"][tipo] = [
+                e for e in self.memoria["memoria_operacional"]["entidades"][tipo]
+                if e["timestamp"] > data_limite
             ]
         
-        for categoria in ["aprendizados", "padroes", "heuristicas", "adaptacoes"]:
-            self.memoria["memoria_cognitiva"][categoria] = [
-                item for item in self.memoria["memoria_cognitiva"][categoria]
-                if item["timestamp"] > data_limite
+        # Limpa ações antigas
+        self.memoria["memoria_operacional"]["acoes"] = [
+            a for a in self.memoria["memoria_operacional"]["acoes"]
+            if a["timestamp"] > data_limite
+        ]
+        
+        # Limpa validações éticas antigas
+        if "validacoes" in self.memoria["memoria_etica"]:
+            self.memoria["memoria_etica"]["validacoes"] = [
+                v for v in self.memoria["memoria_etica"]["validacoes"]
+                if v["timestamp"] > data_limite
+            ]
+        
+        if "violacoes" in self.memoria["memoria_etica"]:
+            self.memoria["memoria_etica"]["violacoes"] = [
+                v for v in self.memoria["memoria_etica"]["violacoes"]
+                if v["timestamp"] > data_limite
             ]
         
         self._salvar_memoria(self.memoria)
-        logger.info(f"Memória antiga limpa (mais de {dias} dias)") 
+        self.logger.info(f"Memória antiga limpa (mais antiga que {dias} dias)") 

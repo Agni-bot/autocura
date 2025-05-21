@@ -12,6 +12,8 @@ from typing import Dict, Any, Generator
 from datetime import datetime
 from unittest.mock import Mock, patch
 from pathlib import Path
+import tempfile
+from prometheus_client import CollectorRegistry
 
 # Configuração de logging para testes
 logging.basicConfig(
@@ -157,4 +159,36 @@ def mock_time(monkeypatch: pytest.MonkeyPatch) -> None:
         def now(cls):
             return datetime(2024, 1, 1, 12, 0, 0)
             
-    monkeypatch.setattr("datetime.datetime", MockDatetime) 
+    monkeypatch.setattr("datetime.datetime", MockDatetime)
+
+@pytest.fixture(scope="session")
+def test_config():
+    """Configuração global para testes."""
+    return {
+        "memoria_path": os.path.join(tempfile.gettempdir(), "memoria_test.json"),
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_db": 1,  # DB 1 para testes
+        "prometheus_port": 9091,
+        "grafana_port": 3001,
+        "loki_port": 3101
+    }
+
+@pytest.fixture(scope="session")
+def prometheus_registry():
+    """Registry do Prometheus para testes."""
+    return CollectorRegistry()
+
+@pytest.fixture(scope="session")
+def temp_dir():
+    """Diretório temporário para testes."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        yield tmpdir
+
+@pytest.fixture(autouse=True)
+def setup_teardown():
+    """Setup e teardown automático para cada teste."""
+    # Setup
+    yield
+    # Teardown
+    # Limpa arquivos temporários se necessário 
