@@ -59,8 +59,8 @@ class AcaoCorrecao:
 class GerenciadorAcoes:
     """Gerenciador de ações de correção"""
     
-    def __init__(self):
-        self.memoria = None
+    def __init__(self, memoria=None):
+        self.memoria = memoria
         logger.info("Gerenciador de Ações inicializado")
     
     async def criar_acao(
@@ -79,7 +79,8 @@ class GerenciadorAcoes:
             parametros=parametros
         )
         
-        await self.memoria.criar_entidade("acoes", acao.__dict__)
+        if self.memoria:
+            await self.memoria.criar_entidade("acoes", acao.__dict__)
         return acao
     
     async def executar_acao(self, acao_id: str) -> bool:
@@ -91,7 +92,8 @@ class GerenciadorAcoes:
         acao.status = StatusAcao.EM_EXECUCAO
         acao.data_inicio = datetime.now()
         
-        await self.memoria.atualizar_entidade("acoes", acao_id, acao.__dict__)
+        if self.memoria:
+            await self.memoria.atualizar_entidade("acoes", acao_id, acao.__dict__)
         return True
     
     async def finalizar_acao(self, acao_id: str, sucesso: bool) -> bool:
@@ -104,11 +106,15 @@ class GerenciadorAcoes:
         acao.data_fim = datetime.now()
         acao.sucesso = sucesso
         
-        await self.memoria.atualizar_entidade("acoes", acao_id, acao.__dict__)
+        if self.memoria:
+            await self.memoria.atualizar_entidade("acoes", acao_id, acao.__dict__)
         return True
     
     async def obter_acao(self, acao_id: str) -> Optional[AcaoCorrecao]:
         """Obtém uma ação de correção pelo ID"""
+        if not self.memoria:
+            return None
+            
         dados = await self.memoria.obter_entidade("acoes", acao_id)
         if not dados:
             return None
@@ -117,6 +123,9 @@ class GerenciadorAcoes:
     
     async def listar_acoes(self) -> List[AcaoCorrecao]:
         """Lista todas as ações de correção"""
+        if not self.memoria:
+            return []
+            
         dados = await self.memoria.buscar_entidades("acoes")
         return [AcaoCorrecao(**d) for d in dados]
     
@@ -129,7 +138,8 @@ class GerenciadorAcoes:
         acao.validada = True
         acao.data_validacao = datetime.now()
         
-        await self.memoria.atualizar_entidade("acoes", acao_id, acao.__dict__)
+        if self.memoria:
+            await self.memoria.atualizar_entidade("acoes", acao_id, acao.__dict__)
         return True
 
 class GerenciadorAcoesCorrecao:

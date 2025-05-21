@@ -21,10 +21,10 @@ import os
 import re
 
 # Importação dos módulos principais do sistema
-from monitoramento import Monitoramento  # Coleta dados multidimensionais
-from diagnostico import Diagnostico      # Analisa dados e identifica anomalias
-from gerador import GeradorAcoes         # Gera ações corretivas
-from portal.routes.acao_necessaria import router as acao_router  # Interface de ações
+from .monitoramento import MonitoramentoMultidimensional
+from .diagnostico import DiagnosticoSistema
+from .gerador import GeradorAcoes
+from .portal.routes.acao_necessaria import router as acao_router
 
 # Configuração de logging para rastreamento de operações
 logging.basicConfig(
@@ -41,8 +41,8 @@ app.mount("/static", StaticFiles(directory="src/portal/static"), name="static")
 templates = Jinja2Templates(directory="src/portal/templates")
 
 # Inicialização dos componentes principais do sistema
-monitoramento = Monitoramento()  # Responsável pela coleta de dados
-diagnostico = Diagnostico()      # Responsável pela análise
+monitoramento = MonitoramentoMultidimensional()  # Responsável pela coleta de dados
+diagnostico = DiagnosticoSistema()      # Responsável pela análise
 gerador = GeradorAcoes()         # Responsável pela geração de ações
 
 # Integração da interface de ações necessárias

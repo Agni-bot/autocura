@@ -24,7 +24,8 @@ logger = logging.getLogger("gerador_acoes")
 class GeradorAcoes:
     """Gerador de Ações - Responsável pela geração e execução de ações do sistema"""
     
-    def __init__(self, gerenciador_memoria: GerenciadorMemoria, validador_etico: ValidadorEtico):
+    def __init__(self, gerenciador_memoria: Optional[GerenciadorMemoria] = None, 
+                 validador_etico: Optional[ValidadorEtico] = None):
         self.gerenciador_memoria = gerenciador_memoria
         self.validador_etico = validador_etico
         self.acoes_pendentes = []

@@ -2,7 +2,7 @@ import numpy as np
 from typing import Dict, List, Tuple
 from dataclasses import dataclass
 from enum import Enum
-from src.monitoramento import MetricasSistema
+from ..monitoramento import MetricasSistema
 
 class TipoDiagnostico(Enum):
     NORMAL = "normal"
@@ -123,7 +123,7 @@ class RedeNeuralDiagnostico:
 
 # Exemplo de uso
 if __name__ == "__main__":
-    from monitoramento import MonitoramentoMultidimensional
+    from ..monitoramento import MonitoramentoMultidimensional
     
     monitor = MonitoramentoMultidimensional()
     diagnostico = RedeNeuralDiagnostico()

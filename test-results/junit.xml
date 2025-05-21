@@ -1,87 +1,111 @@
-<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="26.953" timestamp="2025-05-21T12:48:07.166083" hostname="OA1"><testcase classname="tests.unit.test_validacao_etica" name="test_obter_historico_etico" time="4.166"><failure message="assert == failed. [pytest-clarity diff shown]&#10;  #x1B[0m&#10;  #x1B[0m#x1B[32mLHS#x1B[0m vs #x1B[31mRHS#x1B[0m shown below&#10;  #x1B[0m&#10;  #x1B[0m#x1B[32m78#x1B[0m&#10;  #x1B[0m#x1B[31m1#x1B[0m&#10;  #x1B[0m">gerenciador_memoria = &lt;src.memoria.gerenciador_memoria.GerenciadorMemoria object at 0x000002938922F890&gt;
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="6" time="3.812" timestamp="2025-05-21T13:06:21.415308-03:00" hostname="OA1"><testcase classname="tests.unit.core.test_acoes_correcao" name="test_criar_acao" time="0.015" /><testcase classname="tests.unit.core.test_acoes_correcao" name="test_executar_acao" time="0.008" /><testcase classname="tests.unit.core.test_acoes_correcao" name="test_finalizar_acao" time="0.006" /><testcase classname="tests.unit.core.test_acoes_correcao" name="test_obter_acao" time="0.007"><failure message="AssertionError: assert 'correcao' == &lt;TipoAcao.CORRECAO: 'correcao'&gt;&#10; +  where 'correcao' = &lt;src.core.acoes_correcao.AcaoCorrecao object at 0x0000025A77F6EBE0&gt;.tipo&#10; +  and   &lt;TipoAcao.CORRECAO: 'correcao'&gt; = &lt;src.core.acoes_correcao.AcaoCorrecao object at 0x0000025A77F6C050&gt;.tipo">gerenciador = &lt;src.core.acoes_correcao.GerenciadorAcoes object at 0x0000025A77EDB950&gt;
+acao_exemplo = {'descricao': 'Corrigir falha no sistema', 'parametros': {'componente': 'api', 'severidade': 'alta'}, 'tipo': &lt;TipoAcao.CORRECAO: 'correcao'&gt;}
 
     @pytest.mark.asyncio
-    async def test_obter_historico_etico(gerenciador_memoria):
-        """Testa a obtenção do histórico ético."""
-        # Registra algumas validações e violações
-        validacao = {
-            "tipo": "decisao",
-            "contexto": "teste",
-            "resultado": "aprovado",
-            "justificativa": "Teste de validação"
+    async def test_obter_acao(gerenciador, acao_exemplo):
+        """Testa a obtenção de uma ação de correção."""
+        # Configura os mocks
+        acao_id = "123"
+        acao_dados = {
+            "id": acao_id,
+            "tipo": acao_exemplo["tipo"].value,
+            "descricao": acao_exemplo["descricao"],
+            "parametros": acao_exemplo["parametros"],
+            "status": StatusAcao.PENDENTE.value,
+            "data_criacao": None,
+            "data_inicio": None,
+            "data_fim": None,
+            "sucesso": None,
+            "validada": False,
+            "data_validacao": None
         }
-        gerenciador_memoria.registrar_validacao_etica(validacao)
     
-        violacao = {
-            "tipo": "decisao",
-            "contexto": "teste",
-            "principio_violado": "privacidade",
-            "descricao": "Teste de violação"
-        }
-        gerenciador_memoria.registrar_violacao_etica(violacao)
+        gerenciador.memoria.criar_entidade.return_value = acao_id
+        gerenciador.memoria.obter_entidade.return_value = acao_dados
     
-        historico = gerenciador_memoria.obter_historico_etico()
-&gt;       assert len(historico["validacoes"]) == 1
-E       assert == failed. [pytest-clarity diff shown]
-E         #x1B[0m
-E         #x1B[0m#x1B[32mLHS#x1B[0m vs #x1B[31mRHS#x1B[0m shown below
-E         #x1B[0m
-E         #x1B[0m#x1B[32m78#x1B[0m
-E         #x1B[0m#x1B[31m1#x1B[0m
-E         #x1B[0m
+        # Cria ação
+        acao = await gerenciador.criar_acao(
+            tipo=acao_exemplo["tipo"],
+            descricao=acao_exemplo["descricao"],
+            parametros=acao_exemplo["parametros"]
+        )
+    
+        # Obtém ação
+        acao_obtida = await gerenciador.obter_acao(acao.id)
+    
+        assert acao_obtida is not None
+        assert acao_obtida.id == acao_id
+&gt;       assert acao_obtida.tipo == acao.tipo
+E       AssertionError: assert 'correcao' == &lt;TipoAcao.CORRECAO: 'correcao'&gt;
+E        +  where 'correcao' = &lt;src.core.acoes_correcao.AcaoCorrecao object at 0x0000025A77F6EBE0&gt;.tipo
+E        +  and   &lt;TipoAcao.CORRECAO: 'correcao'&gt; = &lt;src.core.acoes_correcao.AcaoCorrecao object at 0x0000025A77F6C050&gt;.tipo
 
-tests\unit\test_validacao_etica.py:119: AssertionError</failure></testcase><testcase classname="tests.unit.test_validacao_etica" name="test_analise_tendencia_etica" time="4.127"><failure message="KeyError: 'taxa_violacao'">gerenciador_memoria = &lt;src.memoria.gerenciador_memoria.GerenciadorMemoria object at 0x00000293893F34D0&gt;
+tests\unit\core\test_acoes_correcao.py:161: AssertionError</failure></testcase><testcase classname="tests.unit.core.test_acoes_correcao" name="test_listar_acoes" time="0.004"><failure message="assert 0 == 3&#10; +  where 0 = len([])">gerenciador = &lt;src.core.acoes_correcao.GerenciadorAcoes object at 0x0000025A77FC0510&gt;
+acao_exemplo = {'descricao': 'Corrigir falha no sistema', 'parametros': {'componente': 'api', 'severidade': 'alta'}, 'tipo': &lt;TipoAcao.CORRECAO: 'correcao'&gt;}
 
     @pytest.mark.asyncio
-    async def test_analise_tendencia_etica(gerenciador_memoria):
-        """Testa a análise de tendência ética."""
-        # Registra várias validações e violações
-        for _ in range(5):
-            validacao = {
-                "tipo": "decisao",
-                "contexto": "teste",
-                "resultado": "aprovado",
-                "justificativa": "Teste de validação"
-            }
-            gerenciador_memoria.registrar_validacao_etica(validacao)
+    async def test_listar_acoes(gerenciador, acao_exemplo):
+        """Testa a listagem de ações de correção."""
+        # Mock do método de memória
+        gerenciador.memoria.buscar_entidades = AsyncMock()
     
-        for _ in range(2):
-            violacao = {
-                "tipo": "decisao",
-                "contexto": "teste",
-                "principio_violado": "privacidade",
-                "descricao": "Teste de violação"
-            }
-            gerenciador_memoria.registrar_violacao_etica(violacao)
+        # Cria algumas ações
+        for i in range(3):
+            await gerenciador.criar_acao(
+                tipo=acao_exemplo["tipo"],
+                descricao=f"{acao_exemplo['descricao']} {i}",
+                parametros=acao_exemplo["parametros"]
+            )
     
-        tendencia = gerenciador_memoria.analisar_tendencia_etica()
-        assert tendencia["taxa_aprovacao"] == 1.0
-&gt;       assert tendencia["taxa_violacao"] == 0.4
-E       KeyError: 'taxa_violacao'
+        # Lista ações
+        acoes = await gerenciador.listar_acoes()
+    
+&gt;       assert len(acoes) == 3
+E       assert 0 == 3
+E        +  where 0 = len([])
 
-tests\unit\test_validacao_etica.py:146: KeyError</failure></testcase><testcase classname="tests.unit.test_validacao_etica" name="test_registrar_validacao_etica" time="4.102"><failure message="assert == failed. [pytest-clarity diff shown]&#10;  #x1B[0m&#10;  #x1B[0m#x1B[32mLHS#x1B[0m vs #x1B[31mRHS#x1B[0m shown below&#10;  #x1B[0m&#10;  #x1B[0m#x1B[32m10#x1B[0m&#10;  #x1B[0m#x1B[31m1#x1B[0m&#10;  #x1B[0m">gerenciador_memoria = &lt;src.memoria.gerenciador_memoria.GerenciadorMemoria object at 0x0000029389417360&gt;
+tests\unit\core\test_acoes_correcao.py:184: AssertionError</failure></testcase><testcase classname="tests.unit.core.test_acoes_correcao" name="test_validar_acao" time="0.004"><failure message="TypeError: AsyncMock.keys() returned a non-iterable (type coroutine)">gerenciador = &lt;src.core.acoes_correcao.GerenciadorAcoes object at 0x0000025A77FD9010&gt;
+acao_exemplo = {'descricao': 'Corrigir falha no sistema', 'parametros': {'componente': 'api', 'severidade': 'alta'}, 'tipo': &lt;TipoAcao.CORRECAO: 'correcao'&gt;}
 
     @pytest.mark.asyncio
-    async def test_registrar_validacao_etica(gerenciador_memoria):
-        """Testa o registro de uma validação ética."""
-        validacao = {
-            "tipo": "decisao",
-            "contexto": "teste",
-            "resultado": "aprovado",
-            "justificativa": "Teste de validação",
-            "nivel_confianca": 0.95
-        }
+    async def test_validar_acao(gerenciador, acao_exemplo):
+        """Testa a validação de uma ação de correção."""
+        # Cria ação
+        acao = await gerenciador.criar_acao(
+            tipo=acao_exemplo["tipo"],
+            descricao=acao_exemplo["descricao"],
+            parametros=acao_exemplo["parametros"]
+        )
     
-        gerenciador_memoria.registrar_validacao_etica(validacao)
-    
-        validacoes = gerenciador_memoria.obter_validacoes_eticas()
-&gt;       assert len(validacoes) == 1
-E       assert == failed. [pytest-clarity diff shown]
-E         #x1B[0m
-E         #x1B[0m#x1B[32mLHS#x1B[0m vs #x1B[31mRHS#x1B[0m shown below
-E         #x1B[0m
-E         #x1B[0m#x1B[32m10#x1B[0m
-E         #x1B[0m#x1B[31m1#x1B[0m
-E         #x1B[0m
+        # Valida ação
+&gt;       resultado = await gerenciador.validar_acao(acao.id)
 
-tests\unit\test_validacao_etica.py:43: AssertionError</failure></testcase></testsuite></testsuites>
+tests\unit\core\test_acoes_correcao.py:198: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;src.core.acoes_correcao.GerenciadorAcoes object at 0x0000025A77FD9010&gt;
+acao_id = '4874d06e-5600-497f-8a04-2d6553269bac'
+
+    async def validar_acao(self, acao_id: str) -&gt; bool:
+        """Valida uma ação de correção"""
+&gt;       acao = await self.obter_acao(acao_id)
+
+src\core\acoes_correcao.py:134: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;src.core.acoes_correcao.GerenciadorAcoes object at 0x0000025A77FD9010&gt;
+acao_id = '4874d06e-5600-497f-8a04-2d6553269bac'
+
+    async def obter_acao(self, acao_id: str) -&gt; Optional[AcaoCorrecao]:
+        """Obtém uma ação de correção pelo ID"""
+        if not self.memoria:
+            return None
+    
+        dados = await self.memoria.obter_entidade("acoes", acao_id)
+        if not dados:
+            return None
+    
+&gt;       return AcaoCorrecao(**dados)
+E       TypeError: AsyncMock.keys() returned a non-iterable (type coroutine)
+
+src\core\acoes_correcao.py:122: TypeError</failure></testcase></testsuite></testsuites>
