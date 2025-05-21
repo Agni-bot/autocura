@@ -754,4 +754,284 @@ def test_limpar_memoria():
     memoria = gerenciador.carregar_memoria()
     
     # Verificar resultado
-    assert memoria == {} 
+    assert memoria == {}
+
+@pytest.mark.asyncio
+async def test_validacao_etica():
+    """Testa a validação ética de decisões."""
+    gerenciador = GerenciadorMemoria()
+    
+    # Registra princípios éticos
+    principios = {
+        "privacidade": 0.9,
+        "transparencia": 0.8,
+        "justica": 0.95
+    }
+    gerenciador.registrar_principios_eticos(principios)
+    
+    # Testa decisão válida
+    decisao_valida = {
+        "contexto": "processamento_dados",
+        "principios_afetados": ["privacidade", "transparencia"],
+        "acao": "anominizacao_dados"
+    }
+    
+    resultado = await gerenciador.validar_decisao_etica(decisao_valida)
+    assert resultado["aprovado"] is True
+    assert resultado["nivel_confianca"] >= 0.8
+    
+    # Testa decisão inválida
+    decisao_invalida = {
+        "contexto": "processamento_dados",
+        "principios_afetados": ["privacidade"],
+        "acao": "compartilhamento_dados"
+    }
+    
+    resultado = await gerenciador.validar_decisao_etica(decisao_invalida)
+    assert resultado["aprovado"] is False
+    assert "violou" in resultado["justificativa"].lower()
+
+@pytest.mark.asyncio
+async def test_analise_tendencia_etica():
+    """Testa a análise de tendência ética."""
+    gerenciador = GerenciadorMemoria()
+    
+    # Registra algumas validações
+    for _ in range(5):
+        await gerenciador.validar_decisao_etica({
+            "contexto": "teste",
+            "principios_afetados": ["privacidade"],
+            "acao": "teste"
+        })
+    
+    # Registra algumas violações
+    for _ in range(2):
+        gerenciador.registrar_violacao_etica({
+            "tipo": "teste",
+            "descricao": "Violação de teste",
+            "severidade": "baixa"
+        })
+    
+    # Analisa tendência
+    tendencia = gerenciador.analisar_tendencia_etica()
+    
+    assert "taxa_aprovacao" in tendencia
+    assert "taxa_violacao" in tendencia
+    assert "tendencia" in tendencia
+    assert "recomendacoes" in tendencia
+    assert isinstance(tendencia["recomendacoes"], list)
+
+@pytest.mark.asyncio
+async def test_gerenciamento_incidentes():
+    """Testa o gerenciamento de incidentes."""
+    gerenciador = GerenciadorMemoria()
+    
+    # Registra incidente
+    incidente = {
+        "tipo": "erro_sistema",
+        "descricao": "Falha crítica no processamento",
+        "severidade": "alta",
+        "componente": "processador_dados"
+    }
+    
+    gerenciador.registrar_incidente(incidente)
+    
+    # Verifica estado do sistema
+    estado = gerenciador.obter_estado_sistema()
+    assert len(estado["incidentes"]) == 1
+    assert estado["incidentes"][0]["tipo"] == incidente["tipo"]
+    
+    # Registra alerta relacionado
+    alerta = {
+        "tipo": "incidente_ativo",
+        "descricao": "Alerta de incidente crítico",
+        "severidade": "alta"
+    }
+    
+    gerenciador.registrar_alerta(alerta)
+    
+    # Verifica alertas ativos
+    estado = gerenciador.obter_estado_sistema()
+    assert len(estado["alertas_ativos"]) == 1
+    assert estado["alertas_ativos"][0]["tipo"] == alerta["tipo"]
+
+@pytest.mark.asyncio
+async def test_gerenciamento_metricas():
+    """Testa o gerenciamento de métricas."""
+    gerenciador = GerenciadorMemoria()
+    
+    # Registra métricas
+    metricas = {
+        "tempo_resposta": 0.5,
+        "uso_memoria": 0.7,
+        "taxa_erro": 0.01,
+        "requisicoes_por_segundo": 100
+    }
+    
+    gerenciador.registrar_metricas_desempenho(metricas)
+    
+    # Verifica métricas registradas
+    estado = gerenciador.obter_estado_sistema()
+    assert "metricas_desempenho" in estado
+    assert estado["metricas_desempenho"]["tempo_resposta"] == metricas["tempo_resposta"]
+    assert estado["metricas_desempenho"]["uso_memoria"] == metricas["uso_memoria"]
+    
+    # Atualiza métricas
+    novas_metricas = {
+        "tempo_resposta": 0.4,
+        "uso_memoria": 0.8
+    }
+    
+    gerenciador.registrar_metricas_desempenho(novas_metricas)
+    
+    # Verifica atualização
+    estado = gerenciador.obter_estado_sistema()
+    assert estado["metricas_desempenho"]["tempo_resposta"] == novas_metricas["tempo_resposta"]
+    assert estado["metricas_desempenho"]["uso_memoria"] == novas_metricas["uso_memoria"]
+
+@pytest.mark.asyncio
+async def test_gerenciamento_aprendizado():
+    """Testa o gerenciamento de aprendizado."""
+    gerenciador = GerenciadorMemoria()
+    
+    # Registra aprendizado
+    aprendizado = {
+        "tipo": "otimizacao",
+        "contexto": "processamento_dados",
+        "descricao": "Otimização de algoritmo identificada",
+        "impacto": "alto",
+        "detalhes": {
+            "algoritmo": "classificador",
+            "melhoria": "redução_tempo_processamento",
+            "percentual": 0.3
+        }
+    }
+    
+    gerenciador.registrar_aprendizado(aprendizado)
+    
+    # Verifica aprendizado registrado
+    aprendizados = gerenciador.obter_aprendizados_recentes()
+    assert len(aprendizados) == 1
+    assert aprendizados[0]["tipo"] == aprendizado["tipo"]
+    assert aprendizados[0]["contexto"] == aprendizado["contexto"]
+    
+    # Registra transição de autonomia
+    transicao = {
+        "nivel_anterior": 1,
+        "nivel_novo": 2,
+        "motivo": "aprendizado_otimizacao",
+        "contexto": "processamento_dados"
+    }
+    
+    gerenciador.registrar_transicao_autonomia(transicao)
+    
+    # Verifica transição
+    transicoes = gerenciador.obter_transicoes_autonomia()
+    assert len(transicoes) == 1
+    assert transicoes[0]["nivel_anterior"] == transicao["nivel_anterior"]
+    assert transicoes[0]["nivel_novo"] == transicao["nivel_novo"]
+
+@pytest.mark.asyncio
+async def test_gerenciamento_diagnostico():
+    """Testa o gerenciamento de diagnóstico."""
+    gerenciador = GerenciadorMemoria()
+    
+    # Registra diagnóstico
+    diagnostico = {
+        "tipo": "desempenho",
+        "componente": "processador_dados",
+        "descricao": "Alta latência detectada",
+        "severidade": "media",
+        "metricas": {
+            "latencia": 2.5,
+            "uso_cpu": 0.9,
+            "uso_memoria": 0.8
+        },
+        "recomendacoes": [
+            "Otimizar processamento",
+            "Aumentar recursos"
+        ]
+    }
+    
+    gerenciador.registrar_diagnostico(diagnostico)
+    
+    # Verifica diagnóstico registrado
+    diagnosticos = gerenciador.obter_diagnosticos_recentes()
+    assert len(diagnosticos) == 1
+    assert diagnosticos[0]["tipo"] == diagnostico["tipo"]
+    assert diagnosticos[0]["componente"] == diagnostico["componente"]
+    assert len(diagnosticos[0]["recomendacoes"]) == 2
+
+@pytest.mark.asyncio
+async def test_gerenciamento_correcao():
+    """Testa o gerenciamento de correção."""
+    gerenciador = GerenciadorMemoria()
+    
+    # Registra correção
+    correcao = {
+        "tipo": "otimizacao",
+        "componente": "processador_dados",
+        "descricao": "Otimização de algoritmo implementada",
+        "impacto": "alto",
+        "detalhes": {
+            "algoritmo": "classificador",
+            "melhoria": "redução_tempo_processamento",
+            "percentual": 0.3
+        },
+        "metricas_antes": {
+            "tempo_processamento": 2.5,
+            "uso_cpu": 0.9
+        },
+        "metricas_depois": {
+            "tempo_processamento": 1.8,
+            "uso_cpu": 0.7
+        }
+    }
+    
+    gerenciador.registrar_correcao(correcao)
+    
+    # Verifica correção registrada
+    correcoes = gerenciador.obter_correcoes_recentes()
+    assert len(correcoes) == 1
+    assert correcoes[0]["tipo"] == correcao["tipo"]
+    assert correcoes[0]["componente"] == correcao["componente"]
+    assert correcoes[0]["impacto"] == correcao["impacto"]
+    
+    # Verifica métricas de melhoria
+    assert correcoes[0]["metricas_antes"]["tempo_processamento"] > correcoes[0]["metricas_depois"]["tempo_processamento"]
+    assert correcoes[0]["metricas_antes"]["uso_cpu"] > correcoes[0]["metricas_depois"]["uso_cpu"]
+
+@pytest.mark.asyncio
+async def test_gerenciamento_anomalias():
+    """Testa o gerenciamento de anomalias."""
+    gerenciador = GerenciadorMemoria()
+    
+    # Registra anomalia
+    anomalia = {
+        "tipo": "comportamento_inesperado",
+        "componente": "classificador",
+        "descricao": "Alta taxa de falsos positivos",
+        "severidade": "alta",
+        "metricas": {
+            "taxa_falsos_positivos": 0.25,
+            "taxa_falsos_negativos": 0.05,
+            "acuracia": 0.7
+        },
+        "contexto": {
+            "dataset": "teste_2024",
+            "versao_modelo": "1.2.3"
+        }
+    }
+    
+    gerenciador.registrar_anomalia(anomalia)
+    
+    # Verifica anomalia registrada
+    anomalias = gerenciador.obter_anomalias_recentes()
+    assert len(anomalias) == 1
+    assert anomalias[0]["tipo"] == anomalia["tipo"]
+    assert anomalias[0]["componente"] == anomalia["componente"]
+    assert anomalias[0]["severidade"] == anomalia["severidade"]
+    
+    # Verifica métricas
+    assert anomalias[0]["metricas"]["taxa_falsos_positivos"] == anomalia["metricas"]["taxa_falsos_positivos"]
+    assert anomalias[0]["metricas"]["acuracia"] == anomalia["metricas"]["acuracia"] 

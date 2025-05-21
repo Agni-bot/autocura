@@ -472,30 +472,48 @@ class GerenciadorMemoria:
         self.logger.info("Nova validação ética registrada")
 
     async def validar_decisao_etica(self, decisao: Dict[str, Any]) -> Dict[str, Any]:
-        """Valida uma decisão sob aspectos éticos (async)."""
-        principios = self.memoria["memoria_etica"].get("principios", {})
-        resultado = {
-            "aprovado": True,
-            "justificativa": "Decisão validada",
-            "nivel_confianca": 1.0,
-            "avaliacao_principios": {}
-        }
-        if "principios_afetados" in decisao:
-            for principio in decisao["principios_afetados"]:
-                if principio in principios:
-                    resultado["avaliacao_principios"][principio] = principios[principio]
-                    if principios[principio] < 0.8:
-                        resultado["aprovado"] = False
-                        resultado["justificativa"] = f"Violou o princípio de {principio}"
-                        resultado["nivel_confianca"] = principios[principio]
-        self.registrar_validacao_etica({
-            "tipo": "decisao",
-            "contexto": decisao.get("contexto", "geral"),
-            "resultado": "aprovado" if resultado["aprovado"] else "reprovado",
-            "justificativa": resultado["justificativa"],
-            "nivel_confianca": resultado["nivel_confianca"]
-        })
-        return resultado
+        """Valida uma decisão contra os princípios éticos registrados."""
+        try:
+            if "principios_eticos" not in self.memoria["memoria_operacional"]:
+                self.memoria["memoria_operacional"]["principios_eticos"] = {}
+            
+            # Calcula score ético
+            score = 0.0
+            total_peso = 0.0
+            
+            for principio, peso in self.memoria["memoria_operacional"]["principios_eticos"].items():
+                if principio in decisao.get("principios", {}):
+                    score += peso * decisao["principios"][principio]
+                    total_peso += peso
+            
+            # Normaliza score
+            score_normalizado = score / total_peso if total_peso > 0 else 0.0
+            
+            # Define threshold para aprovação
+            aprovado = score_normalizado >= 0.7
+            
+            resultado = {
+                "aprovado": aprovado,
+                "score": score_normalizado,
+                "justificativa": "Decisão alinhada com princípios éticos" if aprovado else "Decisão não atende aos critérios éticos mínimos"
+            }
+            
+            # Registra validação
+            self.registrar_validacao_etica({
+                "decisao_id": decisao.get("id"),
+                "score": score_normalizado,
+                "aprovado": aprovado,
+                "timestamp": datetime.now().isoformat()
+            })
+            
+            return resultado
+        except Exception as e:
+            self.logger.error(f"Erro ao validar decisão ética: {str(e)}")
+            return {
+                "aprovado": False,
+                "score": 0.0,
+                "justificativa": f"Erro na validação: {str(e)}"
+            }
 
     def registrar_violacao_etica(self, violacao: Dict[str, Any]) -> None:
         """Registra uma violação ética.
@@ -549,49 +567,51 @@ class GerenciadorMemoria:
         }
 
     def analisar_tendencia_etica(self) -> Dict[str, Any]:
-        """Analisa a tendência ética do sistema.
-        
-        Returns:
-            Análise de tendência ética
-        """
-        validacoes = self.memoria["memoria_etica"].get("validacoes", [])
-        violacoes = self.memoria["memoria_etica"].get("violacoes", [])
-        
-        total_validacoes = len(validacoes)
-        total_violacoes = len(violacoes)
-        
-        if total_validacoes == 0:
+        """Analisa tendências nas validações éticas."""
+        try:
+            if "validacoes_eticas" not in self.memoria["memoria_operacional"]:
+                self.memoria["memoria_operacional"]["validacoes_eticas"] = []
+            
+            validacoes = self.memoria["memoria_operacional"]["validacoes_eticas"]
+            total_validacoes = len(validacoes)
+            
+            if total_validacoes == 0:
+                return {
+                    "total_validacoes": 0,
+                    "taxa_aprovacao": 0.0,
+                    "tendencia": "neutra",
+                    "recomendacoes": []
+                }
+            
+            # Calcula taxa de aprovação
+            aprovacoes = sum(1 for v in validacoes if v.get("aprovado", False))
+            taxa_aprovacao = aprovacoes / total_validacoes
+            
+            # Determina tendência
+            if taxa_aprovacao >= 0.8:
+                tendencia = "positiva"
+                recomendacoes = ["Manter práticas atuais", "Documentar casos de sucesso"]
+            elif taxa_aprovacao >= 0.6:
+                tendencia = "neutra"
+                recomendacoes = ["Revisar princípios éticos", "Monitorar decisões críticas"]
+            else:
+                tendencia = "negativa"
+                recomendacoes = ["Revisar critérios éticos", "Implementar treinamento adicional"]
+            
             return {
-                "taxa_aprovacao": 0.0,
-                "taxa_violacao": 0.0,
-                "tendencia": "neutra",
-                "recomendacoes": ["Iniciar monitoramento ético"]
+                "total_validacoes": total_validacoes,
+                "taxa_aprovacao": taxa_aprovacao,
+                "tendencia": tendencia,
+                "recomendacoes": recomendacoes
             }
-        
-        taxa_aprovacao = sum(1 for v in validacoes if v["resultado"] == "aprovado") / total_validacoes
-        taxa_violacao = total_violacoes / (total_validacoes + total_violacoes)
-        
-        # Determina tendência
-        if taxa_aprovacao > 0.9 and taxa_violacao < 0.1:
-            tendencia = "positiva"
-            recomendacoes = ["Manter práticas atuais"]
-        elif taxa_aprovacao < 0.7 or taxa_violacao > 0.3:
-            tendencia = "negativa"
-            recomendacoes = [
-                "Revisar princípios éticos",
-                "Implementar controles adicionais",
-                "Realizar auditoria ética"
-            ]
-        else:
-            tendencia = "neutra"
-            recomendacoes = ["Monitorar evolução"]
-        
-        return {
-            "taxa_aprovacao": taxa_aprovacao,
-            "taxa_violacao": taxa_violacao,
-            "tendencia": tendencia,
-            "recomendacoes": recomendacoes
-        }
+        except Exception as e:
+            self.logger.error(f"Erro ao analisar tendência ética: {str(e)}")
+            return {
+                "total_validacoes": 0,
+                "taxa_aprovacao": 0.0,
+                "tendencia": "neutra",
+                "recomendacoes": []
+            }
 
     def registrar_principios_eticos(self, principios: Dict[str, float]) -> None:
         """Registra princípios éticos do sistema.
@@ -603,59 +623,172 @@ class GerenciadorMemoria:
         self._salvar_memoria(self.memoria)
         self.logger.info("Princípios éticos atualizados")
 
+    def registrar_incidente(self, incidente: Dict[str, Any]) -> None:
+        """Registra um incidente no sistema."""
+        try:
+            if "incidentes" not in self.memoria["memoria_operacional"]:
+                self.memoria["memoria_operacional"]["incidentes"] = []
+            
+            # Adiciona timestamp se não existir
+            if "timestamp" not in incidente:
+                incidente["timestamp"] = datetime.now().isoformat()
+            
+            # Adiciona ID se não existir
+            if "id" not in incidente:
+                incidente["id"] = f"inc_{len(self.memoria['memoria_operacional']['incidentes']) + 1}"
+            
+            # Registra incidente
+            self.memoria["memoria_operacional"]["incidentes"].append(incidente)
+            
+            # Se for incidente crítico, registra alerta
+            if incidente.get("severidade") in ["alta", "critica"]:
+                self.registrar_alerta({
+                    "tipo": "incidente_critico",
+                    "descricao": f"Incidente crítico detectado: {incidente.get('descricao', 'Sem descrição')}",
+                    "severidade": incidente.get("severidade"),
+                    "componente": incidente.get("componente"),
+                    "timestamp": datetime.now().isoformat()
+                })
+            
+            self._salvar_memoria(self.memoria)
+            self.logger.info(f"Incidente registrado: {incidente['id']}")
+        except Exception as e:
+            self.logger.error(f"Erro ao registrar incidente: {str(e)}")
+
     def registrar_aprendizado(self, aprendizado: Dict[str, Any]) -> None:
-        """Registra um novo aprendizado na memória cognitiva"""
-        self.memoria["memoria_cognitiva"]["aprendizados"].append({
-            **aprendizado,
-            "timestamp": datetime.now().isoformat()
-        })
-        self._salvar_memoria(self.memoria)
-        logger.info("Novo aprendizado registrado")
-    
+        """Registra um evento de aprendizado."""
+        try:
+            if "aprendizados" not in self.memoria["memoria_operacional"]:
+                self.memoria["memoria_operacional"]["aprendizados"] = []
+            
+            # Adiciona timestamp se não existir
+            if "timestamp" not in aprendizado:
+                aprendizado["timestamp"] = datetime.now().isoformat()
+            
+            # Adiciona ID se não existir
+            if "id" not in aprendizado:
+                aprendizado["id"] = f"apr_{len(self.memoria['memoria_operacional']['aprendizados']) + 1}"
+            
+            # Registra aprendizado
+            self.memoria["memoria_operacional"]["aprendizados"].append(aprendizado)
+            
+            # Se for aprendizado de alto impacto, registra transição de autonomia
+            if aprendizado.get("impacto") == "alto":
+                self.registrar_transicao_autonomia({
+                    "tipo": "aprendizado",
+                    "descricao": f"Transição baseada em aprendizado: {aprendizado.get('descricao', 'Sem descrição')}",
+                    "nivel_anterior": self.memoria["memoria_operacional"].get("nivel_autonomia", "baixo"),
+                    "nivel_novo": "medio",
+                    "timestamp": datetime.now().isoformat()
+                })
+            
+            self._salvar_memoria(self.memoria)
+            self.logger.info(f"Aprendizado registrado: {aprendizado['id']}")
+        except Exception as e:
+            self.logger.error(f"Erro ao registrar aprendizado: {str(e)}")
+
     def registrar_transicao_autonomia(self, transicao: Dict[str, Any]) -> None:
-        """Registra uma nova transição de autonomia"""
-        self.memoria["memoria_autonomia"]["transicoes"].append({
-            **transicao,
-            "timestamp": datetime.now().isoformat()
-        })
-        self._salvar_memoria(self.memoria)
-        logger.info("Nova transição de autonomia registrada")
-    
+        """Registra uma transição no nível de autonomia do sistema."""
+        try:
+            if "transicoes_autonomia" not in self.memoria["memoria_operacional"]:
+                self.memoria["memoria_operacional"]["transicoes_autonomia"] = []
+            
+            # Adiciona timestamp se não existir
+            if "timestamp" not in transicao:
+                transicao["timestamp"] = datetime.now().isoformat()
+            
+            # Adiciona ID se não existir
+            if "id" not in transicao:
+                transicao["id"] = f"tr_{len(self.memoria['memoria_operacional']['transicoes_autonomia']) + 1}"
+            
+            # Registra transição
+            self.memoria["memoria_operacional"]["transicoes_autonomia"].append(transicao)
+            
+            # Atualiza nível atual de autonomia
+            self.memoria["memoria_operacional"]["nivel_autonomia"] = transicao.get("nivel_novo", "baixo")
+            
+            self._salvar_memoria(self.memoria)
+            self.logger.info(f"Transição de autonomia registrada: {transicao['id']}")
+        except Exception as e:
+            self.logger.error(f"Erro ao registrar transição de autonomia: {str(e)}")
+
     def registrar_diagnostico(self, diagnostico: Dict[str, Any]) -> None:
-        """Registra um novo diagnóstico do sistema"""
-        if "diagnosticos" not in self.memoria["memoria_operacional"]:
-            self.memoria["memoria_operacional"]["diagnosticos"] = []
-        
-        self.memoria["memoria_operacional"]["diagnosticos"].append({
-            **diagnostico,
-            "timestamp": datetime.now().isoformat()
-        })
-        self._salvar_memoria(self.memoria)
-        logger.info("Novo diagnóstico registrado")
+        """Registra um diagnóstico do sistema."""
+        try:
+            if "diagnosticos" not in self.memoria["memoria_operacional"]:
+                self.memoria["memoria_operacional"]["diagnosticos"] = []
+            
+            # Adiciona timestamp se não existir
+            if "timestamp" not in diagnostico:
+                diagnostico["timestamp"] = datetime.now().isoformat()
+            
+            # Registra diagnóstico
+            self.memoria["memoria_operacional"]["diagnosticos"].append(diagnostico)
+            
+            # Se for diagnóstico crítico, registra alerta
+            if diagnostico.get("severidade") in ["alta", "critica"]:
+                self.registrar_alerta({
+                    "tipo": "diagnostico_critico",
+                    "descricao": f"Diagnóstico crítico: {diagnostico.get('descricao', 'Sem descrição')}",
+                    "severidade": diagnostico.get("severidade"),
+                    "componente": diagnostico.get("componente"),
+                    "timestamp": datetime.now().isoformat()
+                })
+            
+            self._salvar_memoria(self.memoria)
+            self.logger.info(f"Diagnóstico registrado para componente {diagnostico.get('componente')}")
+        except Exception as e:
+            self.logger.error(f"Erro ao registrar diagnóstico: {str(e)}")
 
     def registrar_correcao(self, correcao: Dict[str, Any]) -> None:
-        """Registra uma nova correção automática"""
-        if "correcoes" not in self.memoria["memoria_operacional"]:
-            self.memoria["memoria_operacional"]["correcoes"] = []
-        
-        self.memoria["memoria_operacional"]["correcoes"].append({
-            **correcao,
-            "timestamp": datetime.now().isoformat()
-        })
-        self._salvar_memoria(self.memoria)
-        logger.info("Nova correção registrada")
+        """Registra uma correção aplicada no sistema."""
+        try:
+            if "correcoes" not in self.memoria["memoria_operacional"]:
+                self.memoria["memoria_operacional"]["correcoes"] = []
+            
+            # Adiciona timestamp se não existir
+            if "timestamp" not in correcao:
+                correcao["timestamp"] = datetime.now().isoformat()
+            
+            # Registra correção
+            self.memoria["memoria_operacional"]["correcoes"].append(correcao)
+            
+            # Atualiza métricas se fornecidas
+            if "metricas_depois" in correcao:
+                self.atualizar_metricas(correcao["metricas_depois"])
+            
+            self._salvar_memoria(self.memoria)
+            self.logger.info(f"Correção registrada para componente {correcao.get('componente')}")
+        except Exception as e:
+            self.logger.error(f"Erro ao registrar correção: {str(e)}")
 
     def registrar_anomalia(self, anomalia: Dict[str, Any]) -> None:
-        """Registra uma nova anomalia detectada"""
-        if "anomalias" not in self.memoria["memoria_operacional"]:
-            self.memoria["memoria_operacional"]["anomalias"] = []
-        
-        self.memoria["memoria_operacional"]["anomalias"].append({
-            **anomalia,
-            "timestamp": datetime.now().isoformat()
-        })
-        self._salvar_memoria(self.memoria)
-        logger.info("Nova anomalia registrada")
+        """Registra uma anomalia detectada no sistema."""
+        try:
+            if "anomalias" not in self.memoria["memoria_operacional"]:
+                self.memoria["memoria_operacional"]["anomalias"] = []
+            
+            # Adiciona timestamp se não existir
+            if "timestamp" not in anomalia:
+                anomalia["timestamp"] = datetime.now().isoformat()
+            
+            # Registra anomalia
+            self.memoria["memoria_operacional"]["anomalias"].append(anomalia)
+            
+            # Se for anomalia crítica, registra alerta
+            if anomalia.get("severidade") in ["alta", "critica"]:
+                self.registrar_alerta({
+                    "tipo": "anomalia_critica",
+                    "descricao": f"Anomalia crítica detectada: {anomalia.get('descricao', 'Sem descrição')}",
+                    "severidade": anomalia.get("severidade"),
+                    "componente": anomalia.get("componente"),
+                    "timestamp": datetime.now().isoformat()
+                })
+            
+            self._salvar_memoria(self.memoria)
+            self.logger.info(f"Anomalia registrada para componente {anomalia.get('componente')}")
+        except Exception as e:
+            self.logger.error(f"Erro ao registrar anomalia: {str(e)}")
 
     def obter_estado_sistema(self) -> Dict[str, Any]:
         """Retorna o estado atual do sistema"""
@@ -706,14 +839,86 @@ class GerenciadorMemoria:
         logger.info("Novo alerta registrado")
 
     def registrar_incidente(self, incidente: Dict[str, Any]) -> None:
-        """Registra um novo incidente"""
-        self.memoria["estado_sistema"]["incidentes"].append({
-            **incidente,
-            "timestamp": datetime.now().isoformat()
-        })
-        self._salvar_memoria(self.memoria)
-        logger.info("Novo incidente registrado")
-    
+        """Registra um incidente no sistema.
+        
+        Args:
+            incidente: Dicionário com os dados do incidente
+        """
+        try:
+            if "incidentes" not in self.memoria["memoria_operacional"]:
+                self.memoria["memoria_operacional"]["incidentes"] = []
+            
+            incidente["id"] = str(uuid.uuid4())
+            incidente["timestamp"] = datetime.now().isoformat()
+            
+            self.memoria["memoria_operacional"]["incidentes"].append(incidente)
+            self._salvar_memoria(self.memoria)
+            
+            # Registra alerta se necessário
+            if incidente.get("severidade") in ["alta", "critica"]:
+                self.registrar_alerta({
+                    "tipo": "incidente",
+                    "severidade": incidente["severidade"],
+                    "mensagem": f"Incidente crítico detectado: {incidente.get('descricao', 'Sem descrição')}",
+                    "componente": incidente.get("componente", "sistema"),
+                    "timestamp": datetime.now().isoformat()
+                })
+            
+            self.logger.info(f"Incidente registrado: {incidente['id']}")
+        except Exception as e:
+            self.logger.error(f"Erro ao registrar incidente: {str(e)}")
+
+    def registrar_aprendizado(self, aprendizado: Dict[str, Any]) -> None:
+        """Registra um evento de aprendizado do sistema.
+        
+        Args:
+            aprendizado: Dicionário com os dados do aprendizado
+        """
+        try:
+            if "aprendizados" not in self.memoria["memoria_operacional"]:
+                self.memoria["memoria_operacional"]["aprendizados"] = []
+            
+            aprendizado["id"] = str(uuid.uuid4())
+            aprendizado["timestamp"] = datetime.now().isoformat()
+            
+            self.memoria["memoria_operacional"]["aprendizados"].append(aprendizado)
+            self._salvar_memoria(self.memoria)
+            
+            # Registra transição de autonomia se necessário
+            if aprendizado.get("impacto") == "alto":
+                self.registrar_transicao_autonomia({
+                    "tipo": "aprendizado",
+                    "contexto": aprendizado.get("contexto", "geral"),
+                    "descricao": f"Transição de autonomia baseada em aprendizado: {aprendizado.get('descricao', 'Sem descrição')}",
+                    "impacto": "alto",
+                    "detalhes": aprendizado.get("detalhes", {}),
+                    "timestamp": datetime.now().isoformat()
+                })
+            
+            self.logger.info(f"Aprendizado registrado: {aprendizado['id']}")
+        except Exception as e:
+            self.logger.error(f"Erro ao registrar aprendizado: {str(e)}")
+
+    def registrar_transicao_autonomia(self, transicao: Dict[str, Any]) -> None:
+        """Registra uma transição no nível de autonomia do sistema.
+        
+        Args:
+            transicao: Dicionário com os dados da transição
+        """
+        try:
+            if "transicoes_autonomia" not in self.memoria["memoria_operacional"]:
+                self.memoria["memoria_operacional"]["transicoes_autonomia"] = []
+            
+            transicao["id"] = str(uuid.uuid4())
+            transicao["timestamp"] = datetime.now().isoformat()
+            
+            self.memoria["memoria_operacional"]["transicoes_autonomia"].append(transicao)
+            self._salvar_memoria(self.memoria)
+            
+            self.logger.info(f"Transição de autonomia registrada: {transicao['id']}")
+        except Exception as e:
+            self.logger.error(f"Erro ao registrar transição de autonomia: {str(e)}")
+
     def limpar_memoria_antiga(self, dias: int = 30) -> None:
         """Limpa registros antigos da memória"""
         data_limite = (datetime.now() - timedelta(days=dias)).isoformat()
@@ -745,4 +950,79 @@ class GerenciadorMemoria:
             ]
         
         self._salvar_memoria(self.memoria)
-        self.logger.info(f"Memória antiga limpa (mais antiga que {dias} dias)") 
+        self.logger.info(f"Memória antiga limpa (mais antiga que {dias} dias)")
+
+    def salvar_memoria(self) -> None:
+        """Salva o estado atual da memória."""
+        try:
+            with open(self.caminho_memoria, 'w') as f:
+                json.dump(self.memoria, f, default=str)
+            self.logger.info("Memória salva com sucesso")
+        except Exception as e:
+            self.logger.error(f"Erro ao salvar memória: {str(e)}")
+
+    def carregar_memoria(self) -> None:
+        """Carrega o estado da memória do arquivo."""
+        try:
+            if self.caminho_memoria.exists():
+                with open(self.caminho_memoria, 'r') as f:
+                    self.memoria = json.load(f)
+                self.logger.info("Memória carregada com sucesso")
+            else:
+                self.memoria = self._criar_memoria_inicial()
+                self._salvar_memoria(self.memoria)
+        except Exception as e:
+            self.logger.error(f"Erro ao carregar memória: {str(e)}")
+            self.memoria = self._criar_memoria_inicial()
+
+    def atualizar_metricas(self, metricas: Dict[str, Any]) -> None:
+        """Atualiza as métricas do sistema."""
+        try:
+            if "metricas" not in self.memoria["memoria_operacional"]:
+                self.memoria["memoria_operacional"]["metricas"] = {}
+            
+            self.memoria["memoria_operacional"]["metricas"].update(metricas)
+            self._salvar_memoria(self.memoria)
+            self.logger.info("Métricas atualizadas com sucesso")
+        except Exception as e:
+            self.logger.error(f"Erro ao atualizar métricas: {str(e)}")
+
+    def obter_historico(self) -> List[Dict[str, Any]]:
+        """Obtém o histórico completo do sistema."""
+        try:
+            historico = []
+            for tipo in self.memoria["memoria_operacional"]["entidades"]:
+                for entidade in self.memoria["memoria_operacional"]["entidades"][tipo]:
+                    historico.append(entidade)
+            return sorted(historico, key=lambda x: x["timestamp"], reverse=True)
+        except Exception as e:
+            self.logger.error(f"Erro ao obter histórico: {str(e)}")
+            return []
+
+    def obter_historico_por_tipo(self, tipo: str) -> List[Dict[str, Any]]:
+        """Obtém o histórico de entidades de um tipo específico."""
+        try:
+            if tipo not in self.memoria["memoria_operacional"]["entidades"]:
+                return []
+            return sorted(
+                self.memoria["memoria_operacional"]["entidades"][tipo],
+                key=lambda x: x["timestamp"],
+                reverse=True
+            )
+        except Exception as e:
+            self.logger.error(f"Erro ao obter histórico por tipo: {str(e)}")
+            return []
+
+    def obter_historico_por_periodo(self, inicio: datetime, fim: datetime) -> List[Dict[str, Any]]:
+        """Obtém o histórico de entidades em um período específico."""
+        try:
+            historico = []
+            for tipo in self.memoria["memoria_operacional"]["entidades"]:
+                for entidade in self.memoria["memoria_operacional"]["entidades"][tipo]:
+                    timestamp = datetime.fromisoformat(entidade["timestamp"])
+                    if inicio <= timestamp <= fim:
+                        historico.append(entidade)
+            return sorted(historico, key=lambda x: x["timestamp"], reverse=True)
+        except Exception as e:
+            self.logger.error(f"Erro ao obter histórico por período: {str(e)}")
+            return [] 
