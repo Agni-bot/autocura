@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "estrutura_arquivos.md",
+                "file": "detalhamento_modulos_eticos.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "estrutura_arquivos"
+              "title": "detalhamento_modulos_eticos"
             }
           }
         ]
@@ -78,7 +78,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 246.50543212890625
   },
   "right": {
     "id": "3d23850b693aa3d2",
@@ -170,6 +170,11 @@
   },
   "active": "f1fddbf1444defbe",
   "lastOpenFiles": [
+    "modulos/diagnostico_avancado.md",
+    "testes.md",
+    "manual_final_completo.md",
+    "modulos_funcionais.md",
+    "estrutura_arquivos.md",
     "estrutura_diretorios.md"
   ]
 }

@@ -56,12 +56,18 @@ class GerenciadorMemoria:
         self.caminho_memoria.parent.mkdir(parents=True, exist_ok=True)
         
         # Cliente Redis
-        self.redis = redis.Redis(
-            host=redis_host,
-            port=redis_port,
-            db=redis_db,
-            decode_responses=True
-        )
+        try:
+            self.redis = redis.Redis(
+                host=redis_host,
+                port=redis_port,
+                db=redis_db,
+                decode_responses=True
+            )
+            # Testa conexão
+            self.redis.ping()
+        except redis.ConnectionError as e:
+            self.logger.error(f"Erro ao conectar ao Redis: {str(e)}")
+            self.redis = None
         
         # Cache local
         self.cache_local: Dict[str, EntidadeMemoria] = {}
@@ -137,6 +143,41 @@ class GerenciadorMemoria:
                     "tempo_operacao_segundos",
                     "Tempo de execução das operações",
                     ["operacao"],
+                    registry=self.registry
+                ),
+                "validacoes_eticas_total": Counter(
+                    "validacoes_eticas_total",
+                    "Número total de validações éticas registradas",
+                    registry=self.registry
+                ),
+                "validacoes_eticas_aprovadas": Counter(
+                    "validacoes_eticas_aprovadas",
+                    "Número de validações éticas aprovadas",
+                    registry=self.registry
+                ),
+                "validacoes_eticas_rejeitadas": Counter(
+                    "validacoes_eticas_rejeitadas",
+                    "Número de validações éticas rejeitadas",
+                    registry=self.registry
+                ),
+                "violacoes_eticas_total": Counter(
+                    "violacoes_eticas_total",
+                    "Número total de violações éticas registradas",
+                    registry=self.registry
+                ),
+                "violacoes_eticas_altas": Counter(
+                    "violacoes_eticas_altas",
+                    "Número de violações éticas de alta severidade registradas",
+                    registry=self.registry
+                ),
+                "violacoes_eticas_medias": Counter(
+                    "violacoes_eticas_medias",
+                    "Número de violações éticas de média severidade registradas",
+                    registry=self.registry
+                ),
+                "violacoes_eticas_baixas": Counter(
+                    "violacoes_eticas_baixas",
+                    "Número de violações éticas de baixa severidade registradas",
                     registry=self.registry
                 )
             }
@@ -421,13 +462,30 @@ class GerenciadorMemoria:
         return memoria
     
     def _salvar_memoria(self, memoria: Dict[str, Any]) -> None:
-        """Salva a memória compartilhada no arquivo"""
+        """Salva a memória no arquivo e Redis."""
         try:
+            # Salva no arquivo
             with open(self.caminho_memoria, 'w', encoding='utf-8') as f:
-                json.dump(memoria, f, indent=2, ensure_ascii=False)
-            logger.info("Memória salva com sucesso")
+                json.dump(memoria, f, ensure_ascii=False, indent=2)
+            
+            # Salva no Redis se disponível
+            if self.redis:
+                self.redis.set('memoria_compartilhada', json.dumps(memoria))
+                self.metricas["operacoes_redis"].labels(operacao='salvar').inc()
+            
+            self.logger.info("Memória salva com sucesso")
         except Exception as e:
-            logger.error(f"Erro ao salvar memória: {str(e)}")
+            self.logger.error(f"Erro ao salvar memória: {str(e)}")
+            raise
+
+    def salvar_memoria(self, caminho: Optional[str] = None) -> None:
+        """Salva a memória em um caminho específico ou no caminho padrão."""
+        try:
+            caminho_salvar = Path(caminho) if caminho else self.caminho_memoria
+            self._salvar_memoria(self.memoria)
+            self.logger.info(f"Memória salva em {caminho_salvar}")
+        except Exception as e:
+            self.logger.error(f"Erro ao salvar memória: {str(e)}")
             raise
     
     def atualizar_estado_sistema(self, atualizacao: Dict[str, Any]) -> None:
@@ -456,83 +514,97 @@ class GerenciadorMemoria:
         logger.info("Nova ação registrada")
     
     def registrar_validacao_etica(self, validacao: Dict[str, Any]) -> None:
-        """Registra uma validação ética.
+        """Registra uma validação ética no histórico.
         
         Args:
-            validacao: Dados da validação ética
+            validacao: Dados da validação a ser registrada
         """
-        if "validacoes" not in self.memoria["memoria_etica"]:
-            self.memoria["memoria_etica"]["validacoes"] = []
-        
-        self.memoria["memoria_etica"]["validacoes"].append({
-            **validacao,
-            "timestamp": datetime.now().isoformat()
-        })
-        self._salvar_memoria(self.memoria)
-        self.logger.info("Nova validação ética registrada")
-
-    async def validar_decisao_etica(self, decisao: Dict[str, Any]) -> Dict[str, Any]:
-        """Valida uma decisão contra os princípios éticos registrados."""
         try:
-            if "principios_eticos" not in self.memoria["memoria_operacional"]:
-                self.memoria["memoria_operacional"]["principios_eticos"] = {}
+            # Verifica se o histórico de validações existe
+            if "validacoes_eticas" not in self.memoria["memoria_operacional"]:
+                self.memoria["memoria_operacional"]["validacoes_eticas"] = []
             
-            # Calcula score ético
-            score = 0.0
-            total_peso = 0.0
+            # Adiciona timestamp se não existir
+            if "timestamp" not in validacao:
+                validacao["timestamp"] = datetime.now().isoformat()
             
-            for principio, peso in self.memoria["memoria_operacional"]["principios_eticos"].items():
-                if principio in decisao.get("principios", {}):
-                    score += peso * decisao["principios"][principio]
-                    total_peso += peso
+            # Adiciona ID único se não existir
+            if "id" not in validacao:
+                validacao["id"] = str(uuid.uuid4())
             
-            # Normaliza score
-            score_normalizado = score / total_peso if total_peso > 0 else 0.0
+            # Adiciona ao histórico
+            self.memoria["memoria_operacional"]["validacoes_eticas"].append(validacao)
             
-            # Define threshold para aprovação
-            aprovado = score_normalizado >= 0.7
+            # Limita o tamanho do histórico
+            max_historico = 1000
+            if len(self.memoria["memoria_operacional"]["validacoes_eticas"]) > max_historico:
+                self.memoria["memoria_operacional"]["validacoes_eticas"] = \
+                    self.memoria["memoria_operacional"]["validacoes_eticas"][-max_historico:]
             
-            resultado = {
-                "aprovado": aprovado,
-                "score": score_normalizado,
-                "justificativa": "Decisão alinhada com princípios éticos" if aprovado else "Decisão não atende aos critérios éticos mínimos"
-            }
+            # Salva a memória
+            self._salvar_memoria()
             
-            # Registra validação
-            self.registrar_validacao_etica({
-                "decisao_id": decisao.get("id"),
-                "score": score_normalizado,
-                "aprovado": aprovado,
-                "timestamp": datetime.now().isoformat()
-            })
+            # Registra métrica
+            self.metricas["validacoes_eticas_total"].inc()
+            if validacao.get("resultado") == "aprovado":
+                self.metricas["validacoes_eticas_aprovadas"].inc()
+            else:
+                self.metricas["validacoes_eticas_rejeitadas"].inc()
             
-            return resultado
+            self.logger.info(f"Validação ética registrada: {validacao['id']}")
+            
         except Exception as e:
-            self.logger.error(f"Erro ao validar decisão ética: {str(e)}")
-            return {
-                "aprovado": False,
-                "score": 0.0,
-                "justificativa": f"Erro na validação: {str(e)}"
-            }
+            self.logger.error(f"Erro ao registrar validação ética: {str(e)}")
+            raise
 
     def registrar_violacao_etica(self, violacao: Dict[str, Any]) -> None:
-        """Registra uma violação ética.
+        """Registra uma violação ética no histórico.
         
         Args:
-            violacao: Dados da violação ética
+            violacao: Dados da violação a ser registrada
         """
-        if "violacoes" not in self.memoria["memoria_etica"]:
-            self.memoria["memoria_etica"]["violacoes"] = []
-        
-        self.memoria["memoria_etica"]["violacoes"].append({
-            **violacao,
-            "timestamp": datetime.now().isoformat()
-        })
-        self._salvar_memoria(self.memoria)
-        self.logger.info("Nova violação ética registrada")
+        try:
+            # Verifica se o histórico de violações existe
+            if "violacoes_eticas" not in self.memoria["memoria_operacional"]:
+                self.memoria["memoria_operacional"]["violacoes_eticas"] = []
+            
+            # Adiciona timestamp se não existir
+            if "timestamp" not in violacao:
+                violacao["timestamp"] = datetime.now().isoformat()
+            
+            # Adiciona ID único se não existir
+            if "id" not in violacao:
+                violacao["id"] = str(uuid.uuid4())
+            
+            # Adiciona ao histórico
+            self.memoria["memoria_operacional"]["violacoes_eticas"].append(violacao)
+            
+            # Limita o tamanho do histórico
+            max_historico = 1000
+            if len(self.memoria["memoria_operacional"]["violacoes_eticas"]) > max_historico:
+                self.memoria["memoria_operacional"]["violacoes_eticas"] = \
+                    self.memoria["memoria_operacional"]["violacoes_eticas"][-max_historico:]
+            
+            # Salva a memória
+            self._salvar_memoria()
+            
+            # Registra métrica
+            self.metricas["violacoes_eticas_total"].inc()
+            if violacao.get("severidade") == "alta":
+                self.metricas["violacoes_eticas_altas"].inc()
+            elif violacao.get("severidade") == "media":
+                self.metricas["violacoes_eticas_medias"].inc()
+            else:
+                self.metricas["violacoes_eticas_baixas"].inc()
+            
+            self.logger.warning(f"Violacao ética registrada: {violacao['id']}")
+            
+        except Exception as e:
+            self.logger.error(f"Erro ao registrar violação ética: {str(e)}")
+            raise
 
     def obter_validacoes_eticas(self, limite: int = 10) -> List[Dict[str, Any]]:
-        """Retorna as validações éticas mais recentes.
+        """Obtém as validações éticas mais recentes.
         
         Args:
             limite: Número máximo de validações a retornar
@@ -540,11 +612,23 @@ class GerenciadorMemoria:
         Returns:
             Lista de validações éticas
         """
-        validacoes = self.memoria["memoria_etica"].get("validacoes", [])
-        return validacoes[-limite:]
-
+        try:
+            # Verifica se o histórico existe
+            if "validacoes_eticas" not in self.memoria["memoria_operacional"]:
+                return []
+            
+            # Obtém as validações mais recentes
+            validacoes = self.memoria["memoria_operacional"]["validacoes_eticas"]
+            validacoes.sort(key=lambda x: x["timestamp"], reverse=True)
+            
+            return validacoes[:limite]
+            
+        except Exception as e:
+            self.logger.error(f"Erro ao obter validações éticas: {str(e)}")
+            return []
+            
     def obter_violacoes_eticas(self, limite: int = 10) -> List[Dict[str, Any]]:
-        """Retorna as violações éticas mais recentes.
+        """Obtém as violações éticas mais recentes.
         
         Args:
             limite: Número máximo de violações a retornar
@@ -552,65 +636,114 @@ class GerenciadorMemoria:
         Returns:
             Lista de violações éticas
         """
-        violacoes = self.memoria["memoria_etica"].get("violacoes", [])
-        return violacoes[-limite:]
+        try:
+            # Verifica se o histórico existe
+            if "violacoes_eticas" not in self.memoria["memoria_operacional"]:
+                return []
+            
+            # Obtém as violações mais recentes
+            violacoes = self.memoria["memoria_operacional"]["violacoes_eticas"]
+            violacoes.sort(key=lambda x: x["timestamp"], reverse=True)
+            
+            return violacoes[:limite]
+            
+        except Exception as e:
+            self.logger.error(f"Erro ao obter violações éticas: {str(e)}")
+            return []
 
     def obter_historico_etico(self) -> Dict[str, List[Dict[str, Any]]]:
-        """Retorna o histórico ético completo.
+        """Obtém o histórico completo de validações e violações éticas.
         
         Returns:
-            Dicionário com histórico de validações e violações
+            Dicionário contendo listas de validações e violações éticas
         """
-        return {
-            "validacoes": self.memoria["memoria_etica"].get("validacoes", []),
-            "violacoes": self.memoria["memoria_etica"].get("violacoes", [])
-        }
+        try:
+            historico = {
+                "validacoes": [],
+                "violacoes": []
+            }
+            
+            # Obtém validações
+            if "validacoes_eticas" in self.memoria["memoria_operacional"]:
+                historico["validacoes"] = self.memoria["memoria_operacional"]["validacoes_eticas"]
+                historico["validacoes"].sort(key=lambda x: x["timestamp"], reverse=True)
+            
+            # Obtém violações
+            if "violacoes_eticas" in self.memoria["memoria_operacional"]:
+                historico["violacoes"] = self.memoria["memoria_operacional"]["violacoes_eticas"]
+                historico["violacoes"].sort(key=lambda x: x["timestamp"], reverse=True)
+            
+            return historico
+            
+        except Exception as e:
+            self.logger.error(f"Erro ao obter histórico ético: {str(e)}")
+            return {"validacoes": [], "violacoes": []}
 
     def analisar_tendencia_etica(self) -> Dict[str, Any]:
-        """Analisa tendências nas validações éticas."""
+        """Analisa tendências no histórico ético.
+        
+        Returns:
+            Dicionário com métricas e análises de tendência
+        """
         try:
-            if "validacoes_eticas" not in self.memoria["memoria_operacional"]:
-                self.memoria["memoria_operacional"]["validacoes_eticas"] = []
+            # Inicializa métricas
+            metricas = {
+                "total_validacoes": 0,
+                "total_violacoes": 0,
+                "taxa_aprovacao": 0.0,
+                "severidade_media": 0.0,
+                "tendencia_aprovacao": 0.0,
+                "tendencia_violacoes": 0.0
+            }
             
-            validacoes = self.memoria["memoria_operacional"]["validacoes_eticas"]
-            total_validacoes = len(validacoes)
+            # Obtém histórico
+            historico = self.obter_historico_etico()
+            validacoes = historico["validacoes"]
+            violacoes = historico["violacoes"]
             
-            if total_validacoes == 0:
-                return {
-                    "total_validacoes": 0,
-                    "taxa_aprovacao": 0.0,
-                    "tendencia": "neutra",
-                    "recomendacoes": []
-                }
+            # Calcula métricas básicas
+            metricas["total_validacoes"] = len(validacoes)
+            metricas["total_violacoes"] = len(violacoes)
             
             # Calcula taxa de aprovação
-            aprovacoes = sum(1 for v in validacoes if v.get("aprovado", False))
-            taxa_aprovacao = aprovacoes / total_validacoes
+            if metricas["total_validacoes"] > 0:
+                aprovadas = sum(1 for v in validacoes if v.get("resultado") == "aprovado")
+                metricas["taxa_aprovacao"] = aprovadas / metricas["total_validacoes"]
             
-            # Determina tendência
-            if taxa_aprovacao >= 0.8:
-                tendencia = "positiva"
-                recomendacoes = ["Manter práticas atuais", "Documentar casos de sucesso"]
-            elif taxa_aprovacao >= 0.6:
-                tendencia = "neutra"
-                recomendacoes = ["Revisar princípios éticos", "Monitorar decisões críticas"]
-            else:
-                tendencia = "negativa"
-                recomendacoes = ["Revisar critérios éticos", "Implementar treinamento adicional"]
+            # Calcula severidade média
+            if metricas["total_violacoes"] > 0:
+                severidades = {
+                    "alta": 3,
+                    "media": 2,
+                    "baixa": 1
+                }
+                soma_severidade = sum(severidades.get(v.get("severidade", "baixa"), 1) for v in violacoes)
+                metricas["severidade_media"] = soma_severidade / metricas["total_violacoes"]
             
-            return {
-                "total_validacoes": total_validacoes,
-                "taxa_aprovacao": taxa_aprovacao,
-                "tendencia": tendencia,
-                "recomendacoes": recomendacoes
-            }
+            # Analisa tendências
+            if len(validacoes) >= 2:
+                # Tendência de aprovação
+                aprovacoes_recentes = sum(1 for v in validacoes[:len(validacoes)//2] if v.get("resultado") == "aprovado")
+                aprovacoes_antigas = sum(1 for v in validacoes[len(validacoes)//2:] if v.get("resultado") == "aprovado")
+                metricas["tendencia_aprovacao"] = (aprovacoes_recentes - aprovacoes_antigas) / len(validacoes)
+            
+            if len(violacoes) >= 2:
+                # Tendência de violações
+                violacoes_recentes = len(violacoes[:len(violacoes)//2])
+                violacoes_antigas = len(violacoes[len(violacoes)//2:])
+                metricas["tendencia_violacoes"] = (violacoes_recentes - violacoes_antigas) / len(violacoes)
+            
+            return metricas
+            
         except Exception as e:
             self.logger.error(f"Erro ao analisar tendência ética: {str(e)}")
             return {
                 "total_validacoes": 0,
+                "total_violacoes": 0,
                 "taxa_aprovacao": 0.0,
-                "tendencia": "neutra",
-                "recomendacoes": []
+                "severidade_media": 0.0,
+                "tendencia_aprovacao": 0.0,
+                "tendencia_violacoes": 0.0
             }
 
     def registrar_principios_eticos(self, principios: Dict[str, float]) -> None:
@@ -952,29 +1085,6 @@ class GerenciadorMemoria:
         self._salvar_memoria(self.memoria)
         self.logger.info(f"Memória antiga limpa (mais antiga que {dias} dias)")
 
-    def salvar_memoria(self) -> None:
-        """Salva o estado atual da memória."""
-        try:
-            with open(self.caminho_memoria, 'w') as f:
-                json.dump(self.memoria, f, default=str)
-            self.logger.info("Memória salva com sucesso")
-        except Exception as e:
-            self.logger.error(f"Erro ao salvar memória: {str(e)}")
-
-    def carregar_memoria(self) -> None:
-        """Carrega o estado da memória do arquivo."""
-        try:
-            if self.caminho_memoria.exists():
-                with open(self.caminho_memoria, 'r') as f:
-                    self.memoria = json.load(f)
-                self.logger.info("Memória carregada com sucesso")
-            else:
-                self.memoria = self._criar_memoria_inicial()
-                self._salvar_memoria(self.memoria)
-        except Exception as e:
-            self.logger.error(f"Erro ao carregar memória: {str(e)}")
-            self.memoria = self._criar_memoria_inicial()
-
     def atualizar_metricas(self, metricas: Dict[str, Any]) -> None:
         """Atualiza as métricas do sistema."""
         try:
@@ -1000,29 +1110,51 @@ class GerenciadorMemoria:
             return []
 
     def obter_historico_por_tipo(self, tipo: str) -> List[Dict[str, Any]]:
-        """Obtém o histórico de entidades de um tipo específico."""
+        """Obtém o histórico de entidades por tipo.
+        
+        Args:
+            tipo: Tipo de entidade a ser buscada
+            
+        Returns:
+            Lista de entidades do tipo especificado
+        """
         try:
+            if not self.memoria or "memoria_operacional" not in self.memoria:
+                return []
+                
+            if "entidades" not in self.memoria["memoria_operacional"]:
+                return []
+                
             if tipo not in self.memoria["memoria_operacional"]["entidades"]:
                 return []
-            return sorted(
-                self.memoria["memoria_operacional"]["entidades"][tipo],
-                key=lambda x: x["timestamp"],
-                reverse=True
-            )
+                
+            return self.memoria["memoria_operacional"]["entidades"][tipo]
         except Exception as e:
             self.logger.error(f"Erro ao obter histórico por tipo: {str(e)}")
             return []
 
     def obter_historico_por_periodo(self, inicio: datetime, fim: datetime) -> List[Dict[str, Any]]:
-        """Obtém o histórico de entidades em um período específico."""
+        """Obtém o histórico de entidades por período.
+        
+        Args:
+            inicio: Data/hora inicial
+            fim: Data/hora final
+            
+        Returns:
+            Lista de entidades no período especificado
+        """
         try:
-            historico = []
-            for tipo in self.memoria["memoria_operacional"]["entidades"]:
+            if not self.memoria or "memoria_operacional" not in self.memoria:
+                return []
+                
+            resultado = []
+            for tipo in self.memoria["memoria_operacional"].get("entidades", {}):
                 for entidade in self.memoria["memoria_operacional"]["entidades"][tipo]:
                     timestamp = datetime.fromisoformat(entidade["timestamp"])
                     if inicio <= timestamp <= fim:
-                        historico.append(entidade)
-            return sorted(historico, key=lambda x: x["timestamp"], reverse=True)
+                        resultado.append(entidade)
+            
+            return resultado
         except Exception as e:
             self.logger.error(f"Erro ao obter histórico por período: {str(e)}")
             return [] 
