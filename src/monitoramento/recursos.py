@@ -6,13 +6,13 @@ from datetime import datetime
 from collections import deque
 from typing import Dict, Any, List
 from pathlib import Path
-from prometheus_client import Counter, Gauge, Histogram
+from prometheus_client import Counter, Gauge, Histogram, CollectorRegistry
 from src.monitoramento.config import CONFIG
 
 logger = logging.getLogger(__name__)
 
 class MonitorRecursos:
-    def __init__(self):
+    def __init__(self, registry=None):
         self.intervalo = CONFIG['intervalo_monitoramento']
         self.limite_equidade = CONFIG['limites']['equidade']
         self.historico = deque(maxlen=CONFIG['memoria']['max_historico'])
@@ -20,50 +20,59 @@ class MonitorRecursos:
         self.memoria_path = Path(CONFIG['memoria']['arquivo'])
         self.recursos = {}
         self.ultimo_ajuste = None
+        self.registry = registry or None
         
         # Inicializa métricas Prometheus
         self._init_prometheus_metrics()
         
     def _init_prometheus_metrics(self) -> None:
         """Inicializa métricas Prometheus"""
+        reg = self.registry
         # Contadores
         self.ajustes_counter = Counter(
             'autocura_ajustes_total',
             'Total de ajustes de recursos realizados',
-            ['tipo']
+            ['tipo'],
+            registry=reg
         )
         self.alertas_counter = Counter(
             'autocura_alertas_total',
             'Total de alertas gerados',
-            ['severidade', 'tipo']
+            ['severidade', 'tipo'],
+            registry=reg
         )
         
         # Gauges
         self.cpu_usage = Gauge(
             'autocura_cpu_usage',
             'Uso de CPU em percentual',
-            ['core']
+            ['core'],
+            registry=reg
         )
         self.memory_usage = Gauge(
             'autocura_memory_usage',
             'Uso de memória em percentual',
-            ['tipo']
+            ['tipo'],
+            registry=reg
         )
         self.disk_usage = Gauge(
             'autocura_disk_usage',
             'Uso de disco em percentual',
-            ['particao']
+            ['particao'],
+            registry=reg
         )
         self.equidade = Gauge(
             'autocura_equidade',
-            'Índice de equidade na distribuição de recursos'
+            'Índice de equidade na distribuição de recursos',
+            registry=reg
         )
         
         # Histogramas
         self.ajuste_duration = Histogram(
             'autocura_ajuste_duration_seconds',
             'Duração dos ajustes de recursos',
-            buckets=[1, 5, 10, 30, 60]
+            buckets=[1, 5, 10, 30, 60],
+            registry=reg
         )
         
     async def iniciar_monitoramento(self):

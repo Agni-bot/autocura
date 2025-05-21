@@ -59,7 +59,8 @@ CONFIG: Dict[str, Any] = {
         },
         'memoria': {
             'limite_cache': 1024 * 1024 * 1024,  # 1GB em bytes
-            'percentual_swap': 50  # percentual
+            'percentual_swap': 50,  # percentual
+            'swap_limite': 70  # percentual máximo de uso de swap
         },
         'disco': {
             'limite_logs': 1024 * 1024 * 1024,  # 1GB em bytes

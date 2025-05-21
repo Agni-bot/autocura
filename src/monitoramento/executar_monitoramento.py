@@ -37,10 +37,10 @@ def signal_handler(signum, frame):
         asyncio.create_task(monitor.encerrar())
     sys.exit(0)
 
-async def main():
+async def main(MonitorClass=None, prometheus_registry=None):
     """Função principal que executa o monitoramento"""
     global monitor
-    
+    MonitorClass = MonitorClass or MonitorRecursos
     try:
         # Configura handlers de sinal
         signal.signal(signal.SIGINT, signal_handler)
@@ -55,14 +55,15 @@ async def main():
         
         # Inicializa e inicia monitoramento
         logger.info("Iniciando sistema de monitoramento de recursos")
-        monitor = MonitorRecursos()
+        monitor = MonitorClass(registry=prometheus_registry)
         await monitor.iniciar_monitoramento()
         
     except KeyboardInterrupt:
         logger.info("Monitoramento interrompido pelo usuário")
     except Exception as e:
-        logger.error(f"Erro fatal no monitoramento: {str(e)}")
-        raise
+        logger.error(f"Erro fatal no monitoramento: {e}")
+        if monitor:
+            await monitor.encerrar()
     finally:
         if monitor:
             await monitor.encerrar()
