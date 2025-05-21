@@ -8,27 +8,22 @@ data:
     global:
       scrape_interval: 15s
       evaluation_interval: 15s
-      scrape_timeout: 10s
-
-    rule_files:
-      - /etc/prometheus/rules/*.yml
-
+    
     scrape_configs:
       - job_name: 'autocura'
+        static_configs:
+          - targets: ['autocura-api.autocura.svc.cluster.local:9090']
         metrics_path: '/metrics'
-        kubernetes_sd_configs:
-          - role: pod
-        relabel_configs:
-          - source_labels: [__meta_kubernetes_pod_label_app]
-            regex: autocura
-            action: keep
-          - source_labels: [__meta_kubernetes_pod_container_port_name]
-            regex: metrics
-            action: keep
-          - source_labels: [__meta_kubernetes_namespace]
-            target_label: kubernetes_namespace
-          - source_labels: [__meta_kubernetes_pod_name]
-            target_label: kubernetes_pod_name
+        
+      - job_name: 'autocura-monitor'
+        static_configs:
+          - targets: ['autocura-monitor.autocura.svc.cluster.local:9090']
+        metrics_path: '/metrics'
+        
+      - job_name: 'autocura-observador'
+        static_configs:
+          - targets: ['autocura-observador.autocura.svc.cluster.local:8080']
+        metrics_path: '/metrics'
 
   rules.yml: |
     groups:
@@ -95,4 +90,23 @@ data:
           severity: warning
         annotations:
           summary: "Erros de rede detectados"
-          description: "Erros de transmissão de rede detectados no nó {{ $labels.instance }}" 
+          description: "Erros de transmissão de rede detectados no nó {{ $labels.instance }}"
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: autocura
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: autocura
+  namespaceSelector:
+    matchNames:
+      - autocura
+  endpoints:
+    - port: metrics
+      interval: 15s
+      path: /metrics 
