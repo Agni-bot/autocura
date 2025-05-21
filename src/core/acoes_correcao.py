@@ -1,14 +1,136 @@
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from datetime import datetime
 import json
 from pathlib import Path
+from enum import Enum
+from uuid import uuid4
 
 from ..memoria.gerenciador_memoria import GerenciadorMemoria
 
 # Configuração de logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("acoes_correcao")
+
+class TipoAcao(Enum):
+    """Tipos de ações de correção"""
+    CORRECAO = "correcao"
+    OTIMIZACAO = "otimizacao"
+    MANUTENCAO = "manutencao"
+    ESCALONAMENTO = "escalonamento"
+
+class StatusAcao(Enum):
+    """Status possíveis de uma ação"""
+    PENDENTE = "pendente"
+    EM_EXECUCAO = "em_execucao"
+    CONCLUIDA = "concluida"
+    FALHA = "falha"
+    CANCELADA = "cancelada"
+
+class AcaoCorrecao:
+    """Representa uma ação de correção no sistema"""
+    
+    def __init__(
+        self,
+        tipo: TipoAcao,
+        descricao: str,
+        parametros: Dict[str, Any],
+        id: Optional[str] = None,
+        status: StatusAcao = StatusAcao.PENDENTE,
+        data_criacao: Optional[datetime] = None,
+        data_inicio: Optional[datetime] = None,
+        data_fim: Optional[datetime] = None,
+        sucesso: Optional[bool] = None,
+        validada: bool = False,
+        data_validacao: Optional[datetime] = None
+    ):
+        self.id = id or str(uuid4())
+        self.tipo = tipo
+        self.descricao = descricao
+        self.parametros = parametros
+        self.status = status
+        self.data_criacao = data_criacao or datetime.now()
+        self.data_inicio = data_inicio
+        self.data_fim = data_fim
+        self.sucesso = sucesso
+        self.validada = validada
+        self.data_validacao = data_validacao
+
+class GerenciadorAcoes:
+    """Gerenciador de ações de correção"""
+    
+    def __init__(self):
+        self.memoria = None
+        logger.info("Gerenciador de Ações inicializado")
+    
+    async def criar_acao(
+        self,
+        tipo: TipoAcao,
+        descricao: str,
+        parametros: Dict[str, Any]
+    ) -> Optional[AcaoCorrecao]:
+        """Cria uma nova ação de correção"""
+        if not tipo or not descricao:
+            return None
+            
+        acao = AcaoCorrecao(
+            tipo=tipo,
+            descricao=descricao,
+            parametros=parametros
+        )
+        
+        await self.memoria.criar_entidade("acoes", acao.__dict__)
+        return acao
+    
+    async def executar_acao(self, acao_id: str) -> bool:
+        """Executa uma ação de correção"""
+        acao = await self.obter_acao(acao_id)
+        if not acao:
+            return False
+            
+        acao.status = StatusAcao.EM_EXECUCAO
+        acao.data_inicio = datetime.now()
+        
+        await self.memoria.atualizar_entidade("acoes", acao_id, acao.__dict__)
+        return True
+    
+    async def finalizar_acao(self, acao_id: str, sucesso: bool) -> bool:
+        """Finaliza uma ação de correção"""
+        acao = await self.obter_acao(acao_id)
+        if not acao:
+            return False
+            
+        acao.status = StatusAcao.CONCLUIDA if sucesso else StatusAcao.FALHA
+        acao.data_fim = datetime.now()
+        acao.sucesso = sucesso
+        
+        await self.memoria.atualizar_entidade("acoes", acao_id, acao.__dict__)
+        return True
+    
+    async def obter_acao(self, acao_id: str) -> Optional[AcaoCorrecao]:
+        """Obtém uma ação de correção pelo ID"""
+        dados = await self.memoria.obter_entidade("acoes", acao_id)
+        if not dados:
+            return None
+            
+        return AcaoCorrecao(**dados)
+    
+    async def listar_acoes(self) -> List[AcaoCorrecao]:
+        """Lista todas as ações de correção"""
+        dados = await self.memoria.buscar_entidades("acoes")
+        return [AcaoCorrecao(**d) for d in dados]
+    
+    async def validar_acao(self, acao_id: str) -> bool:
+        """Valida uma ação de correção"""
+        acao = await self.obter_acao(acao_id)
+        if not acao:
+            return False
+            
+        acao.validada = True
+        acao.data_validacao = datetime.now()
+        
+        await self.memoria.atualizar_entidade("acoes", acao_id, acao.__dict__)
+        return True
 
 class GerenciadorAcoesCorrecao:
     """Gerenciador de ações de correção do sistema"""

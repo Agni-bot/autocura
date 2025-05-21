@@ -7,7 +7,7 @@ import json
 import os
 from pathlib import Path
 import yaml
-from prometheus_client import Counter, Gauge, Histogram
+from prometheus_client import Counter, Gauge, Histogram, CollectorRegistry
 
 @dataclass
 class Configuracao:
@@ -44,27 +44,34 @@ class GerenciadorConfig:
         # Histórico de versões
         self.historico: Dict[str, List[Configuracao]] = {}
         
+        # Registro local do Prometheus
+        self.registry = CollectorRegistry()
+        
         # Métricas Prometheus
         self.metricas = {
             "configuracoes_criadas": Counter(
                 "configuracoes_criadas",
                 "Total de configurações criadas",
-                ["tipo", "ambiente"]
+                ["tipo", "ambiente"],
+                registry=self.registry
             ),
             "configuracoes_atualizadas": Counter(
                 "configuracoes_atualizadas",
                 "Total de configurações atualizadas",
-                ["tipo", "ambiente"]
+                ["tipo", "ambiente"],
+                registry=self.registry
             ),
             "configuracoes_carregadas": Counter(
                 "configuracoes_carregadas",
                 "Total de configurações carregadas",
-                ["tipo", "ambiente"]
+                ["tipo", "ambiente"],
+                registry=self.registry
             ),
             "tempo_operacao": Histogram(
                 "tempo_operacao_config",
                 "Tempo de operações na configuração",
-                ["operacao"]
+                ["operacao"],
+                registry=self.registry
             )
         }
         

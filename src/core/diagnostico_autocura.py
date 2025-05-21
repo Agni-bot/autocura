@@ -3,12 +3,173 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime
 from pathlib import Path
 import json
+from enum import Enum
+from uuid import uuid4
 
 from ..memoria.gerenciador_memoria import GerenciadorMemoria
 
 # Configuração de logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("diagnostico_autocura")
+
+class TipoDiagnostico(Enum):
+    """Tipos de diagnóstico"""
+    SISTEMA = "sistema"
+    PERFORMANCE = "performance"
+    SEGURANCA = "seguranca"
+    CONFIGURACAO = "configuracao"
+    DEPENDENCIA = "dependencia"
+
+class Severidade(Enum):
+    """Níveis de severidade"""
+    BAIXA = "baixa"
+    MEDIA = "media"
+    ALTA = "alta"
+    CRITICA = "critica"
+
+class StatusDiagnostico(Enum):
+    """Status possíveis de um diagnóstico"""
+    ABERTO = "aberto"
+    EM_ANALISE = "em_analise"
+    RESOLVIDO = "resolvido"
+    FALHA = "falha"
+    CANCELADO = "cancelado"
+
+class DiagnosticoAutocura:
+    """Representa um diagnóstico de autocura no sistema"""
+    
+    def __init__(
+        self,
+        tipo: TipoDiagnostico,
+        descricao: str,
+        severidade: Severidade,
+        metricas: Dict[str, Any],
+        id: Optional[str] = None,
+        status: StatusDiagnostico = StatusDiagnostico.ABERTO,
+        data_criacao: Optional[datetime] = None,
+        data_analise: Optional[datetime] = None,
+        data_resolucao: Optional[datetime] = None,
+        resolucao: Optional[str] = None,
+        acoes_tomadas: Optional[List[str]] = None
+    ):
+        self.id = id or str(uuid4())
+        self.tipo = tipo
+        self.descricao = descricao
+        self.severidade = severidade
+        self.metricas = metricas
+        self.status = status
+        self.data_criacao = data_criacao or datetime.now()
+        self.data_analise = data_analise
+        self.data_resolucao = data_resolucao
+        self.resolucao = resolucao
+        self.acoes_tomadas = acoes_tomadas or []
+
+class GerenciadorDiagnostico:
+    """Gerenciador de diagnósticos de autocura"""
+    
+    def __init__(self):
+        self.memoria = None
+        logger.info("Gerenciador de Diagnósticos inicializado")
+    
+    async def criar_diagnostico(
+        self,
+        tipo: TipoDiagnostico,
+        descricao: str,
+        severidade: Severidade,
+        metricas: Dict[str, Any]
+    ) -> Optional[DiagnosticoAutocura]:
+        """Cria um novo diagnóstico"""
+        if not tipo or not descricao:
+            return None
+            
+        diagnostico = DiagnosticoAutocura(
+            tipo=tipo,
+            descricao=descricao,
+            severidade=severidade,
+            metricas=metricas
+        )
+        
+        await self.memoria.criar_entidade("diagnosticos", diagnostico.__dict__)
+        return diagnostico
+    
+    async def analisar_diagnostico(self, diagnostico_id: str) -> bool:
+        """Inicia a análise de um diagnóstico"""
+        diagnostico = await self.obter_diagnostico(diagnostico_id)
+        if not diagnostico:
+            return False
+            
+        diagnostico.status = StatusDiagnostico.EM_ANALISE
+        diagnostico.data_analise = datetime.now()
+        
+        await self.memoria.atualizar_entidade("diagnosticos", diagnostico_id, diagnostico.__dict__)
+        return True
+    
+    async def finalizar_diagnostico(
+        self,
+        diagnostico_id: str,
+        resolucao: str,
+        acoes_tomadas: List[str]
+    ) -> bool:
+        """Finaliza um diagnóstico com resolução"""
+        diagnostico = await self.obter_diagnostico(diagnostico_id)
+        if not diagnostico:
+            return False
+            
+        diagnostico.status = StatusDiagnostico.RESOLVIDO
+        diagnostico.data_resolucao = datetime.now()
+        diagnostico.resolucao = resolucao
+        diagnostico.acoes_tomadas = acoes_tomadas
+        
+        await self.memoria.atualizar_entidade("diagnosticos", diagnostico_id, diagnostico.__dict__)
+        return True
+    
+    async def obter_diagnostico(self, diagnostico_id: str) -> Optional[DiagnosticoAutocura]:
+        """Obtém um diagnóstico pelo ID"""
+        dados = await self.memoria.obter_entidade("diagnosticos", diagnostico_id)
+        if not dados:
+            return None
+            
+        return DiagnosticoAutocura(**dados)
+    
+    async def listar_diagnosticos(self) -> List[DiagnosticoAutocura]:
+        """Lista todos os diagnósticos"""
+        dados = await self.memoria.buscar_entidades("diagnosticos")
+        return [DiagnosticoAutocura(**d) for d in dados]
+    
+    async def analisar_tendencias(self) -> Dict[str, Any]:
+        """Analisa tendências nos diagnósticos"""
+        diagnosticos = await self.listar_diagnosticos()
+        
+        # Agrupa por tipo e severidade
+        agrupamento = {}
+        for d in diagnosticos:
+            if d.tipo not in agrupamento:
+                agrupamento[d.tipo] = {}
+            if d.severidade not in agrupamento[d.tipo]:
+                agrupamento[d.tipo][d.severidade] = 0
+            agrupamento[d.tipo][d.severidade] += 1
+        
+        # Identifica padrões
+        padroes = []
+        for tipo, sevs in agrupamento.items():
+            if sevs.get(Severidade.ALTA, 0) > 5:
+                padroes.append(f"Alta incidência de problemas {tipo.value}")
+            if sevs.get(Severidade.CRITICA, 0) > 0:
+                padroes.append(f"Problemas críticos detectados em {tipo.value}")
+        
+        # Gera recomendações
+        recomendacoes = []
+        for padrao in padroes:
+            if "alta incidência" in padrao:
+                recomendacoes.append(f"Investigar causa raiz dos problemas {padrao}")
+            if "críticos" in padrao:
+                recomendacoes.append(f"Priorizar resolução dos problemas {padrao}")
+        
+        return {
+            "padroes": padroes,
+            "recomendacoes": recomendacoes,
+            "agrupamento": agrupamento
+        }
 
 class SistemaDiagnosticoAutocura:
     """Sistema de diagnóstico e autocura do sistema"""
