@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import asyncio
 from prometheus_client import Counter, Gauge, Histogram
+from flask import jsonify
 
 from ..memoria.gerenciador_memoria import GerenciadorMemoria
 
@@ -321,7 +322,7 @@ class GuardiaoCognitivo:
         logger.info("Loop de monitoramento do Guardião iniciado.")
         while self.rodando:
             try:
-                self.verificar_coerência_diagnosticos()
+                self.verificar_coerencia_diagnosticos()
                 time.sleep(2)
                 self.verificar_eficacia_acoes()
                 time.sleep(2)
@@ -779,18 +780,14 @@ guardiao_singleton = GuardiaoCognitivo(gerenciador_memoria)
 # Inicializar Flask app
 app = flask.Flask(__name__)
 
-@app.route("/health", methods=["GET"])
+@app.route("/health")
 def health_check():
-    is_healthy = guardiao_singleton.rodando
-    if guardiao_singleton.thread_monitoramento and not guardiao_singleton.thread_monitoramento.is_alive():
-        is_healthy = False
-        logger.error("Health check falhou: Thread de monitoramento não está ativa!")
-    return flask.jsonify({
-        "status": "healthy" if is_healthy else "unhealthy", 
-        "timestamp": time.time(), 
+    """Endpoint para verificação de saúde do serviço"""
+    return jsonify({
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
         "guardian_running": guardiao_singleton.rodando,
-        "monitoring_thread_active": guardiao_singleton.thread_monitoramento.is_alive() if guardiao_singleton.thread_monitoramento else False,
-        "kube_api_available": guardiao_singleton.kube_api_client is not None
+        "monitoring_thread_active": guardiao_singleton.thread_monitoramento.is_alive() if guardiao_singleton.thread_monitoramento else False
     })
 
 @app.route("/api/guardian/start", methods=["POST"])

@@ -12,7 +12,7 @@ import requests
 from datetime import datetime
 from typing import Dict, Any, Optional
 from pathlib import Path
-from prometheus_client import start_http_server, Counter, Gauge, Histogram
+from prometheus_client import start_http_server, Counter, Gauge, Histogram, CollectorRegistry
 from elasticsearch import Elasticsearch
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
@@ -28,14 +28,16 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class MonitoramentoTestes:
-    def __init__(self, config_path: Optional[str] = None):
+    def __init__(self, config_path: Optional[str] = None, registry: Optional[CollectorRegistry] = None):
         """
         Inicializa o sistema de monitoramento.
         
         Args:
             config_path: Caminho para o arquivo de configuração
+            registry: CollectorRegistry customizado para Prometheus (usado em testes)
         """
         self.config = self._carregar_configuracao(config_path)
+        self._registry = registry
         self._inicializar_prometheus()
         self._inicializar_elasticsearch()
         self._inicializar_slack()
@@ -66,32 +68,38 @@ class MonitoramentoTestes:
             return
             
         prom_config = self.config["prometheus"]
+        registry = self._registry
         
         # Inicializa métricas
         self.metricas = {
             "testes_executados": Counter(
                 f"{prom_config['prefixo_metricas']}executados_total",
-                "Total de testes executados"
+                "Total de testes executados",
+                registry=registry
             ),
             "testes_falhas": Counter(
                 f"{prom_config['prefixo_metricas']}falhas_total",
-                "Total de falhas em testes"
+                "Total de falhas em testes",
+                registry=registry
             ),
             "duracao_testes": Histogram(
                 f"{prom_config['prefixo_metricas']}duracao_segundos",
-                "Duração dos testes em segundos"
+                "Duração dos testes em segundos",
+                registry=registry
             ),
             "cobertura_codigo": Gauge(
                 f"{prom_config['prefixo_metricas']}cobertura_percentual",
-                "Cobertura de código em percentual"
+                "Cobertura de código em percentual",
+                registry=registry
             )
         }
         
-        # Inicia servidor
-        start_http_server(
-            prom_config.get("porta", 9090),
-            addr=prom_config.get("host", "localhost")
-        )
+        # Inicia servidor apenas se não for um registry customizado (evita conflito em testes)
+        if registry is None:
+            start_http_server(
+                prom_config.get("porta", 9090),
+                addr=prom_config.get("host", "localhost")
+            )
         
     def _inicializar_elasticsearch(self) -> None:
         """Inicializa o cliente Elasticsearch."""

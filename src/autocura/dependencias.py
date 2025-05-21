@@ -147,7 +147,10 @@ class GerenciadorDependencias:
         """Sugere uma solução baseada no histórico de problemas."""
         for problema in self.historico:
             if problema.pacote == pacote and problema.versao == versao:
-                return problema.solucao
+                if "pip install" in problema.solucao.lower():
+                    return problema.solucao
+                else:
+                    return f"Instalar {pacote} com versão específica: pip install {pacote}=={versao}"
         return None
     
     def executar_autocura(self):
@@ -176,6 +179,10 @@ class GerenciadorDependencias:
         except subprocess.CalledProcessError as e:
             self.logger.error(f"Erro ao instalar dependências: {e}")
             return False
+
+    def limpar_historico(self) -> None:
+        """Limpa o histórico de problemas registrados."""
+        self.historico = []
 
 def main():
     """Função principal para execução do script."""

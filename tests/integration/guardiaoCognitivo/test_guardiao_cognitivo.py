@@ -4,7 +4,7 @@ import time
 from unittest.mock import patch, MagicMock
 
 # Importa a app Flask e a instância do GuardiaoCognitivo do módulo principal
-from src.guardiao.guardiao_cognitivo import app, guardiao_singleton, DiagnosticoInfo, PlanoAcaoInfo, CONFIG_GUARDIAN
+from src.guardiao.guardiao_cognitivo import app, guardiao_singleton, DiagnosticoInfo, PlanoAcaoInfo, CONFIG_GUARDIAN, GuardiaoCognitivo
 
 @pytest.fixture
 def client():
@@ -112,8 +112,8 @@ def test_new_action_plan_event(client):
 
 # --- Testes da Lógica de Verificação (com mocks) ---
 
-@patch("guardiao_cognitivo.GuardiaoCognitivo._obter_diagnosticos_recentes")
-@patch("guardiao_cognitivo.GuardiaoCognitivo._acionar_protocolo_emergencia")
+@patch("src.guardiao.guardiao_cognitivo.GuardiaoCognitivo._obter_diagnosticos_recentes")
+@patch("src.guardiao.guardiao_cognitivo.GuardiaoCognitivo._acionar_protocolo_emergencia")
 def test_verificar_coerencia_diagnosticos_aciona_emergencia(mock_acionar_emergencia, mock_obter_diagnosticos, client):
     # Configura o mock para retornar diagnósticos de baixa confiança
     diagnosticos_mock = [
@@ -130,8 +130,8 @@ def test_verificar_coerencia_diagnosticos_aciona_emergencia(mock_acionar_emergen
         {"total_diagnosticos": 10, "baixa_confianca_count": 10}
     )
 
-@patch("guardiao_cognitivo.GuardiaoCognitivo._obter_planos_acao_concluidos_recentes")
-@patch("guardiao_cognitivo.GuardiaoCognitivo._acionar_protocolo_emergencia")
+@patch("src.guardiao.guardiao_cognitivo.GuardiaoCognitivo._obter_planos_acao_concluidos_recentes")
+@patch("src.guardiao.guardiao_cognitivo.GuardiaoCognitivo._acionar_protocolo_emergencia")
 def test_verificar_eficacia_acoes_aciona_emergencia(mock_acionar_emergencia, mock_obter_planos, client):
     planos_mock = [
         PlanoAcaoInfo(id=f"p{i}", diagnostico_id="d1", acoes_ids=[], timestamp_geracao=time.time(), 

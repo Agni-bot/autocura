@@ -11,6 +11,11 @@ import json
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
 from pathlib import Path
+import logging
+import mock
+from src.orquestrador.monitoramento import MonitoramentoTestes
+from src.core.sistema_autocura import SistemaAutocura
+from prometheus_client import CollectorRegistry
 
 # Marca todos os testes deste módulo como de integração
 pytestmark = pytest.mark.integration
@@ -29,121 +34,71 @@ class TestSistemaCompleto:
     - Recuperação de falhas
     """
     
-    def test_fluxo_completo_processamento(
-        self,
-        config_teste: Dict[str, Any],
-        mock_api: Any,
-        mock_db: Any,
-        mock_redis: Any,
-        monitoramento: Any,
-        log_captura: pytest.LogCaptureFixture
-    ) -> None:
-        """
-        Testa o fluxo completo de processamento de dados.
+    @pytest.fixture(autouse=True)
+    def mock_elasticsearch(self):
+        """Fixture para mockar o cliente Elasticsearch globalmente."""
+        with mock.patch('elasticsearch.Elasticsearch') as mock_es:
+            mock_es.return_value.index.return_value = {'_id': 'test_id', 'result': 'created'}
+            yield mock_es
+
+    def test_fluxo_completo_processamento(self, mock_elasticsearch):
+        """Testa o fluxo completo de processamento de dados."""
+        # Configuração inicial
+        sistema = SistemaAutocura()
+        registry = CollectorRegistry()
+        monitor = MonitoramentoTestes(registry=registry)
         
-        Este teste verifica:
-        1. Recebimento de dados
-        2. Validação
-        3. Processamento
-        4. Armazenamento
-        5. Cache
-        6. Notificações
-        
-        Args:
-            config_teste: Configurações de teste
-            mock_api: Mock da API
-            mock_db: Mock do banco de dados
-            mock_redis: Mock do Redis
-            monitoramento: Instância do monitoramento
-            log_captura: Fixture para captura de logs
-        """
-        # Arrange
-        dados_entrada = {
-            "id": "test_123",
-            "dados": [1, 2, 3],
-            "timestamp": datetime.now().isoformat()
+        # Dados de teste
+        dados = {
+            'id': 'test_001',
+            'dados': [1, 2, 3],
+            'timestamp': '2025-05-21T15:58:28'
         }
         
-        # Configura mocks
-        mock_api.return_value.post.return_value.json.return_value = {"status": "success"}
-        mock_db.return_value.execute.return_value = None
-        mock_redis.return_value.set.return_value = True
+        # Execução do processamento
+        resultado = sistema.processar_dados(dados)
         
-        # Act
-        inicio = time.time()
-        resultado = self._processar_dados(dados_entrada, config_teste)
-        duracao = time.time() - inicio
-        
-        # Assert
-        assert resultado["status"] == "success"
-        assert "id" in resultado
-        assert "timestamp" in resultado
-        
-        # Verifica logs
-        assert "Iniciando processamento" in log_captura.text
-        assert "Processamento concluído" in log_captura.text
+        # Verificações
+        assert resultado['status'] == 'success'
+        assert 'processado_em' in resultado
+        assert mock_elasticsearch.called
         
         # Verifica métricas
-        monitoramento.registrar_execucao_teste(
-            "test_fluxo_completo_processamento",
-            True,
-            duracao
-        )
+        metricas = monitor.obter_metricas()
+        assert metricas['total_processamentos'] > 0
+        assert metricas['tempo_medio_processamento'] > 0
+
+    def test_recuperacao_falha(self, mock_elasticsearch):
+        """Testa o processo de recuperação após uma falha."""
+        # Configuração inicial
+        sistema = SistemaAutocura()
+        registry = CollectorRegistry()
+        monitor = MonitoramentoTestes(registry=registry)
         
-    def test_recuperacao_falha(
-        self,
-        config_teste: Dict[str, Any],
-        mock_api: Any,
-        mock_db: Any,
-        mock_redis: Any,
-        monitoramento: Any
-    ) -> None:
-        """
-        Testa a recuperação após uma falha no processamento.
-        
-        Este teste verifica:
-        1. Falha inicial
-        2. Retry automático
-        3. Recuperação
-        4. Processamento final
-        
-        Args:
-            config_teste: Configurações de teste
-            mock_api: Mock da API
-            mock_db: Mock do banco de dados
-            mock_redis: Mock do Redis
-            monitoramento: Instância do monitoramento
-        """
-        # Arrange
-        dados_entrada = {
-            "id": "test_456",
-            "dados": [4, 5, 6],
-            "timestamp": datetime.now().isoformat()
+        # Dados de teste
+        dados = {
+            'id': 'test_002',
+            'dados': [4, 5, 6],
+            'timestamp': '2025-05-21T15:58:29'
         }
         
-        # Configura falha inicial e recuperação
-        mock_api.return_value.post.side_effect = [
+        # Simula falha e recuperação
+        mock_elasticsearch.return_value.index.side_effect = [
             Exception("Erro temporário"),
-            {"status": "success"}
+            {'_id': 'test_id', 'result': 'created'}
         ]
         
-        # Act
-        resultado = self._processar_dados_com_retry(
-            dados_entrada,
-            config_teste,
-            max_retries=3
-        )
+        # Execução com retry
+        resultado = sistema.processar_dados(dados, max_retries=3)
         
-        # Assert
-        assert resultado["status"] == "success"
-        assert mock_api.return_value.post.call_count == 2
+        # Verificações
+        assert resultado['status'] == 'success'
+        assert mock_elasticsearch.call_count == 2
         
-        # Verifica métricas
-        monitoramento.registrar_execucao_teste(
-            "test_recuperacao_falha",
-            True,
-            0.0  # Duração não relevante para este teste
-        )
+        # Verifica métricas de falha
+        metricas = monitor.obter_metricas()
+        assert metricas['falhas_processamento'] > 0
+        assert metricas['recuperacoes_sucesso'] > 0
         
     def test_processamento_concorrente(
         self,
@@ -218,12 +173,27 @@ class TestSistemaCompleto:
         
         # Act
         arquivo_path = temp_dir / "dados.json"
+        
+        # Limpa arquivo existente se houver
+        if arquivo_path.exists():
+            arquivo_path.unlink()
+        
+        # Persiste dados
         self._persistir_dados(dados, arquivo_path)
         
-        # Assert
+        # Verifica se arquivo foi criado
         assert arquivo_path.exists()
+        
+        # Lê dados persistidos
         dados_lidos = json.loads(arquivo_path.read_text())
+        
+        # Assert
         assert dados_lidos == dados
+        
+        # Verifica que não há duplicação
+        self._persistir_dados(dados, arquivo_path)
+        dados_lidos_apos_duplicacao = json.loads(arquivo_path.read_text())
+        assert dados_lidos_apos_duplicacao == dados  # Deve manter os mesmos dados, não duplicar
         
     def _processar_dados(self, dados: Dict[str, Any], config: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -242,31 +212,6 @@ class TestSistemaCompleto:
             "id": dados["id"],
             "timestamp": datetime.now().isoformat()
         }
-        
-    def _processar_dados_com_retry(
-        self,
-        dados: Dict[str, Any],
-        config: Dict[str, Any],
-        max_retries: int
-    ) -> Dict[str, Any]:
-        """
-        Processa dados com retry em caso de falha.
-        
-        Args:
-            dados: Dados a serem processados
-            config: Configurações
-            max_retries: Número máximo de tentativas
-            
-        Returns:
-            Dict[str, Any]: Resultado do processamento
-        """
-        # Implementação simulada
-        for _ in range(max_retries):
-            try:
-                return self._processar_dados(dados, config)
-            except Exception:
-                time.sleep(1)
-        return {"status": "error"}
         
     def _processar_dados_concorrente(
         self,
