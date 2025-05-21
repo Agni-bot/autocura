@@ -461,18 +461,18 @@ class GerenciadorMemoria:
         self._salvar_memoria(memoria)
         return memoria
     
-    def _salvar_memoria(self, memoria: Dict[str, Any]) -> None:
+    def _salvar_memoria(self, memoria: Optional[Dict[str, Any]] = None) -> None:
         """Salva a memória no arquivo e Redis."""
+        if memoria is None:
+            memoria = self.memoria
         try:
             # Salva no arquivo
             with open(self.caminho_memoria, 'w', encoding='utf-8') as f:
                 json.dump(memoria, f, ensure_ascii=False, indent=2)
-            
             # Salva no Redis se disponível
             if self.redis:
                 self.redis.set('memoria_compartilhada', json.dumps(memoria))
                 self.metricas["operacoes_redis"].labels(operacao='salvar').inc()
-            
             self.logger.info("Memória salva com sucesso")
         except Exception as e:
             self.logger.error(f"Erro ao salvar memória: {str(e)}")
@@ -1128,17 +1128,18 @@ class GerenciadorMemoria:
             if tipo not in self.memoria["memoria_operacional"]["entidades"]:
                 return []
                 
-            return self.memoria["memoria_operacional"]["entidades"][tipo]
+            entidades = self.memoria["memoria_operacional"]["entidades"][tipo]
+            return sorted(entidades, key=lambda x: x["timestamp"], reverse=True)
         except Exception as e:
             self.logger.error(f"Erro ao obter histórico por tipo: {str(e)}")
             return []
 
     def obter_historico_por_periodo(self, inicio: datetime, fim: datetime) -> List[Dict[str, Any]]:
-        """Obtém o histórico de entidades por período.
+        """Obtém o histórico de entidades em um período específico.
         
         Args:
-            inicio: Data/hora inicial
-            fim: Data/hora final
+            inicio: Data/hora inicial do período
+            fim: Data/hora final do período
             
         Returns:
             Lista de entidades no período especificado
@@ -1147,14 +1148,89 @@ class GerenciadorMemoria:
             if not self.memoria or "memoria_operacional" not in self.memoria:
                 return []
                 
-            resultado = []
-            for tipo in self.memoria["memoria_operacional"].get("entidades", {}):
+            if "entidades" not in self.memoria["memoria_operacional"]:
+                return []
+                
+            entidades_periodo = []
+            for tipo in self.memoria["memoria_operacional"]["entidades"]:
                 for entidade in self.memoria["memoria_operacional"]["entidades"][tipo]:
                     timestamp = datetime.fromisoformat(entidade["timestamp"])
                     if inicio <= timestamp <= fim:
-                        resultado.append(entidade)
-            
-            return resultado
+                        entidades_periodo.append(entidade)
+                    
+            return sorted(entidades_periodo, key=lambda x: x["timestamp"], reverse=True)
         except Exception as e:
             self.logger.error(f"Erro ao obter histórico por período: {str(e)}")
-            return [] 
+            return []
+
+    def carregar_memoria(self, caminho: Optional[str] = None) -> None:
+        """Carrega a memória do arquivo.
+        
+        Args:
+            caminho: Caminho do arquivo de memória (opcional)
+        """
+        try:
+            caminho = caminho or self.caminho_memoria
+            
+            if not os.path.exists(caminho):
+                self.logger.warning(f"Arquivo de memória não encontrado: {caminho}")
+                self.memoria = {
+                    "memoria_operacional": {
+                        "entidades": {},
+                        "metricas": {},
+                        "logs": []
+                    }
+                }
+                return
+            
+            with open(caminho, 'r', encoding='utf-8') as f:
+                self.memoria = json.load(f)
+            
+            # Carrega do Redis se disponível
+            if self.redis:
+                try:
+                    redis_data = self.redis.get(self.redis_key)
+                    if redis_data:
+                        redis_memoria = json.loads(redis_data)
+                        # Mescla dados do Redis com dados locais
+                        self._mesclar_memorias(redis_memoria)
+                except Exception as e:
+                    self.logger.error(f"Erro ao carregar do Redis: {str(e)}")
+                
+            self.logger.info(f"Memória carregada de {caminho}")
+        except Exception as e:
+            self.logger.error(f"Erro ao carregar memória: {str(e)}")
+            self.memoria = {
+                "memoria_operacional": {
+                    "entidades": {},
+                    "metricas": {},
+                    "logs": []
+                }
+            }
+        
+    def _mesclar_memorias(self, redis_memoria: Dict[str, Any]) -> None:
+        """Mescla dados do Redis com dados locais.
+        
+        Args:
+            redis_memoria: Dados da memória do Redis
+        """
+        try:
+            if "memoria_operacional" not in redis_memoria:
+                return
+            
+            if "entidades" in redis_memoria["memoria_operacional"]:
+                for tipo, entidades in redis_memoria["memoria_operacional"]["entidades"].items():
+                    if tipo not in self.memoria["memoria_operacional"]["entidades"]:
+                        self.memoria["memoria_operacional"]["entidades"][tipo] = []
+                    self.memoria["memoria_operacional"]["entidades"][tipo].extend(entidades)
+                
+            if "metricas" in redis_memoria["memoria_operacional"]:
+                for nome, valor in redis_memoria["memoria_operacional"]["metricas"].items():
+                    self.memoria["memoria_operacional"]["metricas"][nome] = valor
+                
+            if "logs" in redis_memoria["memoria_operacional"]:
+                self.memoria["memoria_operacional"]["logs"].extend(
+                    redis_memoria["memoria_operacional"]["logs"]
+                )
+        except Exception as e:
+            self.logger.error(f"Erro ao mesclar memórias: {str(e)}") 

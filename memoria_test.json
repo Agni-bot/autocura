@@ -16,7 +16,191 @@
     "correcoes": [],
     "anomalias": [],
     "entidades": {},
-    "principios_eticos": {}
+    "principios_eticos": {},
+    "validacoes_eticas": [
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "nivel_confianca": 0.95,
+        "timestamp": "2025-05-21T05:42:48.764609",
+        "id": "50d5d6ef-77de-4381-9d39-98b25e6f5ca5"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-21T05:43:00.947871",
+        "id": "b3cf3dc9-374a-41ce-bd81-0bfe30e88205"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-21T05:43:05.029239",
+        "id": "1ed27fa2-746d-409a-a5be-dca3faaa441b"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-21T05:43:05.031259",
+        "id": "1e446863-9769-4016-9ab9-f29698c08af1"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-21T05:43:05.032909",
+        "id": "05889c18-b12c-4e18-a1dc-c50130dc5f16"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-21T05:43:05.034567",
+        "id": "bc56dfc9-4303-4d92-8ce1-30a6ee8a61d9"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-21T05:43:05.036216",
+        "id": "caed6227-b740-43a7-ac09-8f4aead995f0"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "nivel_confianca": 0.95,
+        "timestamp": "2025-05-21T05:52:35.388306",
+        "id": "13ce13ea-9eaa-4f65-a485-8c0f9a98c6f3"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-21T05:52:47.595279",
+        "id": "2f58f857-369c-4ac1-8080-b4ffd666afa4"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-21T05:52:51.687662",
+        "id": "d504fc3c-59e2-4612-8bf6-44daf41b5da4"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-21T05:52:51.690284",
+        "id": "8c1dd649-f50e-49ed-b267-600def998959"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-21T05:52:51.692576",
+        "id": "7f211ce9-274b-411d-b142-ad05c5824f40"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-21T05:52:51.694559",
+        "id": "921f49c2-eec1-42e1-bddb-a35dade54aeb"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-21T05:52:51.696561",
+        "id": "30439787-3add-409d-a0ae-449a3ce36212"
+      }
+    ],
+    "violacoes_eticas": [
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "principio_violado": "privacidade",
+        "descricao": "Teste de violação",
+        "severidade": "alta",
+        "timestamp": "2025-05-21T05:42:56.864764",
+        "id": "9adc57cb-919b-4039-8cca-de5a0cacfe8e"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "principio_violado": "privacidade",
+        "descricao": "Teste de violação",
+        "timestamp": "2025-05-21T05:43:00.949810",
+        "id": "b125c9d2-df20-416b-927b-1fcad6074bbe"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "principio_violado": "privacidade",
+        "descricao": "Teste de violação",
+        "timestamp": "2025-05-21T05:43:05.037990",
+        "id": "8a4c53a0-bfe1-420b-8d4e-8a56e976599a"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "principio_violado": "privacidade",
+        "descricao": "Teste de violação",
+        "timestamp": "2025-05-21T05:43:05.039908",
+        "id": "ab8f6425-157f-4fca-bb70-bf795af1c953"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "principio_violado": "privacidade",
+        "descricao": "Teste de violação",
+        "severidade": "alta",
+        "timestamp": "2025-05-21T05:52:43.537137",
+        "id": "5beb5a36-7d3f-4d04-9ec6-7a909c95cd1d"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "principio_violado": "privacidade",
+        "descricao": "Teste de violação",
+        "timestamp": "2025-05-21T05:52:47.597572",
+        "id": "3fb4f153-26a4-4ab9-8cec-a2689a466387"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "principio_violado": "privacidade",
+        "descricao": "Teste de violação",
+        "timestamp": "2025-05-21T05:52:51.698707",
+        "id": "845ce883-f1be-414a-9991-403d3f54f41a"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "principio_violado": "privacidade",
+        "descricao": "Teste de violação",
+        "timestamp": "2025-05-21T05:52:51.701714",
+        "id": "56f80927-8b06-46ba-8fc1-ad855755b37f"
+      }
+    ]
   },
   "memoria_etica": {
     "principios": {
