@@ -97,6 +97,11 @@
       "data": "2025-05-21T06:48:49.100909",
       "evento": "Teste de conexão com API de IA",
       "detalhes": "Status: sucesso, Modelo: gpt-4.1"
+    },
+    {
+      "data": "2025-05-21T07:09:04.018417",
+      "evento": "Análise de Testes com IA",
+      "detalhes": "Error code: 429 - {'error': {'message': 'Request too large for gpt-4.1 in organization org-k14toH46WjbTUAqjQpJpa2yf on tokens per min (TPM): Limit 30000, Requested 5979854. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}"
     }
   ],
   "parametros_gerais": {
@@ -134,7 +139,12 @@
     "configuracoes": {},
     "dependencias": {},
     "logs": [],
-    "metricas": {}
+    "metricas": {
+      "ultima_analise_testes": {
+        "erro": "Error code: 429 - {'error': {'message': 'Request too large for gpt-4.1 in organization org-k14toH46WjbTUAqjQpJpa2yf on tokens per min (TPM): Limit 30000, Requested 5979854. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}",
+        "timestamp": "2025-05-21T07:09:04.018417"
+      }
+    }
   },
   "memoria_cognitiva": {
     "aprendizados": [],

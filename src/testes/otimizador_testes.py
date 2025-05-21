@@ -32,14 +32,53 @@ class OtimizadorTestes:
             text=True
         )
         
+        # Processar a saída para extrair informações relevantes
+        saida_processada = self._processar_saida_teste(resultado.stdout)
+        
         return {
             "exit_code": resultado.returncode,
-            "stdout": resultado.stdout,
-            "stderr": resultado.stderr
+            "resumo": saida_processada,
+            "erros": resultado.stderr if resultado.stderr else "Nenhum erro encontrado"
         }
+
+    def _processar_saida_teste(self, saida: str) -> Dict[str, Any]:
+        """Processa a saída dos testes para extrair informações relevantes."""
+        linhas = saida.split('\n')
+        resumo = {
+            "total_testes": 0,
+            "testes_passaram": 0,
+            "testes_falharam": 0,
+            "cobertura": {},
+            "testes_falhos": []
+        }
+        
+        for linha in linhas:
+            if "collected" in linha:
+                resumo["total_testes"] = int(linha.split()[0])
+            elif "PASSED" in linha:
+                resumo["testes_passaram"] += 1
+            elif "FAILED" in linha:
+                resumo["testes_falharam"] += 1
+                resumo["testes_falhos"].append(linha)
+            elif "TOTAL" in linha and "COVERAGE" in linha:
+                resumo["cobertura"] = {
+                    "total": linha.split()[-1],
+                    "detalhes": []
+                }
+        
+        return resumo
 
     def analisar_resultados(self, resultados: Dict[str, Any]) -> Dict[str, Any]:
         """Utiliza a API de IA para analisar os resultados dos testes."""
+        # Criar um resumo conciso dos resultados
+        resumo = {
+            "total_testes": resultados["resumo"]["total_testes"],
+            "testes_passaram": resultados["resumo"]["testes_passaram"],
+            "testes_falharam": resultados["resumo"]["testes_falharam"],
+            "cobertura": resultados["resumo"]["cobertura"],
+            "erros_principais": resultados["resumo"]["testes_falhos"][:5] if resultados["resumo"]["testes_falhos"] else []
+        }
+
         prompt = f"""
         Analise os resultados dos testes abaixo e forneça:
         1. Resumo dos testes executados
@@ -48,7 +87,7 @@ class OtimizadorTestes:
         4. Priorização de correções
 
         Resultados:
-        {json.dumps(resultados, indent=2)}
+        {json.dumps(resumo, indent=2)}
         """
 
         try:
