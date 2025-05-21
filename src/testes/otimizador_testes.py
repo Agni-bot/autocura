@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import List, Dict, Any
 import pytest
 from pathlib import Path
+import re
 
 # Carregar variáveis de ambiente
 load_dotenv()
@@ -52,19 +53,30 @@ class OtimizadorTestes:
             "testes_falhos": []
         }
         
+        # Padrão para encontrar o número total de testes
+        padrao_total = re.compile(r'collected (\d+) items')
+        
         for linha in linhas:
-            if "collected" in linha:
-                resumo["total_testes"] = int(linha.split()[0])
-            elif "PASSED" in linha:
+            # Verificar total de testes
+            match_total = padrao_total.search(linha)
+            if match_total:
+                resumo["total_testes"] = int(match_total.group(1))
+            
+            # Verificar testes passados/falhados
+            if "PASSED" in linha:
                 resumo["testes_passaram"] += 1
             elif "FAILED" in linha:
                 resumo["testes_falharam"] += 1
                 resumo["testes_falhos"].append(linha)
-            elif "TOTAL" in linha and "COVERAGE" in linha:
-                resumo["cobertura"] = {
-                    "total": linha.split()[-1],
-                    "detalhes": []
-                }
+            
+            # Verificar cobertura
+            if "TOTAL" in linha and "COVERAGE" in linha:
+                partes = linha.split()
+                if len(partes) >= 2:
+                    resumo["cobertura"] = {
+                        "total": partes[-1],
+                        "detalhes": []
+                    }
         
         return resumo
 
