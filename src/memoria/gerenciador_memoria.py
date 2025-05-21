@@ -1110,55 +1110,61 @@ class GerenciadorMemoria:
             return []
 
     def obter_historico_por_tipo(self, tipo: str) -> List[Dict[str, Any]]:
-        """Obtém o histórico de entidades por tipo.
+        """Obtém o histórico de entidades de um tipo específico.
         
         Args:
-            tipo: Tipo de entidade a ser buscada
+            tipo: Tipo das entidades a serem retornadas
             
         Returns:
             Lista de entidades do tipo especificado
         """
         try:
-            if not self.memoria or "memoria_operacional" not in self.memoria:
+            if not self.memoria or "operacional" not in self.memoria:
                 return []
                 
-            if "entidades" not in self.memoria["memoria_operacional"]:
+            if "entidades" not in self.memoria["operacional"]:
                 return []
                 
-            if tipo not in self.memoria["memoria_operacional"]["entidades"]:
-                return []
-                
-            entidades = self.memoria["memoria_operacional"]["entidades"][tipo]
-            return sorted(entidades, key=lambda x: x["timestamp"], reverse=True)
+            entidades = self.memoria["operacional"]["entidades"]
+            entidades_tipo = [e for e in entidades if e.get("tipo") == tipo]
+            
+            # Ordena por timestamp decrescente
+            entidades_tipo.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+            
+            return entidades_tipo
+            
         except Exception as e:
             self.logger.error(f"Erro ao obter histórico por tipo: {str(e)}")
             return []
 
-    def obter_historico_por_periodo(self, inicio: datetime, fim: datetime) -> List[Dict[str, Any]]:
+    def obter_historico_por_periodo(self, inicio: str, fim: str) -> List[Dict[str, Any]]:
         """Obtém o histórico de entidades em um período específico.
         
         Args:
-            inicio: Data/hora inicial do período
-            fim: Data/hora final do período
+            inicio: Data/hora inicial do período (formato ISO)
+            fim: Data/hora final do período (formato ISO)
             
         Returns:
             Lista de entidades no período especificado
         """
         try:
-            if not self.memoria or "memoria_operacional" not in self.memoria:
+            if not self.memoria or "operacional" not in self.memoria:
                 return []
                 
-            if "entidades" not in self.memoria["memoria_operacional"]:
+            if "entidades" not in self.memoria["operacional"]:
                 return []
                 
-            entidades_periodo = []
-            for tipo in self.memoria["memoria_operacional"]["entidades"]:
-                for entidade in self.memoria["memoria_operacional"]["entidades"][tipo]:
-                    timestamp = datetime.fromisoformat(entidade["timestamp"])
-                    if inicio <= timestamp <= fim:
-                        entidades_periodo.append(entidade)
-                    
-            return sorted(entidades_periodo, key=lambda x: x["timestamp"], reverse=True)
+            entidades = self.memoria["operacional"]["entidades"]
+            entidades_periodo = [
+                e for e in entidades 
+                if inicio <= e.get("timestamp", "") <= fim
+            ]
+            
+            # Ordena por timestamp decrescente
+            entidades_periodo.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+            
+            return entidades_periodo
+            
         except Exception as e:
             self.logger.error(f"Erro ao obter histórico por período: {str(e)}")
             return []
@@ -1233,4 +1239,69 @@ class GerenciadorMemoria:
                     redis_memoria["memoria_operacional"]["logs"]
                 )
         except Exception as e:
-            self.logger.error(f"Erro ao mesclar memórias: {str(e)}") 
+            self.logger.error(f"Erro ao mesclar memórias: {str(e)}")
+
+    def validar_decisao_etica(self, decisao: Dict[str, Any]) -> Dict[str, Any]:
+        """Valida uma decisão sob aspectos éticos.
+        
+        Args:
+            decisao: Dicionário contendo os dados da decisão a ser validada
+            
+        Returns:
+            Dicionário com o resultado da validação
+        """
+        try:
+            # Verifica se a decisão tem os campos obrigatórios
+            campos_obrigatorios = ["tipo", "contexto", "descricao"]
+            for campo in campos_obrigatorios:
+                if campo not in decisao:
+                    return {
+                        "aprovada": False,
+                        "motivos_rejeicao": [f"Campo obrigatório ausente: {campo}"]
+                    }
+            
+            # Verifica documentação
+            if "documentacao" not in decisao:
+                return {
+                    "aprovada": False,
+                    "motivos_rejeicao": ["Documentação ausente"]
+                }
+                
+            # Verifica rastreabilidade
+            if "rastreabilidade" not in decisao:
+                return {
+                    "aprovada": False,
+                    "motivos_rejeicao": ["Rastreabilidade ausente"]
+                }
+                
+            # Verifica explicabilidade
+            if "explicabilidade" not in decisao:
+                return {
+                    "aprovada": False,
+                    "motivos_rejeicao": ["Explicabilidade ausente"]
+                }
+            
+            # Registra a validação
+            validacao = {
+                "tipo": "decisao",
+                "contexto": decisao["contexto"],
+                "resultado": "aprovado",
+                "justificativa": "Decisão validada com sucesso",
+                "nivel_confianca": 0.95,
+                "timestamp": datetime.now().isoformat(),
+                "id": str(uuid.uuid4())
+            }
+            
+            self.registrar_validacao_etica(validacao)
+            
+            return {
+                "aprovada": True,
+                "validacao": validacao
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Erro ao validar decisão ética: {str(e)}")
+            return {
+                "aprovada": False,
+                "motivos_rejeicao": [f"Erro na validação: {str(e)}"]
+            } 

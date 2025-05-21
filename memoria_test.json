@@ -131,6 +131,63 @@
         "justificativa": "Teste de validação",
         "timestamp": "2025-05-21T05:52:51.696561",
         "id": "30439787-3add-409d-a0ae-449a3ce36212"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "nivel_confianca": 0.95,
+        "timestamp": "2025-05-21T06:09:38.441498",
+        "id": "84f4d2b0-ef6c-4936-a4cc-6e069a7c7462"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-21T06:09:50.670739",
+        "id": "7296e8da-bcbf-4c7c-b6e2-ab71c814ffae"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-21T06:09:54.752002",
+        "id": "8f034a56-d591-4b32-9706-0d14944e3229"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-21T06:09:54.758163",
+        "id": "566662ce-aba5-4342-85f9-f88ba219b7da"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-21T06:09:54.761447",
+        "id": "d672ea54-592e-4c77-8b98-78e705f50c57"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-21T06:09:54.764268",
+        "id": "b48913ad-14d2-427e-9179-b33852cf7381"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "resultado": "aprovado",
+        "justificativa": "Teste de validação",
+        "timestamp": "2025-05-21T06:09:54.768722",
+        "id": "0f8e9dab-1385-4a49-9ace-e787269aa481"
       }
     ],
     "violacoes_eticas": [
@@ -199,6 +256,39 @@
         "descricao": "Teste de violação",
         "timestamp": "2025-05-21T05:52:51.701714",
         "id": "56f80927-8b06-46ba-8fc1-ad855755b37f"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "principio_violado": "privacidade",
+        "descricao": "Teste de violação",
+        "severidade": "alta",
+        "timestamp": "2025-05-21T06:09:46.599283",
+        "id": "7a6876f0-1770-474f-8339-837be8789b1f"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "principio_violado": "privacidade",
+        "descricao": "Teste de violação",
+        "timestamp": "2025-05-21T06:09:50.673585",
+        "id": "e6ee20b1-84a0-4ba7-990d-4037cd7f0747"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "principio_violado": "privacidade",
+        "descricao": "Teste de violação",
+        "timestamp": "2025-05-21T06:09:54.775091",
+        "id": "1707663f-4997-4787-9491-66c52f8232db"
+      },
+      {
+        "tipo": "decisao",
+        "contexto": "teste",
+        "principio_violado": "privacidade",
+        "descricao": "Teste de violação",
+        "timestamp": "2025-05-21T06:09:54.779428",
+        "id": "031f75c9-afdf-4a59-9792-45c5428ca6f8"
       }
     ]
   },
