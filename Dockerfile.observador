@@ -1,0 +1,12 @@
+FROM autocura-base:latest
+
+# Copiar código fonte
+COPY src/observabilidade /app/observabilidade
+COPY src/core /app/core
+COPY src/metricas /app/metricas
+
+# Expor porta
+EXPOSE 8080
+
+# Comando para iniciar o observador
+CMD ["python", "-m", "observabilidade.main"] 

@@ -1,15 +1,19 @@
-FROM python:3.11-slim
+FROM autocura-base:latest
 
 WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY src/ src/
+COPY src/diagnostico /app/diagnostico
+COPY src/core /app/core
+COPY src/ia /app/ia
+COPY src/memoria /app/memoria
+
 COPY config/ config/
 COPY modelos/ modelos/
 
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 
-CMD ["python", "src/diagnostico.py"] 
+CMD ["python", "-m", "diagnostico.main"] 

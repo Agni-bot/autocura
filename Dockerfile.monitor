@@ -1,27 +1,12 @@
-FROM python:3.10-slim
+FROM autocura-base:latest
 
-WORKDIR /app
+# Copiar código fonte
+COPY src/monitoramento /app/monitoramento
+COPY src/metricas /app/metricas
+COPY src/core /app/core
 
-# Instala dependências do sistema
-RUN apt-get update && apt-get install -y \
-    gcc \
-    make \
-    postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
+# Expor porta
+EXPOSE 9090
 
-# Copia arquivos do projeto
-COPY requirements.txt .
-COPY src/ src/
-COPY scripts/ scripts/
-
-# Instala dependências Python
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Cria diretórios necessários
-RUN mkdir -p logs memoria
-
-# Expõe porta do Prometheus
-EXPOSE 9092
-
-# Executa o script de monitoramento
-CMD ["python", "scripts/monitor_dependencias.py"] 
+# Comando para iniciar o monitor
+CMD ["python", "-m", "monitoramento.main"] 

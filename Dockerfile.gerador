@@ -1,14 +1,18 @@
-FROM python:3.11-slim
+FROM autocura-base:latest
 
 WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY src/ src/
+COPY src/gerador /app/gerador
+COPY src/core /app/core
+COPY src/ia /app/ia
+COPY src/memoria /app/memoria
+
 COPY config/ config/
 
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 
-CMD ["python", "src/gerador.py"] 
+CMD ["python", "-m", "gerador.main"] 

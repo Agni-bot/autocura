@@ -1,0 +1,14 @@
+FROM autocura-base:latest
+
+# Copiar código fonte
+COPY src/api /app/api
+COPY src/core /app/core
+COPY src/memoria /app/memoria
+COPY src/seguranca /app/seguranca
+COPY src/integracao /app/integracao
+
+# Expor porta
+EXPOSE 8000
+
+# Comando para iniciar a API
+CMD ["python", "-m", "api.main"] 

@@ -1,0 +1,9 @@
+FROM autocura-base:latest
+
+# Copiar código fonte
+COPY src/etica /app/etica
+COPY src/core /app/core
+COPY src/memoria /app/memoria
+
+# Comando para iniciar o validador
+CMD ["python", "-m", "etica.validador"] 

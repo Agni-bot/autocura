@@ -1,0 +1,10 @@
+FROM autocura-base:latest
+
+# Copiar código fonte
+COPY src/guardiao /app/guardiao
+COPY src/core /app/core
+COPY src/etica /app/etica
+COPY src/memoria /app/memoria
+
+# Comando para iniciar o guardião
+CMD ["python", "-m", "guardiao.main"] 
