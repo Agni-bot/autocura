@@ -13,5 +13,19 @@
         "timestamp": "2025-05-21T11:13:25.336365"
       }
     }
-  }
+  },
+  "decisoes_recentes": [
+    "Início do Sprint 1: backlog detalhado aprovado pelo usuário, execução colaborativa iniciada em 2024-06-07.",
+    "Prioridades: testes críticos, documentação, otimização de pipelines, segurança/observabilidade, DevOps/CI-CD."
+  ],
+  "feedback_modelo": [],
+  "erros_criticos": [],
+  "etapas_concluidas": [],
+  "documentacao_chave": [
+    "docs/status_sistema.md",
+    "docs/priorizacao_tarefas.md",
+    "docs/modulos_funcionais.md",
+    "docs/estrutura_arquivos.md"
+  ],
+  "alertas_eticos": []
 }
