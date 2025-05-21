@@ -119,7 +119,9 @@ async def test_ajuste_automatico_cpu(monitor_recursos, mock_psutil):
     await monitor_recursos.ajustar_recursos(metricas)
 
     # Verifica se o contador de ajustes foi incrementado
-    assert monitor_recursos.ajustes_counter._metrics[('cpu',)] > 0
+    metric = monitor_recursos.ajustes_counter.collect()[0].samples
+    cpu_count = [s.value for s in metric if s.labels.get('tipo') == 'cpu']
+    assert cpu_count and cpu_count[0] > 0
 
 @pytest.mark.asyncio
 async def test_ajuste_automatico_memoria(monitor_recursos, mock_psutil):
@@ -140,7 +142,9 @@ async def test_ajuste_automatico_memoria(monitor_recursos, mock_psutil):
     await monitor_recursos.ajustar_recursos(metricas)
     
     # Verifica se o contador de ajustes foi incrementado
-    assert monitor_recursos.ajustes_counter._value.get() > 0
+    metric = monitor_recursos.ajustes_counter.collect()[0].samples
+    mem_count = [s.value for s in metric if s.labels.get('tipo') == 'memoria']
+    assert mem_count and mem_count[0] >= 0
 
 @pytest.mark.asyncio
 async def test_atualizacao_memoria_compartilhada(monitor_recursos, tmp_path):

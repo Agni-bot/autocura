@@ -9,6 +9,7 @@ from datetime import datetime
 import uuid
 import json
 import logging
+from enum import Enum
 from ..core.base import BaseComponent
 from src.diagnostico.rede_neural import Diagnostico
 
@@ -16,18 +17,102 @@ from src.diagnostico.rede_neural import Diagnostico
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+class TipoAcao(Enum):
+    """Tipos de ações possíveis no sistema."""
+    CRITICA = "critica"
+    CORRETIVA = "corretiva"
+    PREVENTIVA = "preventiva"
+    MONITORAMENTO = "monitoramento"
+
+class PrioridadeAcao(Enum):
+    """Níveis de prioridade para ações."""
+    ALTA = 0
+    MEDIA = 1
+    BAIXA = 2
+
 @dataclass
 class Acao:
     """Classe que representa uma ação emergente gerada pelo sistema."""
     id: str
-    tipo: str
+    tipo: TipoAcao
     descricao: str
-    prioridade: int
+    prioridade: PrioridadeAcao
     timestamp: datetime
     diagnostico: Diagnostico
     parametros: Dict[str, Any]
     status: str
     resultado: Optional[Dict[str, Any]] = None
+    dependencias: List[str] = None
+    tempo_estimado: float = 0.0
+    probabilidade_sucesso: float = 0.0
+
+    def __post_init__(self):
+        if self.dependencias is None:
+            self.dependencias = []
+
+class PlanoAcao:
+    """Classe que representa um plano de ação completo."""
+    
+    def __init__(self, acoes: List[Acao]):
+        self.id = str(uuid.uuid4())
+        self.acoes = acoes
+        self.timestamp = datetime.now()
+        self.status = "pendente"
+        self.resultado = None
+        
+        # Ordena ações por prioridade
+        self.acoes_ordenadas = sorted(
+            self.acoes,
+            key=lambda x: x.prioridade.value
+        )
+        
+        # Calcula tempo estimado total
+        self.tempo_estimado = sum(
+            acao.tempo_estimado for acao in self.acoes
+        )
+        
+        # Calcula probabilidade de sucesso
+        self.probabilidade_sucesso = min(
+            acao.probabilidade_sucesso for acao in self.acoes
+        ) if self.acoes else 0.0
+    
+    def adicionar_acao(self, acao: Acao) -> None:
+        """Adiciona uma ação ao plano."""
+        self.acoes.append(acao)
+        self.acoes_ordenadas = sorted(
+            self.acoes,
+            key=lambda x: x.prioridade.value
+        )
+        self.tempo_estimado += acao.tempo_estimado
+        self.probabilidade_sucesso = min(
+            self.probabilidade_sucesso,
+            acao.probabilidade_sucesso
+        )
+    
+    def remover_acao(self, acao_id: str) -> bool:
+        """Remove uma ação do plano."""
+        for i, acao in enumerate(self.acoes):
+            if acao.id == acao_id:
+                self.acoes.pop(i)
+                self.acoes_ordenadas = sorted(
+                    self.acoes,
+                    key=lambda x: x.prioridade.value
+                )
+                self.tempo_estimado -= acao.tempo_estimado
+                if self.acoes:
+                    self.probabilidade_sucesso = min(
+                        acao.probabilidade_sucesso for acao in self.acoes
+                    )
+                else:
+                    self.probabilidade_sucesso = 0.0
+                return True
+        return False
+    
+    def atualizar_status(self, status: str, resultado: Optional[Dict[str, Any]] = None) -> None:
+        """Atualiza o status do plano."""
+        self.status = status
+        if resultado:
+            self.resultado = resultado
 
 class GeradorAcoes(BaseComponent):
     """Gerador de ações emergentes baseado em diagnósticos."""
@@ -74,6 +159,26 @@ class GeradorAcoes(BaseComponent):
                     "max_retries": 5,
                     "circuit_breaker": True
                 }
+            },
+            "cpu": {
+                "tipo": "escalar_horizontal",
+                "descricao": "Ação crítica para CPU",
+                "prioridade": 0,
+                "parametros": {
+                    "min_replicas": 2,
+                    "max_replicas": 5,
+                    "target_cpu": 70
+                }
+            },
+            "memoria": {
+                "tipo": "otimizar_memoria",
+                "descricao": "Ação crítica para Memória",
+                "prioridade": 0,
+                "parametros": {
+                    "clear_cache": True,
+                    "gc_threshold": 85,
+                    "max_memory": "2Gi"
+                }
             }
         }
         
@@ -102,7 +207,7 @@ class GeradorAcoes(BaseComponent):
         # TODO: Implementar persistência do histórico
         pass
     
-    def gerar_acao(self, diagnostico: Diagnostico) -> Optional[Acao]:
+    def gerar_acao(self, diagnostico, severidade: str = "ALTA") -> Optional[Acao]:
         """Gera uma ação emergente baseada no diagnóstico."""
         if not diagnostico.anomalia_detectada:
             logger.info("Nenhuma anomalia detectada, nenhuma ação necessária")
@@ -120,16 +225,22 @@ class GeradorAcoes(BaseComponent):
         # Gera ID único
         acao_id = f"acao_{len(self.historico_acoes) + 1}"
         
+        # Determina tipo e prioridade baseado na severidade
+        tipo = TipoAcao.CRITICA if severidade == "ALTA" else TipoAcao.CORRETIVA
+        prioridade = PrioridadeAcao.ALTA if severidade == "ALTA" else PrioridadeAcao.MEDIA
+        
         # Cria ação
         acao = Acao(
             id=acao_id,
-            tipo=config["tipo"],
+            tipo=tipo,
             descricao=config["descricao"],
-            prioridade=config["prioridade"],
+            prioridade=prioridade,
             timestamp=datetime.now(),
             diagnostico=diagnostico,
             parametros=config["parametros"],
-            status="pendente"
+            status="pendente",
+            tempo_estimado=30.0,  # Tempo estimado padrão em segundos
+            probabilidade_sucesso=0.8  # Probabilidade padrão de sucesso
         )
         
         # Adiciona ao histórico
@@ -226,6 +337,57 @@ class GeradorAcoes(BaseComponent):
             f"Histórico de ações limpo, mantendo apenas ações dos últimos {dias} dias"
         )
 
-# Stub para evitar erro de importação
-class PlanoAcao:
-    pass 
+    async def gerar_acoes(self, diagnostico: Dict[str, Any]) -> List[Acao]:
+        """Gera uma lista de ações baseada no diagnóstico."""
+        acoes = []
+        from src.diagnostico.rede_neural import Diagnostico as DiagnosticoNN
+        from datetime import datetime
+        severidade = diagnostico.get('severidade', 'ALTA')
+        # Gera ação para cada métrica afetada
+        for metrica in diagnostico['metricas_afetadas']:
+            diag_metrica = DiagnosticoNN(
+                timestamp=datetime.fromisoformat(diagnostico['timestamp']),
+                anomalia_detectada=True,
+                score_anomalia=1.0,
+                padrao_detectado=metrica,
+                confianca=1.0,
+                metricas_relevantes=[metrica],
+                recomendacoes=[f"Ação recomendada para {metrica}"]
+            )
+            acao = self.gerar_acao(diag_metrica, severidade=severidade)
+            if acao:
+                acoes.append(acao)
+        return acoes
+    
+    async def gerar_plano_acao(
+        self,
+        diagnostico: Dict[str, Any],
+        feedback: Optional[Dict[str, Any]] = None
+    ) -> PlanoAcao:
+        """Gera um plano de ação completo baseado no diagnóstico e feedback."""
+        # Gera ações
+        acoes = await self.gerar_acoes(diagnostico)
+        
+        # Se houver feedback, ajusta as ações
+        if feedback:
+            # Encontra a ação que falhou
+            for acao in acoes:
+                if acao.id == feedback['acao_id']:
+                    # Ajusta parâmetros baseado no feedback
+                    if not feedback['sucesso']:
+                        # Aumenta tempo estimado e reduz probabilidade
+                        acao.tempo_estimado *= 1.5
+                        acao.probabilidade_sucesso *= 0.8
+                        
+                        # Adiciona ação alternativa
+                        acao_alt = self.gerar_acao(acao.diagnostico)
+                        if acao_alt:
+                            acao_alt.descricao = f"Ação alternativa para {acao.descricao}"
+                            acao_alt.dependencias = [acao.id]
+                            acoes.append(acao_alt)
+        
+        # Cria plano
+        plano = PlanoAcao(acoes)
+        
+        logger.info(f"Plano de ação gerado: {plano.id} com {len(acoes)} ações")
+        return plano 

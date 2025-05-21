@@ -2,10 +2,10 @@
   "memoria_tecnica": {
     "metricas": {
       "recursos": {
-        "ultima_atualizacao": "2025-05-21T18:13:32.489830",
+        "ultima_atualizacao": "2025-05-21T18:18:34.008103",
         "valores": {
-          "cpu": 12.042857142857143,
-          "memoria": 27.0,
+          "cpu": 4.953571428571428,
+          "memoria": 26.8,
           "disco": 33.4,
           "equidade": 1.0
         }
