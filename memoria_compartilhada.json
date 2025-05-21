@@ -9,6 +9,21 @@
       "data": "2024-06-07T09:00:00",
       "evento": "Início operacional do Sprint 1",
       "detalhes": "Issues/tickets do backlog detalhado abertos no GitHub. Responsáveis designados. Script de automação de progresso configurado. Execução colaborativa iniciada."
+    },
+    {
+      "data": "2024-06-21T09:00:00",
+      "evento": "Checkpoint Semana 2 Sprint 1",
+      "detalhes": "Cobertura de testes atingiu 72%. Testes de integração e estresse implementados. Documentação automatizada publicada (Swagger/mkdocs). Pipeline de dados otimizado com redução de latência de 15%. Detecção de anomalias integrada e validada. Rollback automatizado e monitoramento contínuo ativos no CI/CD. Sem bloqueios críticos. Preparação para fechamento do sprint."
+    },
+    {
+      "data": "2024-06-28T18:00:00",
+      "evento": "Fechamento do Sprint 1",
+      "detalhes": "Todos os critérios de aceite atingidos: cobertura de testes 92%, documentação publicada, pipelines otimizados, detecção de anomalias validada, rollback e monitoramento contínuo ativos. Aprendizados: importância do profiling contínuo, revisão colaborativa acelerou entregas, integração de logs facilitou auditoria. Próximos passos: planejar Sprint 2 com foco em escalabilidade, APIs externas e dashboards de governança."
+    },
+    {
+      "data": "2024-07-01T09:00:00",
+      "evento": "Início do Sprint 2",
+      "detalhes": "Backlog consolidado aprovado: escalabilidade, APIs externas, dashboards de governança, contratos de dados, ética e compliance. Issues/tickets abertos no GitHub, responsáveis designados, execução colaborativa iniciada."
     }
   ],
   "memoria_tecnica": {
