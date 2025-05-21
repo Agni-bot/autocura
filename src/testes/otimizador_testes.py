@@ -12,6 +12,7 @@ import logging
 import sys
 from dataclasses import dataclass, asdict
 from enum import Enum
+import shutil
 
 # Carregar variáveis de ambiente
 load_dotenv()
@@ -66,9 +67,56 @@ class OtimizadorTestes:
         self.memoria_path = Path('memoria_compartilhada.json')
         self.testes_detalhados = []
 
+    def verificar_ambiente(self) -> Dict[str, Any]:
+        """Verifica e valida o ambiente de testes."""
+        logger.info("Verificando ambiente de testes...")
+        
+        verificacoes = {
+            "python_version": sys.version,
+            "dependencias": {},
+            "variaveis_ambiente": {},
+            "diretorios": {},
+            "status": "OK"
+        }
+        
+        # Verificar dependências críticas
+        try:
+            import pytest
+            import coverage
+            verificacoes["dependencias"]["pytest"] = pytest.__version__
+            verificacoes["dependencias"]["coverage"] = coverage.__version__
+        except ImportError as e:
+            verificacoes["status"] = "ERRO"
+            verificacoes["dependencias"]["erro"] = str(e)
+        
+        # Verificar variáveis de ambiente
+        for var in ['AI_API_KEY', 'AI_API_ENDPOINT', 'AI_API_PRIMARY_MODEL']:
+            verificacoes["variaveis_ambiente"][var] = bool(os.getenv(var))
+        
+        # Verificar diretórios críticos
+        diretorios = ['tests', 'src', 'coverage']
+        for dir_name in diretorios:
+            path = Path(dir_name)
+            verificacoes["diretorios"][dir_name] = {
+                "existe": path.exists(),
+                "eh_diretorio": path.is_dir() if path.exists() else False
+            }
+        
+        return verificacoes
+
     def executar_testes(self) -> Dict[str, Any]:
         """Executa os testes e coleta os resultados."""
         logger.info("Iniciando execução dos testes...")
+        
+        # Verificar ambiente primeiro
+        ambiente = self.verificar_ambiente()
+        if ambiente["status"] == "ERRO":
+            logger.error("Problemas no ambiente de testes detectados!")
+            return {
+                "exit_code": 1,
+                "erro_ambiente": ambiente,
+                "resumo": {"total_testes": 0}
+            }
         
         # Executar pytest com cobertura e relatório detalhado
         resultado = subprocess.run(
@@ -81,7 +129,9 @@ class OtimizadorTestes:
                 "--cov-report=html",
                 "--cov-report=xml",
                 "--junitxml=test-results.xml",
-                "--tb=long"
+                "--tb=long",
+                "--durations=10",  # Mostrar os 10 testes mais lentos
+                "--maxfail=5"      # Parar após 5 falhas para análise mais focada
             ],
             capture_output=True,
             text=True
@@ -97,7 +147,8 @@ class OtimizadorTestes:
             "exit_code": resultado.returncode,
             "resumo": saida_processada,
             "erros": resultado.stderr if resultado.stderr else "Nenhum erro encontrado",
-            "testes_detalhados": [teste.to_dict() for teste in self.testes_detalhados]
+            "testes_detalhados": [teste.to_dict() for teste in self.testes_detalhados],
+            "ambiente": ambiente
         }
 
     def _processar_saida_teste(self, saida: str) -> Dict[str, Any]:
@@ -114,13 +165,15 @@ class OtimizadorTestes:
                 "detalhes": []
             },
             "testes_falhos": [],
-            "duracao_total": 0.0
+            "duracao_total": 0.0,
+            "testes_lentos": []  # Lista dos testes mais lentos
         }
         
         # Padrões para extração de informações
         padrao_total = re.compile(r'collected (\d+) items')
         padrao_duracao = re.compile(r'(\d+\.\d+)s')
         padrao_cobertura = re.compile(r'TOTAL.*?(\d+)%')
+        padrao_teste_lento = re.compile(r'(\d+\.\d+)s\s+(.+)')
         
         for linha in linhas:
             # Verificar total de testes
@@ -140,12 +193,29 @@ class OtimizadorTestes:
                 resumo["cobertura"]["total"] = f"{match_cobertura.group(1)}%"
                 logger.info(f"Cobertura total: {resumo['cobertura']['total']}")
             
+            # Identificar testes lentos
+            match_teste_lento = padrao_teste_lento.search(linha)
+            if match_teste_lento:
+                duracao = float(match_teste_lento.group(1))
+                nome_teste = match_teste_lento.group(2)
+                resumo["testes_lentos"].append({
+                    "nome": nome_teste,
+                    "duracao": duracao
+                })
+            
             # Processar resultados de testes individuais
             if any(status.value in linha for status in StatusTeste):
                 partes = linha.split()
                 if len(partes) >= 2:
                     nome_teste = partes[0]
                     status = next(s for s in StatusTeste if s.value in linha)
+                    
+                    # Extrair mensagem de erro se houver
+                    mensagem_erro = ""
+                    if status in [StatusTeste.FAILED, StatusTeste.ERROR]:
+                        idx = linha.find(status.value)
+                        if idx != -1:
+                            mensagem_erro = linha[idx + len(status.value):].strip()
                     
                     # Corrigir parser de duração
                     duracao = 0.0
@@ -158,7 +228,8 @@ class OtimizadorTestes:
                     resultado = ResultadoTeste(
                         nome=nome_teste,
                         status=status,
-                        duracao=duracao
+                        duracao=duracao,
+                        mensagem_erro=mensagem_erro
                     )
                     
                     if status == StatusTeste.FAILED:
@@ -166,7 +237,8 @@ class OtimizadorTestes:
                         resumo["testes_falhos"].append({
                             "nome": nome_teste,
                             "status": str(status),
-                            "duracao": resultado.duracao
+                            "duracao": resultado.duracao,
+                            "mensagem_erro": mensagem_erro
                         })
                     elif status == StatusTeste.PASSED:
                         resumo["testes_passaram"] += 1
@@ -177,6 +249,9 @@ class OtimizadorTestes:
                     
                     self.testes_detalhados.append(resultado)
         
+        # Ordenar testes lentos por duração
+        resumo["testes_lentos"].sort(key=lambda x: x["duracao"], reverse=True)
+        
         return resumo
 
     def _registrar_resultados_detalhados(self, saida: str):
@@ -185,8 +260,9 @@ class OtimizadorTestes:
             # Criar backup do arquivo atual
             if self.memoria_path.exists():
                 backup_path = self.memoria_path.with_suffix('.json.bak')
-                self.memoria_path.rename(backup_path)
-            
+                if backup_path.exists():
+                    backup_path.unlink()  # Remove o backup antigo
+                shutil.copy2(self.memoria_path, backup_path)
             # Criar novo arquivo com os resultados
             memoria = {
                 "memoria_tecnica": {
@@ -198,10 +274,8 @@ class OtimizadorTestes:
                     }
                 }
             }
-            
             with open(self.memoria_path, 'w', encoding='utf-8') as f:
                 json.dump(memoria, f, indent=2, ensure_ascii=False)
-            
             logger.info("Resultados detalhados registrados na memória compartilhada")
         except Exception as e:
             logger.error(f"Erro ao registrar resultados detalhados: {str(e)}")
@@ -259,8 +333,9 @@ class OtimizadorTestes:
             # Criar backup do arquivo atual
             if self.memoria_path.exists():
                 backup_path = self.memoria_path.with_suffix('.json.bak')
-                self.memoria_path.rename(backup_path)
-            
+                if backup_path.exists():
+                    backup_path.unlink()  # Remove o backup antigo
+                shutil.copy2(self.memoria_path, backup_path)
             # Criar novo arquivo com a análise
             memoria = {
                 "log_eventos": [{
@@ -274,10 +349,8 @@ class OtimizadorTestes:
                     }
                 }
             }
-            
             with open(self.memoria_path, 'w', encoding='utf-8') as f:
                 json.dump(memoria, f, indent=2, ensure_ascii=False)
-            
             logger.info("Análise registrada na memória compartilhada")
         except Exception as e:
             logger.error(f"Erro ao registrar análise: {str(e)}")
