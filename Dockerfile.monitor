@@ -1,4 +1,4 @@
-FROM autocura-base:latest
+FROM autocura/base:latest
 
 # Copiar código fonte
 COPY src/monitoramento /app/monitoramento

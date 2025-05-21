@@ -1,24 +1,26 @@
-FROM python:3.10-slim-bullseye
+FROM python:3.10-slim
 
 WORKDIR /app
 
-# Instalar dependências do sistema
+# Instalar dependências do sistema como root
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiar requirements
+# Copiar arquivos de requisitos
 COPY requirements.txt .
 
-# Instalar dependências Python
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Configurar usuário não-root
-RUN useradd -m -u 1000 appuser
-USER appuser
+# Instalar dependências em etapas como root
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir numpy==1.24.4 && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Configurar variáveis de ambiente
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/home/appuser/.local/bin:$PATH" 
+ENV PYTHONPATH=/app \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Comando padrão
+CMD ["python"] 
