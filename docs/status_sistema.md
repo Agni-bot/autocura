@@ -273,4 +273,10 @@
 
 ### 📚 Referência
 
-- Todos os eventos e decisões são rastreados em `memoria_compartilhada.json` (campos: `log_eventos`, `decisoes_recentes`, `memoria_operacional`). 
+- Todos os eventos e decisões são rastreados em `memoria_compartilhada.json` (campos: `log_eventos`, `decisoes_recentes`, `memoria_operacional`).
+
+## [2024-06-07] Início operacional do Sprint 1
+- Issues/tickets do backlog detalhado abertos no GitHub
+- Responsáveis designados
+- Script de automação de progresso configurado
+- Execução colaborativa iniciada 
