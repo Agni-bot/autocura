@@ -4,7 +4,7 @@ import time
 from unittest.mock import patch, MagicMock
 
 # Importa a app Flask e a instância do GuardiaoCognitivo do módulo principal
-from src.guardiao.guardiao_cognitivo import app, guardiao_singleton, DiagnosticoInfo, PlanoAcaoInfo, CONFIG_GUARDIAN, GuardiaoCognitivo
+from src.services.guardiao.guardiao_cognitivo import app, guardiao_singleton, DiagnosticoInfo, PlanoAcaoInfo, CONFIG_GUARDIAN, GuardiaoCognitivo
 
 @pytest.fixture
 def client():

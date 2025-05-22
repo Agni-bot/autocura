@@ -1,74 +1,97 @@
 version: '3.8'
 
 services:
-  autocura:
-    build: .
-    container_name: autocura
-    volumes:
-      - ./logs:/app/logs
-      - ./data:/app/data
-      - ./config:/app/config
-    environment:
-      - PYTHONPATH=/app
-      - PYTHONUNBUFFERED=1
+  api:
+    build:
+      context: .
+      dockerfile: docker/services/api/Dockerfile
     ports:
-      - "9090:9090"  # Prometheus
+      - "8000:8000"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     depends_on:
       - redis
-      - prometheus
-      - grafana
-    networks:
-      - autocura-network
-    restart: unless-stopped
+
+  monitor:
+    build:
+      context: .
+      dockerfile: docker/services/monitor/Dockerfile
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
+
+  observador:
+    build:
+      context: .
+      dockerfile: docker/services/observador/Dockerfile
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
+
+  validador:
+    build:
+      context: .
+      dockerfile: docker/services/validador/Dockerfile
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
+
+  guardiao:
+    build:
+      context: .
+      dockerfile: docker/services/guardiao/Dockerfile
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
+
+  gerador:
+    build:
+      context: .
+      dockerfile: docker/services/gerador/Dockerfile
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
+
+  diagnostico:
+    build:
+      context: .
+      dockerfile: docker/services/diagnostico/Dockerfile
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
 
   redis:
-    image: redis:7-alpine
-    container_name: autocura-redis
+    image: redis:alpine
     ports:
       - "6379:6379"
     volumes:
-      - redis-data:/data
-    networks:
-      - autocura-network
-    restart: unless-stopped
+      - redis_data:/data
 
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: autocura-prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./config/prometheus:/etc/prometheus
-      - prometheus-data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-    networks:
-      - autocura-network
-    restart: unless-stopped
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: autocura-grafana
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./config/grafana/provisioning:/etc/grafana/provisioning
-      - grafana-data:/var/lib/grafana
+  tests:
+    build:
+      context: .
+      dockerfile: docker/tests/Dockerfile
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_USERS_ALLOW_SIGN_UP=false
-    networks:
-      - autocura-network
-    restart: unless-stopped
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
 
 volumes:
-  redis-data:
-  prometheus-data:
-  grafana-data:
+  redis_data:
 
 networks:
   autocura-network:

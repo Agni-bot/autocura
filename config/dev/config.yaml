@@ -1,0 +1,49 @@
+# Configurações do ambiente de desenvolvimento
+environment: development
+debug: true
+
+# Configurações da API
+api:
+  host: localhost
+  port: 8000
+  debug: true
+  workers: 2
+  timeout: 30
+
+# Configurações de monitoramento
+monitoring:
+  enabled: true
+  prometheus:
+    port: 9090
+    path: /metrics
+  grafana:
+    port: 3000
+    admin_user: admin
+    admin_password: admin
+  loki:
+    port: 3100
+  alertmanager:
+    port: 9093
+
+# Configurações de memória
+memory:
+  path: memoria_compartilhada.json
+  backup_path: backup/memoria
+  max_size: 100MB
+  backup_interval: 3600  # segundos
+
+# Configurações de logging
+logging:
+  level: DEBUG
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: logs/dev.log
+  max_size: 10MB
+  backup_count: 5
+
+# Configurações de testes
+testing:
+  enabled: true
+  coverage_threshold: 80
+  timeout: 300
+  parallel: true
+  workers: 4 

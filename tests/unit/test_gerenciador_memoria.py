@@ -3,7 +3,7 @@ import tempfile
 import os
 from datetime import datetime
 from prometheus_client import CollectorRegistry
-from src.memoria.gerenciador_memoria import GerenciadorMemoria
+from src.services.memoria.gerenciador_memoria import GerenciadorMemoria
 
 @pytest.fixture
 def test_config():

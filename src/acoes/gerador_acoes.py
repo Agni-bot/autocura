@@ -10,8 +10,9 @@ import uuid
 import json
 import logging
 from enum import Enum
+from pathlib import Path
 from ..core.base import BaseComponent
-from src.diagnostico.rede_neural import Diagnostico
+from ..services.diagnostico.rede_neural import Diagnostico
 
 # Configuração de logging
 logging.basicConfig(level=logging.INFO)
@@ -84,10 +85,10 @@ class PlanoAcao:
             key=lambda x: x.prioridade.value
         )
         self.tempo_estimado += acao.tempo_estimado
-        self.probabilidade_sucesso = min(
-            self.probabilidade_sucesso,
-            acao.probabilidade_sucesso
-        )
+        if self.acoes:
+            self.probabilidade_sucesso = min(
+                acao.probabilidade_sucesso for acao in self.acoes
+            )
     
     def remover_acao(self, acao_id: str) -> bool:
         """Remove uma ação do plano."""
@@ -119,69 +120,9 @@ class GeradorAcoes(BaseComponent):
     
     def __init__(self, name: str = "GeradorAcoes"):
         super().__init__(name)
-        self.mapeamento_acoes = {
-            "alta_cpu": {
-                "tipo": "escalar_horizontal",
-                "descricao": "Escalar horizontalmente para distribuir carga",
-                "prioridade": 2,
-                "parametros": {
-                    "min_replicas": 2,
-                    "max_replicas": 5,
-                    "target_cpu": 70
-                }
-            },
-            "alta_memoria": {
-                "tipo": "otimizar_memoria",
-                "descricao": "Otimizar uso de memória e limpar cache",
-                "prioridade": 2,
-                "parametros": {
-                    "clear_cache": True,
-                    "gc_threshold": 85,
-                    "max_memory": "2Gi"
-                }
-            },
-            "alta_latencia": {
-                "tipo": "otimizar_performance",
-                "descricao": "Otimizar performance e reduzir latência",
-                "prioridade": 1,
-                "parametros": {
-                    "enable_cache": True,
-                    "timeout": 30,
-                    "max_retries": 3
-                }
-            },
-            "alta_taxa_erro": {
-                "tipo": "corrigir_erros",
-                "descricao": "Corrigir erros e implementar retry",
-                "prioridade": 0,  # Máxima prioridade
-                "parametros": {
-                    "retry_strategy": "exponential",
-                    "max_retries": 5,
-                    "circuit_breaker": True
-                }
-            },
-            "cpu": {
-                "tipo": "escalar_horizontal",
-                "descricao": "Ação crítica para CPU",
-                "prioridade": 0,
-                "parametros": {
-                    "min_replicas": 2,
-                    "max_replicas": 5,
-                    "target_cpu": 70
-                }
-            },
-            "memoria": {
-                "tipo": "otimizar_memoria",
-                "descricao": "Ação crítica para Memória",
-                "prioridade": 0,
-                "parametros": {
-                    "clear_cache": True,
-                    "gc_threshold": 85,
-                    "max_memory": "2Gi"
-                }
-            }
-        }
-        
+        self.mapeamento_acoes: Dict[str, Dict[str, Any]] = {}
+        self.tempo_estimado_padrao: float = 30.0
+        self.probabilidade_sucesso_padrao: float = 0.8
         self.historico_acoes: List[Acao] = []
         
         logger.info("Gerador de ações emergentes inicializado")
@@ -198,9 +139,22 @@ class GeradorAcoes(BaseComponent):
     
     def _carregar_configuracoes(self) -> None:
         """Carrega configurações do gerador de ações."""
-        config = self.get_config()
-        if "acoes_disponiveis" in config:
-            self.mapeamento_acoes.update(config["acoes_disponiveis"])
+        config_path = Path(__file__).parents[2] / "config" / "acoes_config.json"
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config_file = json.load(f)
+                if "mapeamento_acoes" in config_file:
+                    self.mapeamento_acoes.update(config_file["mapeamento_acoes"])
+                    
+                # Carrega valores padrão
+                tempos_padrao = config_file.get("tempos_padrao", {})
+                self.tempo_estimado_padrao = tempos_padrao.get("tempo_estimado_padrao", 30.0)
+                self.probabilidade_sucesso_padrao = tempos_padrao.get("probabilidade_sucesso_padrao", 0.8)
+                
+                logger.info("Configurações carregadas com sucesso")
+        except Exception as e:
+            logger.error(f"Erro ao carregar configurações: {e}")
+            raise
     
     def _salvar_historico(self) -> None:
         """Salva o histórico de planos de ação."""
@@ -239,8 +193,8 @@ class GeradorAcoes(BaseComponent):
             diagnostico=diagnostico,
             parametros=config["parametros"],
             status="pendente",
-            tempo_estimado=30.0,  # Tempo estimado padrão em segundos
-            probabilidade_sucesso=0.8  # Probabilidade padrão de sucesso
+            tempo_estimado=self.tempo_estimado_padrao,
+            probabilidade_sucesso=self.probabilidade_sucesso_padrao
         )
         
         # Adiciona ao histórico
@@ -340,7 +294,7 @@ class GeradorAcoes(BaseComponent):
     async def gerar_acoes(self, diagnostico: Dict[str, Any]) -> List[Acao]:
         """Gera uma lista de ações baseada no diagnóstico."""
         acoes = []
-        from src.diagnostico.rede_neural import Diagnostico as DiagnosticoNN
+        from src.services.diagnostico.rede_neural import Diagnostico as DiagnosticoNN
         from datetime import datetime
         severidade = diagnostico.get('severidade', 'ALTA')
         # Gera ação para cada métrica afetada

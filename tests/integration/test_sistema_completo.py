@@ -13,7 +13,7 @@ from typing import Dict, Any, List
 from pathlib import Path
 import logging
 import mock
-from src.orquestrador.monitoramento import MonitoramentoTestes
+from src.orchestration.monitoramento import MonitoramentoTestes
 from src.core.sistema_autocura import SistemaAutocura
 from prometheus_client import CollectorRegistry
 

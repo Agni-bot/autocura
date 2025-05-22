@@ -4,10 +4,10 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 from pathlib import Path
 
-from ..memoria.gerenciador_memoria import GerenciadorMemoria
-from ..etica.validador_etico import ValidadorEtico
-from ..guardiao.guardiao_cognitivo import GuardiaoCognitivo
-from ..gerador.gerador_acoes import GeradorAcoes
+from ..services.memoria.gerenciador_memoria import GerenciadorMemoria
+from ..services.etica.validador_etico import ValidadorEtico
+from ..services.guardiao.guardiao_cognitivo import GuardiaoCognitivo
+from ..services.gerador.gerador_acoes import GeradorAcoes
 
 # Configuração de logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

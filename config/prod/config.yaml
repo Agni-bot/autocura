@@ -1,0 +1,56 @@
+# Configurações do ambiente de produção
+environment: production
+debug: false
+
+# Configurações da API
+api:
+  host: 0.0.0.0
+  port: 8000
+  debug: false
+  workers: 4
+  timeout: 60
+
+# Configurações de monitoramento
+monitoring:
+  enabled: true
+  prometheus:
+    port: 9090
+    path: /metrics
+  grafana:
+    port: 3000
+    admin_user: ${GRAFANA_ADMIN_USER}
+    admin_password: ${GRAFANA_ADMIN_PASSWORD}
+  loki:
+    port: 3100
+  alertmanager:
+    port: 9093
+
+# Configurações de memória
+memory:
+  path: /data/memoria_compartilhada.json
+  backup_path: /data/backup/memoria
+  max_size: 1GB
+  backup_interval: 3600  # segundos
+
+# Configurações de logging
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: /var/log/autocura/prod.log
+  max_size: 100MB
+  backup_count: 10
+
+# Configurações de segurança
+security:
+  ssl_enabled: true
+  ssl_cert: /etc/ssl/certs/autocura.crt
+  ssl_key: /etc/ssl/private/autocura.key
+  cors_origins: ["https://*.autocura.com"]
+  rate_limit: 1000  # requisições por minuto
+
+# Configurações de backup
+backup:
+  enabled: true
+  schedule: "0 0 * * *"  # Diariamente à meia-noite
+  retention_days: 30
+  compression: true 

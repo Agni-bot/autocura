@@ -22,44 +22,51 @@ wheels/
 
 # Virtual Environment
 venv/
+.env/
+.venv/
 ENV/
-env/
 
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
-.DS_Store
+.cursor/
+
+# Testes e Relatórios
+.pytest_cache/
+.coverage
+coverage.xml
+reports/
+test-results/
+test_logs/
+test_config/
 
 # Logs
 logs/
 *.log
 
-# Data
-data/
-*.db
-*.sqlite3
+# Dados temporários
+*.bak
+*.tmp
+*.temp
+memoria_test.json
+output.json
 
 # Docker
 .docker/
 
-# Test
-.coverage
-htmlcov/
-.pytest_cache/
+# Kubernetes
+.kube/
 
-# Environment variables
-.env
-.env.*
-
-# Documentation
-docs/_build/
-site/
-
-# Misc
+# Sistema
 .DS_Store
 Thumbs.db
+
+# Data
+data/
+*.db
+*.sqlite3
 
 # Arquivos de configuração local
 .env
@@ -131,8 +138,6 @@ config/secrets/*
 *.truststore
 
 # Arquivos de logs e dados temporários
-*.tmp
-*.temp
 *.swp
 *.swo
 

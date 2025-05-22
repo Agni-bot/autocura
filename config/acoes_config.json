@@ -1,0 +1,68 @@
+{
+    "mapeamento_acoes": {
+        "alta_cpu": {
+            "tipo": "escalar_horizontal",
+            "descricao": "Escalar horizontalmente para distribuir carga",
+            "prioridade": 2,
+            "parametros": {
+                "min_replicas": 2,
+                "max_replicas": 5,
+                "target_cpu": 70
+            }
+        },
+        "alta_memoria": {
+            "tipo": "otimizar_memoria",
+            "descricao": "Otimizar uso de memória e limpar cache",
+            "prioridade": 2,
+            "parametros": {
+                "clear_cache": true,
+                "gc_threshold": 85,
+                "max_memory": "2Gi"
+            }
+        },
+        "alta_latencia": {
+            "tipo": "otimizar_performance",
+            "descricao": "Otimizar performance e reduzir latência",
+            "prioridade": 1,
+            "parametros": {
+                "enable_cache": true,
+                "timeout": 30,
+                "max_retries": 3
+            }
+        },
+        "alta_taxa_erro": {
+            "tipo": "corrigir_erros",
+            "descricao": "Corrigir erros e implementar retry",
+            "prioridade": 0,
+            "parametros": {
+                "retry_strategy": "exponential",
+                "max_retries": 5,
+                "circuit_breaker": true
+            }
+        },
+        "cpu": {
+            "tipo": "escalar_horizontal",
+            "descricao": "Ação crítica para CPU",
+            "prioridade": 0,
+            "parametros": {
+                "min_replicas": 2,
+                "max_replicas": 5,
+                "target_cpu": 70
+            }
+        },
+        "memoria": {
+            "tipo": "otimizar_memoria",
+            "descricao": "Ação crítica para Memória",
+            "prioridade": 0,
+            "parametros": {
+                "clear_cache": true,
+                "gc_threshold": 85,
+                "max_memory": "2Gi"
+            }
+        }
+    },
+    "tempos_padrao": {
+        "tempo_estimado_padrao": 30.0,
+        "probabilidade_sucesso_padrao": 0.8
+    }
+} 

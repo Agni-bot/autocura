@@ -1,7 +1,6 @@
 FROM autocura/base:latest
 
 # Copiar código fonte
-COPY src/api /app/api
 COPY src/core /app/core
 COPY src/memoria /app/memoria
 COPY src/seguranca /app/seguranca

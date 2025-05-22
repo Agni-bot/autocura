@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime
-from src.memoria.gerenciador_memoria import GerenciadorMemoria
+from src.services.memoria.gerenciador_memoria import GerenciadorMemoria
 
 @pytest.fixture
 def test_config():

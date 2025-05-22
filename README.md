@@ -1,52 +1,31 @@
-# Sistema de Autocura
+# AutoCura
 
-## Visão Geral
-O Sistema de Autocura é uma plataforma que permite evolução contínua e adaptativa baseada em feedback e monitoramento, utilizando técnicas avançadas de processamento de linguagem natural e aprendizado de máquina.
+Sistema de autocura e monitoramento inteligente.
 
-## Funcionalidades
-- Evolução contínua
-- Monitoramento em tempo real
-- Processamento inteligente de feedback
-- Memória persistente
-- Observabilidade via Prometheus e Grafana
+## Estrutura do Projeto
 
-## Tecnologias
+```
+autocura/
+├── src/                    # Código fonte
+├── tests/                  # Testes e configurações de teste
+├── config/                 # Configurações
+│   ├── monitoring/        # Configurações de monitoramento
+│   └── kubernetes/        # Configurações do Kubernetes
+├── deploy/                # Scripts de deploy
+├── docker/               # Arquivos Docker
+├── docs/                 # Documentação
+├── reports/             # Relatórios (cobertura, testes)
+├── scripts/             # Scripts utilitários
+└── assets/              # Recursos estáticos
+```
+
+## Requisitos
+
 - Python 3.10+
-- LangChain
-- Groq API
-- FastAPI
-- SQLAlchemy
-- Redis
 - Docker
-- Prometheus
-- Grafana
-
-## Pré-requisitos
-- Docker
-- Docker Compose
-- Git
+- Kubernetes (opcional)
 
 ## Instalação
-
-### Usando Docker (Recomendado)
-
-1. Clone o repositório:
-```bash
-git clone https://github.com/seu-usuario/autocura.git
-cd autocura
-```
-
-2. Inicie o sistema:
-```bash
-chmod +x scripts/start.sh
-./scripts/start.sh
-```
-
-3. Acesse:
-- Grafana: http://localhost:3000 (usuário: admin, senha: admin)
-- Prometheus: http://localhost:9090
-
-### Instalação Manual
 
 1. Clone o repositório:
 ```bash
@@ -58,64 +37,65 @@ cd autocura
 ```bash
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
+.\venv\Scripts\activate   # Windows
 ```
 
 3. Instale as dependências:
 ```bash
 pip install -r requirements.txt
+pip install -r requirements-test.txt
 ```
 
-4. Configure as variáveis de ambiente:
+## Executando os Testes
+
 ```bash
-cp config/config.yaml.example config/config.yaml
-# Edite o arquivo config/config.yaml com suas configurações
+pytest
 ```
 
-5. Execute o sistema:
+## Executando com Docker
+
+1. Construa as imagens:
 ```bash
-python scripts/run_autocura.py
+# Linux/Mac
+./docker/build.sh
+
+# Windows
+.\docker\build.ps1
+```
+
+2. Inicie os serviços:
+```bash
+docker-compose up -d
+```
+
+3. Inicie o monitoramento:
+```bash
+docker-compose -f docker-compose.monitoring.yml up -d
 ```
 
 ## Monitoramento
 
-### Métricas Disponíveis
-- Taxa de requisições
-- Taxa de erros
-- Tempo de resposta
-- Uso de memória
-- Uso de CPU
+O sistema inclui:
+- Prometheus para métricas
+- Grafana para visualização
+- Loki para logs
+- Alertmanager para alertas
 
-### Dashboards
-O sistema inclui dashboards pré-configurados no Grafana:
-- Visão geral do sistema
-- Métricas de performance
-- Análise de erros
-- Tendências de uso
-
-## Testes
-```bash
-# Executar testes
-pytest
-
-# Gerar relatório de cobertura
-pytest --cov=src tests/
-```
-
-## Documentação
-A documentação completa está disponível no diretório `docs/`. Para servir a documentação localmente:
-```bash
-mkdocs serve
-```
+Acesse:
+- Grafana: http://localhost:3000
+- Prometheus: http://localhost:9090
+- Alertmanager: http://localhost:9093
 
 ## Contribuindo
-1. Faça um fork do projeto
+
+1. Fork o projeto
 2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
 3. Commit suas mudanças (`git commit -am 'Adiciona nova feature'`)
 4. Push para a branch (`git push origin feature/nova-feature`)
 5. Crie um Pull Request
 
 ## Licença
+
 Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
 
 ## Autores

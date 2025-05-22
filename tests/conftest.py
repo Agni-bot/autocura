@@ -3,6 +3,11 @@ Fixtures compartilhadas para os testes do sistema de autocura.
 
 Este módulo contém fixtures que podem ser utilizadas em todos os testes,
 evitando duplicação de código e garantindo consistência.
+
+Tipos de Testes:
+- Unitários: Testes de componentes individuais
+- Integração: Testes de interação entre componentes
+- E2E: Testes end-to-end do sistema completo
 """
 
 import os
@@ -14,6 +19,12 @@ from unittest.mock import Mock, patch
 from pathlib import Path
 import tempfile
 from prometheus_client import CollectorRegistry
+import sys
+import yaml
+
+# Adiciona o diretório src ao PYTHONPATH
+src_path = str(Path(__file__).parent.parent / "src")
+sys.path.append(src_path)
 
 # Configuração de logging para testes
 logging.basicConfig(
@@ -22,22 +33,21 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+def load_test_config() -> Dict[str, Any]:
+    """Carrega configurações de teste do arquivo YAML."""
+    config_path = Path(__file__).parent.parent / "config" / "test" / "config.yaml"
+    with open(config_path) as f:
+        return yaml.safe_load(f)
+
 @pytest.fixture(scope="session")
 def config_teste() -> Dict[str, Any]:
     """
     Fixture que fornece configurações de teste para toda a sessão.
     
     Returns:
-        Dict[str, Any]: Configurações de teste
+        Dict[str, Any]: Configurações de teste carregadas do arquivo YAML
     """
-    return {
-        "ambiente": "teste",
-        "timeout": 30,
-        "retry_count": 3,
-        "api_url": os.getenv("TEST_API_URL", "http://localhost:8000"),
-        "db_url": os.getenv("TEST_DB_URL", "postgresql://test:test@localhost:5432/test_db"),
-        "redis_url": os.getenv("TEST_REDIS_URL", "redis://localhost:6379/0")
-    }
+    return load_test_config()
 
 @pytest.fixture(scope="function")
 def mock_api() -> Generator[Mock, None, None]:
@@ -99,7 +109,7 @@ def monitoramento() -> Generator[Any, None, None]:
     Yields:
         MonitoramentoTestes: Instância do monitoramento
     """
-    from src.orquestrador.monitoramento import MonitoramentoTestes
+    from src.orchestration.monitoramento import MonitoramentoTestes
     
     monitor = MonitoramentoTestes()
     yield monitor
@@ -163,16 +173,49 @@ def mock_time(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.fixture(scope="session")
 def test_config():
-    """Configuração global para testes."""
+    """Fixture que retorna a configuração de teste."""
+    config = load_test_config()
     return {
-        "memoria_path": os.path.join(tempfile.gettempdir(), "memoria_test.json"),
-        "redis_host": "localhost",
-        "redis_port": 6379,
-        "redis_db": 1,  # DB 1 para testes
-        "prometheus_port": 9091,
-        "grafana_port": 3001,
-        "loki_port": 3101
+        "test_mode": True,
+        "log_level": config["logging"]["level"],
+        "memory_path": config["memory"]["path"],
+        "api_url": f"http://{config['api']['host']}:{config['api']['port']}",
+        "monitoring_enabled": config["monitoring"]["enabled"]
     }
+
+@pytest.fixture(scope="session")
+def test_memory():
+    """Fixture que retorna um dicionário de memória de teste."""
+    return {
+        "last_update": "2024-03-20T00:00:00Z",
+        "metrics": {
+            "cpu_usage": 0.0,
+            "memory_usage": 0.0,
+            "disk_usage": 0.0
+        },
+        "alerts": [],
+        "adjustments": []
+    }
+
+@pytest.fixture(scope="function")
+def clean_test_env():
+    """Fixture que limpa o ambiente de teste antes e depois de cada teste."""
+    config = load_test_config()
+    # Setup
+    test_files = [
+        config["memory"]["path"],
+        config["logging"]["file"]
+    ]
+    for file in test_files:
+        if os.path.exists(file):
+            os.remove(file)
+    
+    yield
+    
+    # Teardown
+    for file in test_files:
+        if os.path.exists(file):
+            os.remove(file)
 
 @pytest.fixture(scope="session")
 def prometheus_registry():

@@ -15,7 +15,7 @@ import redis
 import msgpack
 import yaml
 from src.monitoramento.coletor_metricas import Metrica
-from src.diagnostico.rede_neural import Diagnostico
+from src.services.diagnostico.rede_neural import Diagnostico
 from src.acoes.gerador_acoes import Acao
 
 # Configuração de logging

@@ -19,7 +19,8 @@ class BlockchainAdapter:
             # Aqui viria a lógica de conexão usando uma biblioteca específica como Hyperledger Fabric SDK
             # Exemplo (pseudo-código):
             # self.client = FabricClient(net_profile=self.network_config_path)
-            # self.user = self.client.get_user(org_name=\'org1.example.comze, name=\'admin\')
+            # self.user = self.client.get_user(org_name=\'org1.example.com
+ze, name=\'admin\')
             # if not self.user or not self.user.is_enrolled():
             #     raise Exception("Usuário admin não encontrado ou não registrado")
             # self.connected = True

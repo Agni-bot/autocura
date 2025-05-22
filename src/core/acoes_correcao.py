@@ -6,7 +6,7 @@ from pathlib import Path
 from enum import Enum
 from uuid import uuid4
 
-from ..memoria.gerenciador_memoria import GerenciadorMemoria
+from ..services.memoria.gerenciador_memoria import GerenciadorMemoria
 
 # Configuração de logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -44,7 +44,6 @@ class AcaoCorrecao:
         validada: bool = False,
         data_validacao: Optional[datetime] = None
     ):
-        from src.core.acoes_correcao import TipoAcao, StatusAcao
         # Conversão automática de string para Enum
         if isinstance(tipo, str):
             tipo = TipoAcao(tipo)
