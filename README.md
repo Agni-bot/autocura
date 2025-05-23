@@ -1,20 +1,19 @@
 # Sistema de Autocura Cognitiva
 
-Sistema modular de autocura cognitiva com foco em ética, segurança e evolução contínua.
+Sistema modular de IA com capacidade de autocura e evolução contínua.
 
-## 🏗️ Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
 sistema-autocura/
-├── modulos/                    # Módulos principais do sistema
-│   ├── core/                   # Módulo central com interfaces comuns
-│   ├── monitoramento/          # Módulo de monitoramento independente
-│   ├── diagnostico/            # Módulo de diagnóstico independente
-│   ├── gerador-acoes/          # Módulo gerador de ações independente
-│   ├── integracao/             # Módulo de integração independente
-│   ├── observabilidade/        # Módulo de observabilidade independente
-│   ├── guardiao-cognitivo/     # Módulo guardião cognitivo independente
-│   └── etica/                  # Módulos ético-operacionais
+├── modulos/
+│   ├── core/                    # Módulo central com interfaces comuns
+│   ├── monitoramento/           # Módulo de monitoramento e observabilidade
+│   ├── diagnostico/             # Módulo de diagnóstico
+│   ├── gerador-acoes/           # Módulo gerador de ações
+│   ├── integracao/              # Módulo de integração
+│   ├── guardiao-cognitivo/      # Módulo guardião cognitivo
+│   └── etica/                   # Módulos ético-operacionais
 │       ├── circuitos-morais/
 │       ├── decisao-hibrida/
 │       ├── auditoria/
@@ -23,69 +22,60 @@ sistema-autocura/
 │       ├── validadores-eticos/
 │       ├── priorizacao-financeira/
 │       └── registro-decisoes/
-├── shared/                     # Bibliotecas compartilhadas
-├── tests/                      # Testes por módulo
-├── docker/                     # Dockerfiles por módulo
-└── deployment/                 # Configurações de deployment
+├── shared/                      # Bibliotecas compartilhadas
+├── tests/                       # Testes por módulo
+├── docs/                        # Documentação
+└── deployment/                  # Configurações de deployment
 ```
 
-## 🚀 Instalação
+## Instalação
 
-1. Clone o repositório:
 ```bash
-git clone https://github.com/seu-usuario/sistema-autocura.git
-cd sistema-autocura
+# Instalar dependências
+pip install -r requirements.txt
+
+# Instalar dependências de desenvolvimento
+pip install -r requirements-test.txt
 ```
 
-2. Instale as dependências:
+## Desenvolvimento
+
 ```bash
-poetry install
+# Executar testes
+pytest
+
+# Executar linting
+pre-commit run --all-files
+
+# Executar em modo desenvolvimento
+docker-compose -f docker-compose.dev.yml up
 ```
 
-3. Configure as variáveis de ambiente:
+## Produção
+
 ```bash
-cp .env.example .env
-# Edite o arquivo .env com suas configurações
-```
+# Construir imagens
+./build-images.sh
 
-## 🧪 Testes
-
-Execute os testes com:
-```bash
-poetry run pytest
-```
-
-## 🐳 Docker
-
-Para executar com Docker:
-```bash
+# Executar em produção
 docker-compose up -d
 ```
 
-## 📚 Documentação
+## Documentação
 
-A documentação completa está disponível em `docs/`:
-- [Arquitetura](docs/01-Etapa1/arquitetura.md)
-- [Plano Modular](docs/02-Etapa2/plano_modular_ia.md)
-- [Guia de Desenvolvimento](docs/03-Etapa3/guia_desenvolvimento.md)
+A documentação completa está disponível em `docs/`.
 
-## 🤝 Contribuindo
+## Contribuição
 
 1. Fork o projeto
-2. Crie sua branch de feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
+2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
+3. Commit suas mudanças (`git commit -am 'Adiciona nova feature'`)
+4. Push para a branch (`git push origin feature/nova-feature`)
+5. Crie um Pull Request
 
-## 📝 Licença
+## Licença
 
-Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
-
-## 📫 Contato
-
-Seu Nome - [@seutwitter](https://twitter.com/seutwitter) - email@example.com
-
-Link do Projeto: [https://github.com/seu-usuario/sistema-autocura](https://github.com/seu-usuario/sistema-autocura)
+Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para detalhes.
 
 # Sistema de Monitoramento de Recursos
 
