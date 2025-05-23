@@ -1,0 +1,1 @@
+"""Módulo priorizacao-financeira"""

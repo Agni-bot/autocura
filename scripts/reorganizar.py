@@ -15,103 +15,72 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Diretórios a serem reorganizados
-REORGANIZACAO = {
-    # Módulos principais
-    'src/GeradorAcoes': 'src/gerador',
-    'src/consciencia_situacional': 'src/core/consciencia',
-    'src/conscienciaSituacional': 'src/core/consciencia',
-    'src/autocorrection': 'src/core/autocorrecao',
-    'src/guardiaoCognitivo': 'src/guardiao',
-    'src/will': 'src/core/will',
-    
-    # Módulos de ML/AI
-    'src/interpretability': 'src/core/interpretabilidade',
-    'src/validation': 'src/core/validacao',
-    'src/synthesis': 'src/core/sintese',
-    'src/prediction': 'src/core/predicao',
-    'src/adaptation': 'src/core/adaptacao',
-    
-    # Arquivos soltos
-    'src/monitoramento.py': 'src/monitoramento/monitoramento.py',
-    'src/gerador.py': 'src/gerador/gerador.py',
-    'src/diagnostico.py': 'src/diagnostico/diagnostico.py',
+# Mapeamento de diretórios antigos para novos
+MAPPING = {
+    'src/core': 'modulos/core',
+    'src/monitoramento': 'modulos/monitoramento',
+    'src/monitoring': 'modulos/monitoramento',
+    'src/diagnostico': 'modulos/diagnostico',
+    'src/gerador-acoes': 'modulos/gerador-acoes',
+    'src/integracao': 'modulos/integracao',
+    'src/observabilidade': 'modulos/observabilidade',
+    'src/guardiao-cognitivo': 'modulos/guardiao-cognitivo',
+    'src/etica': 'modulos/etica',
+    'src/utils': 'shared/utils',
+    'src/api': 'shared/api',
+    'src/events': 'shared/events',
+    'src/seguranca': 'modulos/etica/validadores-eticos',
+    'src/financas': 'modulos/etica/priorizacao-financeira',
+    'src/auditoria': 'modulos/etica/auditoria',
+    'src/governanca': 'modulos/etica/governanca',
+    'src/registro-decisoes': 'modulos/etica/registro-decisoes',
 }
 
-def criar_diretorio(path: Path):
-    """Cria um diretório se não existir."""
-    if not path.exists():
-        path.mkdir(parents=True)
-        logger.info(f"Diretório criado: {path}")
+def criar_estrutura_base():
+    """Cria a estrutura base de diretórios para cada módulo"""
+    for modulo in MAPPING.values():
+        Path(modulo).mkdir(parents=True, exist_ok=True)
+        # Criar estrutura padrão dentro de cada módulo
+        for subdir in ['src', 'tests', 'config', 'docker']:
+            Path(f"{modulo}/{subdir}").mkdir(exist_ok=True)
 
-def mover_arquivo(origem: Path, destino: Path):
-    """Move um arquivo para o novo local."""
-    if origem.exists():
-        # Cria diretório de destino se necessário
-        destino.parent.mkdir(parents=True, exist_ok=True)
+def mover_arquivos():
+    """Move os arquivos para suas novas localizações"""
+    for src, dest in MAPPING.items():
+        if os.path.exists(src):
+            # Criar diretório de destino se não existir
+            os.makedirs(dest, exist_ok=True)
+            
+            # Mover arquivos
+            for item in os.listdir(src):
+                src_path = os.path.join(src, item)
+                dest_path = os.path.join(dest, item)
+                
+                if os.path.isfile(src_path):
+                    shutil.copy2(src_path, dest_path)
+                elif os.path.isdir(src_path):
+                    shutil.copytree(src_path, dest_path, dirs_exist_ok=True)
+
+def criar_arquivos_base():
+    """Cria arquivos base necessários para cada módulo"""
+    for modulo in MAPPING.values():
+        # Criar __init__.py
+        with open(f"{modulo}/__init__.py", 'w') as f:
+            f.write(f'"""Módulo {os.path.basename(modulo)}"""\n')
         
-        # Move o arquivo
-        shutil.move(str(origem), str(destino))
-        logger.info(f"Arquivo movido: {origem} -> {destino}")
+        # Criar README.md
+        with open(f"{modulo}/README.md", 'w') as f:
+            f.write(f"# Módulo {os.path.basename(modulo)}\n\n")
+            f.write("## Descrição\n\n")
+            f.write("## Instalação\n\n")
+            f.write("## Uso\n\n")
 
-def reorganizar():
-    """Reorganiza os diretórios conforme a nova estrutura."""
-    # Diretório base do projeto
-    base_dir = Path(__file__).parent.parent
-    
-    # Cria diretórios principais se não existirem
-    diretorios_principais = [
-        'config',
-        'docs',
-        'grafana',
-        'kubernetes',
-        'logs',
-        'memoria',
-        'prometheus',
-        'scripts',
-        'src',
-        'tests',
-        'verificar'
-    ]
-    
-    for dir_name in diretorios_principais:
-        criar_diretorio(base_dir / dir_name)
-    
-    # Reorganiza diretórios e arquivos
-    for origem, destino in REORGANIZACAO.items():
-        origem_path = base_dir / origem
-        destino_path = base_dir / destino
-        
-        if origem_path.exists():
-            if origem_path.is_dir():
-                # Move diretório
-                if destino_path.exists():
-                    # Se destino existe, move conteúdo
-                    for item in origem_path.iterdir():
-                        shutil.move(str(item), str(destino_path / item.name))
-                    # Remove diretório origem vazio
-                    origem_path.rmdir()
-                else:
-                    # Move diretório inteiro
-                    shutil.move(str(origem_path), str(destino_path))
-                logger.info(f"Diretório movido: {origem} -> {destino}")
-            else:
-                # Move arquivo
-                mover_arquivo(origem_path, destino_path)
-    
-    # Limpa diretórios vazios
-    for dir_path in base_dir.rglob('*'):
-        if dir_path.is_dir() and not any(dir_path.iterdir()):
-            try:
-                dir_path.rmdir()
-                logger.info(f"Diretório vazio removido: {dir_path}")
-            except OSError:
-                pass
+def main():
+    print("Iniciando reorganização do projeto...")
+    criar_estrutura_base()
+    mover_arquivos()
+    criar_arquivos_base()
+    print("Reorganização concluída!")
 
-if __name__ == '__main__':
-    try:
-        reorganizar()
-        logger.info("Reorganização concluída com sucesso!")
-    except Exception as e:
-        logger.error(f"Erro durante a reorganização: {str(e)}")
-        raise 
+if __name__ == "__main__":
+    main() 

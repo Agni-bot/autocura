@@ -1,0 +1,84 @@
+{
+  "decision_request_example": {
+    "description": "Example payload for POST /api/will/decision",
+    "payload": {
+      "request_id": "REQ_INTEG_007",
+      "timestamp": "2025-05-09T12:30:00Z",
+      "source_module": "CognitiveAutoHealer",
+      "asset": "BTC/USD",
+      "timeframe": "H4",
+      "market_conditions": {
+        "volatility_index": 65.2,
+        "current_price": 60500.75,
+        "recent_news_sentiment_score": -0.25,
+        "trading_volume_24h_change_pct": 15.5
+      },
+      "requested_volume": 2.5,
+      "additional_parameters": {
+        "user_risk_profile": "aggressive",
+        "max_slippage_allowed_bps": 10,
+        "strategy_preference": "momentum_breakout"
+      }
+    }
+  },
+  "decision_response_example": {
+    "description": "Example success response for POST /api/will/decision",
+    "payload": {
+      "timestamp": "2025-05-09T12:30:05Z",
+      "input_parameters": {
+        "request_id": "REQ_INTEG_007",
+        "asset": "BTC/USD",
+        "requested_volume": 2.5
+      },
+      "decision_engine_version": "1.0.0-enh",
+      "trade_signal": "SELL",
+      "confidence_score": 0.88,
+      "target_asset": "BTC/USD",
+      "recommended_volume": 2.0,
+      "risk_assessment": "HIGH",
+      "supporting_factors": [
+        "Negative sentiment from crypto news aggregator",
+        "Bearish divergence on RSI H4",
+        "Increased exchange inflow detected"
+      ],
+      "gemini_analysis_summary": "Gemini Pro 2.5 analysis indicates potential short-term correction due to regulatory news from region X.",
+      "execution_parameters": {
+        "order_type": "MARKET",
+        "stop_loss_price": 61500.00,
+        "take_profit_price": 59000.00
+      }
+    }
+  },
+  "status_response_example": {
+    "description": "Example success response for GET /api/will/status",
+    "payload": {
+      "timestamp": "2025-05-09T12:35:00Z",
+      "system_name": "Will Predictive Trading System",
+      "version": "1.0.0-enh",
+      "status": "OPERATIONAL",
+      "active_models": ["TemporalLSTM", "ProbabilisticBN", "GeminiProIntegration", "SentimentAnalyzerV2"],
+      "last_decision_time": "2025-05-09T12:30:05Z",
+      "data_feed_status": {
+        "market_data_api": "CONNECTED",
+        "geospatial_api": "NOT_APPLICABLE_FOR_ASSET_BTC/USD",
+        "news_feed_api": "CONNECTED_HIGH_THROUGHPUT"
+      },
+      "system_health_metrics": {
+        "cpu_load_avg": 0.45,
+        "memory_usage_gb": 3.1,
+        "disk_space_free_gb": 140.5,
+        "api_latency_ms_avg": 65,
+        "active_connections": 12
+      },
+      "alerts": []
+    }
+  },
+  "error_response_example_400": {
+    "description": "Example error response for 400 Bad Request",
+    "payload": {
+        "error": "Invalid input data",
+        "message": "O campo 'asset' é obrigatório e não pode estar vazio."
+    }
+  }
+}
+

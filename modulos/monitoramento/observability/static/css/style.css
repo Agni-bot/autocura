@@ -1,0 +1,210 @@
+/* Estilos gerais */
+body {
+    background-color: #f8f9fc;
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* Cards */
+.card {
+    margin-bottom: 1.5rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+.card-header {
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+}
+
+/* Bordas coloridas para cards */
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+
+/* Textos */
+.text-xs {
+    font-size: 0.7rem;
+}
+
+.text-gray-300 {
+    color: #dddfeb !important;
+}
+
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+
+/* Tabelas */
+.table-responsive {
+    overflow-x: auto;
+}
+
+.table th {
+    font-weight: 600;
+    background-color: #f8f9fc;
+}
+
+/* Badges */
+.badge {
+    padding: 0.5em 0.75em;
+    font-weight: 600;
+}
+
+/* Footer */
+.footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background-color: #f8f9fc;
+    border-top: 1px solid #e3e6f0;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+}
+
+header {
+    background-color: #005f73;
+    color: #fff;
+    padding: 1.5rem 0;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2.2rem;
+    font-weight: 500;
+}
+
+main {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 2rem auto;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.07);
+}
+
+#services-overview h2 {
+    text-align: center;
+    color: #003459;
+    margin-bottom: 2rem;
+    font-size: 1.8rem;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.service-card {
+    background-color: #e9f5f9;
+    border: 1px solid #bee3db;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.service-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.service-card h3 {
+    margin-top: 0;
+    color: #0077b6;
+    font-size: 1.4rem;
+    margin-bottom: 0.5rem;
+}
+
+.service-card p {
+    font-size: 0.95rem;
+    color: #555;
+    margin-bottom: 1rem;
+}
+
+.service-card a.service-link {
+    display: inline-block;
+    background-color: #0077b6;
+    color: #fff;
+    padding: 0.6rem 1.2rem;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.service-card a.service-link:hover {
+    background-color: #005f73;
+}
+
+footer {
+    text-align: center;
+    padding: 1.5rem 0;
+    background-color: #003459;
+    color: #e0e0e0;
+    margin-top: 3rem;
+    font-size: 0.9rem;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 1.8rem;
+    }
+
+    main {
+        padding: 1.5rem;
+        margin: 1.5rem auto;
+    }
+
+    #services-overview h2 {
+        font-size: 1.6rem;
+    }
+
+    .grid-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    .service-card h3 {
+        font-size: 1.2rem;
+    }
+
+    .service-card a.service-link {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+    }
+} 

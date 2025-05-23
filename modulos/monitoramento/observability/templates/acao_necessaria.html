@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Ação Necessária{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Ações Necessárias</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tipo</th>
+                                    <th>Descrição</th>
+                                    <th>Prioridade</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="acoes-table">
+                                <!-- Dados serão carregados via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Carregar ações necessárias
+    fetch('/api/observabilidade/acoes-necessarias')
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('acoes-table');
+            data.forEach(acao => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${acao.id}</td>
+                    <td>${acao.tipo}</td>
+                    <td>${acao.descricao}</td>
+                    <td><span class="badge bg-${getPriorityColor(acao.prioridade)}">${acao.prioridade}</span></td>
+                    <td><span class="badge bg-${getStatusColor(acao.status)}">${acao.status}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="executarAcao(${acao.id})">Executar</button>
+                        <button class="btn btn-sm btn-info" onclick="detalhesAcao(${acao.id})">Detalhes</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+});
+
+function getPriorityColor(prioridade) {
+    const colors = {
+        'Alta': 'danger',
+        'Média': 'warning',
+        'Baixa': 'success'
+    };
+    return colors[prioridade] || 'secondary';
+}
+
+function getStatusColor(status) {
+    const colors = {
+        'Pendente': 'warning',
+        'Em Execução': 'info',
+        'Concluída': 'success',
+        'Falha': 'danger'
+    };
+    return colors[status] || 'secondary';
+}
+
+function executarAcao(id) {
+    fetch(`/api/observabilidade/acoes/${id}/executar`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Ação iniciada com sucesso!');
+            location.reload();
+        } else {
+            alert('Erro ao executar ação: ' + data.message);
+        }
+    });
+}
+
+function detalhesAcao(id) {
+    window.location.href = `/observabilidade/acoes/${id}`;
+}
+</script>
+{% endblock %} 

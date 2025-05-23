@@ -1,0 +1,105 @@
+# Configurações do Bandit para análise de segurança
+# https://bandit.readthedocs.io/
+
+# Configurações gerais
+skips: ['B101']  # Ignora avisos de assert em testes
+targets: ['src', 'tests']
+exclude_dirs: ['venv', '.venv', 'env', '.env', '__pycache__', '.pytest_cache', '.mypy_cache']
+
+# Configurações de plugins
+plugins:
+  # Execução de código
+  - name: B102
+    enabled: true   # Verifica uso de exec()
+  - name: B103
+    enabled: true   # Verifica uso de eval()
+  - name: B307
+    enabled: true   # Verifica uso de eval
+
+  # Senhas e credenciais
+  - name: B105
+    enabled: true   # Verifica uso de hardcoded_password_string
+  - name: B106
+    enabled: true   # Verifica uso de hardcoded_password_funcarg
+  - name: B107
+    enabled: true   # Verifica uso de hardcoded_password_default
+  - name: B112
+    enabled: true   # Verifica uso de hardcoded_aws_access_key
+  - name: B113
+    enabled: true   # Verifica uso de hardcoded_aws_secret_key
+
+  # Segurança web
+  - name: B201
+    enabled: true   # Verifica uso de flask_debug_true
+  - name: B309
+    enabled: true   # Verifica uso de httpsconnection
+  - name: B310
+    enabled: true   # Verifica uso de urllib_urlopen
+  - name: B323
+    enabled: true   # Verifica uso de unverified_context
+
+  # Serialização
+  - name: B301
+    enabled: true   # Verifica uso de pickle
+  - name: B302
+    enabled: true   # Verifica uso de marshal
+  - name: B326
+    enabled: true   # Verifica uso de yaml_load
+
+  # Criptografia
+  - name: B303
+    enabled: true   # Verifica uso de md5
+  - name: B304
+    enabled: true   # Verifica uso de ciphers
+  - name: B324
+    enabled: true   # Verifica uso de hashlib
+
+  # Entrada de dados
+  - name: B311
+    enabled: true   # Verifica uso de random
+  - name: B322
+    enabled: true   # Verifica uso de input
+
+  # XML
+  - name: B313
+    enabled: true   # Verifica uso de xml_bad_cElementTree
+  - name: B314
+    enabled: true   # Verifica uso de xml_bad_ElementTree
+  - name: B315
+    enabled: true   # Verifica uso de xml_bad_expatreader
+  - name: B316
+    enabled: true   # Verifica uso de xml_bad_expatbuilder
+  - name: B317
+    enabled: true   # Verifica uso de xml_bad_sax
+  - name: B318
+    enabled: true   # Verifica uso de xml_bad_minidom
+  - name: B319
+    enabled: true   # Verifica uso de xml_bad_pulldom
+  - name: B320
+    enabled: true   # Verifica uso de xml_bad_etree
+
+  # Segurança de arquivos
+  - name: B108
+    enabled: true   # Verifica uso de hardcoded_tmp_directory
+  - name: B325
+    enabled: true   # Verifica uso de tempnam
+  - name: B306
+    enabled: true   # Verifica uso de mktemp_q
+
+  # Segurança de rede
+  - name: B321
+    enabled: true   # Verifica uso de ftplib
+  - name: B312
+    enabled: true   # Verifica uso de telnetlib
+
+  # Segurança de banco de dados
+  - name: B109
+    enabled: true   # Verifica uso de hardcoded_sql_expressions
+  - name: B327
+    enabled: true   # Verifica uso de no_sql
+  - name: B328
+    enabled: true   # Verifica uso de no_sql_mongodb
+  - name: B349
+    enabled: true   # Verifica uso de no_sql_postgresql
+  - name: B350
+    enabled: true   # Verifica uso de no_sql_sqlite 

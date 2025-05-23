@@ -1,0 +1,1 @@
+"""Módulo gerador-acoes"""

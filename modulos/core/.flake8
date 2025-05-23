@@ -1,0 +1,48 @@
+[flake8]
+max-line-length = 88
+extend-ignore = E203, W503
+exclude =
+    .git,
+    __pycache__,
+    build,
+    dist,
+    *.egg-info,
+    .eggs,
+    .tox,
+    .venv,
+    venv,
+    ENV,
+    env,
+    .pytest_cache,
+    .coverage,
+    htmlcov,
+    coverage.xml,
+    .mypy_cache,
+    .idea,
+    .vscode
+
+# Configurações de importação
+import-order-style = google
+application-import-names = modulos
+
+# Configurações de complexidade
+max-complexity = 10
+
+# Configurações de docstring
+docstring-convention = google
+
+# Configurações de naming
+naming-style = snake_case
+naming-function-regex = ^[a-z_][a-z0-9_]*$
+naming-variable-regex = ^[a-z_][a-z0-9_]*$
+naming-constant-regex = ^[A-Z_][A-Z0-9_]*$
+naming-class-regex = ^[A-Z_][a-zA-Z0-9_]*$
+naming-module-regex = ^[a-z_][a-z0-9_]*$
+naming-method-regex = ^[a-z_][a-z0-9_]*$
+naming-attr-regex = ^[a-z_][a-z0-9_]*$
+
+# Configurações de imports
+import-order-style = google
+application-import-names = modulos
+known-first-party = modulos
+known-third-party = pytest,fastapi,uvicorn,pydantic 

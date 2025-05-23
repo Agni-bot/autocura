@@ -1,0 +1,42 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'consciencia-situacional'
+    static_configs:
+      - targets: ['consciencia-situacional:8080']
+
+  - job_name: 'monitoramento'
+    static_configs:
+      - targets: ['monitoramento:8080']
+
+  - job_name: 'observabilidade'
+    static_configs:
+      - targets: ['observabilidade:8080']
+
+  - job_name: 'diagnostico'
+    static_configs:
+      - targets: ['diagnostico:8080']
+
+  - job_name: 'autocorrecao'
+    static_configs:
+      - targets: ['autocorrecao:8080']
+
+  - job_name: 'orquestracao'
+    static_configs:
+      - targets: ['orquestracao:8080'] 

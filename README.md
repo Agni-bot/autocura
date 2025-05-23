@@ -1,112 +1,91 @@
-# AutoCura
+# Sistema de Autocura Cognitiva
 
-Sistema de autocura e monitoramento inteligente.
+Sistema modular de autocura cognitiva com foco em ética, segurança e evolução contínua.
 
-## Estrutura do Projeto
+## 🏗️ Estrutura do Projeto
 
 ```
-autocura/
-├── src/                    # Código fonte
-├── tests/                  # Testes e configurações de teste
-├── config/                 # Configurações
-│   ├── monitoring/        # Configurações de monitoramento
-│   └── kubernetes/        # Configurações do Kubernetes
-├── deploy/                # Scripts de deploy
-├── docker/               # Arquivos Docker
-├── docs/                 # Documentação
-├── reports/             # Relatórios (cobertura, testes)
-├── scripts/             # Scripts utilitários
-└── assets/              # Recursos estáticos
+sistema-autocura/
+├── modulos/                    # Módulos principais do sistema
+│   ├── core/                   # Módulo central com interfaces comuns
+│   ├── monitoramento/          # Módulo de monitoramento independente
+│   ├── diagnostico/            # Módulo de diagnóstico independente
+│   ├── gerador-acoes/          # Módulo gerador de ações independente
+│   ├── integracao/             # Módulo de integração independente
+│   ├── observabilidade/        # Módulo de observabilidade independente
+│   ├── guardiao-cognitivo/     # Módulo guardião cognitivo independente
+│   └── etica/                  # Módulos ético-operacionais
+│       ├── circuitos-morais/
+│       ├── decisao-hibrida/
+│       ├── auditoria/
+│       ├── governanca/
+│       ├── fluxo-autonomia/
+│       ├── validadores-eticos/
+│       ├── priorizacao-financeira/
+│       └── registro-decisoes/
+├── shared/                     # Bibliotecas compartilhadas
+├── tests/                      # Testes por módulo
+├── docker/                     # Dockerfiles por módulo
+└── deployment/                 # Configurações de deployment
 ```
 
-## Requisitos
-
-- Python 3.10+
-- Docker
-- Kubernetes (opcional)
-
-## Instalação
+## 🚀 Instalação
 
 1. Clone o repositório:
 ```bash
-git clone https://github.com/seu-usuario/autocura.git
-cd autocura
+git clone https://github.com/seu-usuario/sistema-autocura.git
+cd sistema-autocura
 ```
 
-2. Crie um ambiente virtual:
+2. Instale as dependências:
 ```bash
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-.\venv\Scripts\activate   # Windows
+poetry install
 ```
 
-3. Instale as dependências:
+3. Configure as variáveis de ambiente:
 ```bash
-pip install -r requirements.txt
-pip install -r requirements-test.txt
+cp .env.example .env
+# Edite o arquivo .env com suas configurações
 ```
 
-## Executando os Testes
+## 🧪 Testes
 
+Execute os testes com:
 ```bash
-pytest
+poetry run pytest
 ```
 
-## Executando com Docker
+## 🐳 Docker
 
-1. Construa as imagens:
-```bash
-# Linux/Mac
-./docker/build.sh
-
-# Windows
-.\docker\build.ps1
-```
-
-2. Inicie os serviços:
+Para executar com Docker:
 ```bash
 docker-compose up -d
 ```
 
-3. Inicie o monitoramento:
-```bash
-docker-compose -f docker-compose.monitoring.yml up -d
-```
+## 📚 Documentação
 
-## Monitoramento
+A documentação completa está disponível em `docs/`:
+- [Arquitetura](docs/01-Etapa1/arquitetura.md)
+- [Plano Modular](docs/02-Etapa2/plano_modular_ia.md)
+- [Guia de Desenvolvimento](docs/03-Etapa3/guia_desenvolvimento.md)
 
-O sistema inclui:
-- Prometheus para métricas
-- Grafana para visualização
-- Loki para logs
-- Alertmanager para alertas
-
-Acesse:
-- Grafana: http://localhost:3000
-- Prometheus: http://localhost:9090
-- Alertmanager: http://localhost:9093
-
-## Contribuindo
+## 🤝 Contribuindo
 
 1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
-3. Commit suas mudanças (`git commit -am 'Adiciona nova feature'`)
-4. Push para a branch (`git push origin feature/nova-feature`)
-5. Crie um Pull Request
+2. Crie sua branch de feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
 
-## Licença
+## 📝 Licença
 
 Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
 
-## Autores
-- Seu Nome (@seu-usuario)
+## 📫 Contato
 
-## Agradecimentos
-- [LangChain](https://github.com/hwchase17/langchain)
-- [Groq](https://groq.com/)
-- [FastAPI](https://fastapi.tiangolo.com/)
-- [Prometheus](https://prometheus.io/)
-- [Grafana](https://grafana.com/)
+Seu Nome - [@seutwitter](https://twitter.com/seutwitter) - email@example.com
+
+Link do Projeto: [https://github.com/seu-usuario/sistema-autocura](https://github.com/seu-usuario/sistema-autocura)
 
 # Sistema de Monitoramento de Recursos
 
