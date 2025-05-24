@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-Script para executar testes do projeto AutoCura.
-Suporta testes unitários, de integração e end-to-end.
+Script para executar testes de integração do projeto AutoCura.
+Foca em testar a integração entre diferentes módulos do sistema.
 """
 
 import os
@@ -23,8 +23,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class ExecutorTestes:
-    """Executor de testes do projeto AutoCura."""
+class ExecutorTestesIntegracao:
+    """Executor de testes de integração do projeto AutoCura."""
 
     def __init__(self, raiz: str = "."):
         """Inicializa o executor.
@@ -37,45 +37,76 @@ class ExecutorTestes:
         self.avisos: List[str] = []
         self.resultados: Dict[str, Dict] = {}
         
-        # Diretórios de teste
-        self.diretorios_teste = {
-            "unit": "tests/unit",
-            "integration": "tests/integration",
-            "e2e": "tests/e2e"
-        }
+        # Diretório de testes de integração
+        self.dir_teste = self.raiz / "tests/integration"
         
         # Diretório de resultados
-        self.dir_resultados = self.raiz / "test-results"
-        self.dir_resultados.mkdir(exist_ok=True)
+        self.dir_resultados = self.raiz / "test-results/integration"
+        self.dir_resultados.mkdir(parents=True, exist_ok=True)
+        
+        # Módulos a testar
+        self.modulos = [
+            "core",
+            "monitoramento",
+            "etica",
+            "diagnostico"
+        ]
 
-    def executar_teste(self, tipo: str, args: List[str] = None) -> bool:
-        """Executa um tipo específico de teste.
+    def verificar_ambiente(self) -> bool:
+        """Verifica se o ambiente está pronto para os testes.
+        
+        Returns:
+            bool: True se o ambiente está pronto
+        """
+        logger.info("Verificando ambiente...")
+        
+        # Verifica diretório de testes
+        if not self.dir_teste.exists():
+            self.erros.append(f"Diretório de testes não encontrado: {self.dir_teste}")
+            return False
+            
+        # Verifica módulos
+        for modulo in self.modulos:
+            modulo_path = self.raiz / "modulos" / modulo
+            if not modulo_path.exists():
+                self.avisos.append(f"Módulo não encontrado: {modulo}")
+                
+        # Verifica dependências
+        try:
+            import pytest
+            import requests
+            import docker
+        except ImportError as e:
+            self.erros.append(f"Dependência não encontrada: {str(e)}")
+            return False
+            
+        return True
+
+    def executar_teste_modulo(self, modulo: str, args: List[str] = None) -> bool:
+        """Executa testes de integração para um módulo específico.
         
         Args:
-            tipo: Tipo de teste (unit, integration, e2e)
+            modulo: Nome do módulo
             args: Argumentos adicionais para pytest
             
         Returns:
             bool: True se os testes passaram
         """
-        logger.info(f"Executando testes {tipo}...")
+        logger.info(f"Executando testes de integração para {modulo}...")
         
-        if tipo not in self.diretorios_teste:
-            self.erros.append(f"Tipo de teste inválido: {tipo}")
-            return False
-            
-        diretorio = self.diretorios_teste[tipo]
-        if not (self.raiz / diretorio).exists():
-            self.avisos.append(f"Diretório de testes não encontrado: {diretorio}")
+        # Diretório de testes do módulo
+        dir_teste_modulo = self.dir_teste / modulo
+        if not dir_teste_modulo.exists():
+            self.avisos.append(f"Diretório de testes não encontrado para {modulo}")
             return False
             
         # Argumentos padrão
         pytest_args = [
             sys.executable, "-m", "pytest",
-            str(self.raiz / diretorio),
+            str(dir_teste_modulo),
             "-v",
-            "--junitxml", str(self.dir_resultados / f"junit_{tipo}.xml"),
-            "--html", str(self.dir_resultados / f"report_{tipo}.html")
+            "--junitxml", str(self.dir_resultados / f"junit_{modulo}.xml"),
+            "--html", str(self.dir_resultados / f"report_{modulo}.html")
         ]
         
         # Adiciona argumentos personalizados
@@ -92,27 +123,27 @@ class ExecutorTestes:
             )
             
             # Salva resultado
-            self.resultados[tipo] = {
+            self.resultados[modulo] = {
                 "sucesso": True,
                 "saida": resultado.stdout,
                 "erro": resultado.stderr
             }
             
-            logger.info(f"Testes {tipo} executados com sucesso!")
+            logger.info(f"Testes de {modulo} executados com sucesso!")
             return True
             
         except subprocess.CalledProcessError as e:
-            self.resultados[tipo] = {
+            self.resultados[modulo] = {
                 "sucesso": False,
                 "saida": e.stdout,
                 "erro": e.stderr
             }
             
-            self.erros.append(f"Erro ao executar testes {tipo}: {str(e)}")
+            self.erros.append(f"Erro ao executar testes de {modulo}: {str(e)}")
             return False
 
     def executar_todos_testes(self, args: List[str] = None) -> bool:
-        """Executa todos os tipos de teste.
+        """Executa todos os testes de integração.
         
         Args:
             args: Argumentos adicionais para pytest
@@ -120,11 +151,14 @@ class ExecutorTestes:
         Returns:
             bool: True se todos os testes passaram
         """
-        logger.info("Executando todos os testes...")
+        logger.info("Executando todos os testes de integração...")
         
+        if not self.verificar_ambiente():
+            return False
+            
         sucesso = True
-        for tipo in self.diretorios_teste:
-            if not self.executar_teste(tipo, args):
+        for modulo in self.modulos:
+            if not self.executar_teste_modulo(modulo, args):
                 sucesso = False
                 
         return sucesso
@@ -145,7 +179,7 @@ class ExecutorTestes:
         }
         
         # Nome do arquivo de relatório
-        nome_arquivo = f"testes_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        nome_arquivo = f"testes_integracao_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         caminho_relatorio = self.dir_resultados / nome_arquivo
         
         # Salvar relatório
@@ -154,30 +188,34 @@ class ExecutorTestes:
             
         return str(caminho_relatorio)
 
-    def executar(self, tipo: str = None, args: List[str] = None) -> Tuple[bool, str]:
-        """Executa os testes.
+    def executar(self, modulo: str = None, args: List[str] = None) -> Tuple[bool, str]:
+        """Executa os testes de integração.
         
         Args:
-            tipo: Tipo de teste específico (opcional)
+            modulo: Módulo específico para testar (opcional)
             args: Argumentos adicionais para pytest
             
         Returns:
             Tuple[bool, str]: (sucesso, caminho_relatorio)
         """
-        logger.info("Iniciando execução de testes...")
+        logger.info("Iniciando execução de testes de integração...")
         
         try:
-            if tipo:
-                sucesso = self.executar_teste(tipo, args)
+            if modulo:
+                if modulo not in self.modulos:
+                    self.erros.append(f"Módulo inválido: {modulo}")
+                    return False, ""
+                    
+                sucesso = self.executar_teste_modulo(modulo, args)
             else:
                 sucesso = self.executar_todos_testes(args)
                 
             relatorio = self.gerar_relatorio()
             
             if sucesso:
-                logger.info("Testes concluídos com sucesso!")
+                logger.info("Testes de integração concluídos com sucesso!")
             else:
-                logger.error("Testes encontraram erros!")
+                logger.error("Testes de integração encontraram erros!")
                 
             if self.avisos:
                 logger.warning("Avisos encontrados durante os testes")
@@ -192,11 +230,11 @@ def main():
     """Função principal."""
     import argparse
     
-    parser = argparse.ArgumentParser(description="Executa testes do projeto AutoCura")
+    parser = argparse.ArgumentParser(description="Executa testes de integração do projeto AutoCura")
     parser.add_argument(
-        "--tipo",
-        choices=["unit", "integration", "e2e"],
-        help="Tipo de teste a executar"
+        "--modulo",
+        choices=["core", "monitoramento", "etica", "diagnostico"],
+        help="Módulo específico para testar"
     )
     parser.add_argument(
         "--args",
@@ -206,8 +244,8 @@ def main():
     
     args = parser.parse_args()
     
-    executor = ExecutorTestes()
-    sucesso, relatorio = executor.executar(args.tipo, args.args)
+    executor = ExecutorTestesIntegracao()
+    sucesso, relatorio = executor.executar(args.modulo, args.args)
     
     if not sucesso:
         print("\nErros encontrados:")

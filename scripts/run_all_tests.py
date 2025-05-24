@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-Script para executar testes do projeto AutoCura.
-Suporta testes unitários, de integração e end-to-end.
+Script para executar todos os testes do projeto AutoCura.
+Inclui testes unitários, de integração e end-to-end.
 """
 
 import os
@@ -23,8 +23,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class ExecutorTestes:
-    """Executor de testes do projeto AutoCura."""
+class ExecutorTodosTestes:
+    """Executor de todos os testes do projeto AutoCura."""
 
     def __init__(self, raiz: str = "."):
         """Inicializa o executor.
@@ -37,18 +37,59 @@ class ExecutorTestes:
         self.avisos: List[str] = []
         self.resultados: Dict[str, Dict] = {}
         
-        # Diretórios de teste
-        self.diretorios_teste = {
-            "unit": "tests/unit",
-            "integration": "tests/integration",
-            "e2e": "tests/e2e"
-        }
-        
         # Diretório de resultados
         self.dir_resultados = self.raiz / "test-results"
         self.dir_resultados.mkdir(exist_ok=True)
+        
+        # Tipos de teste
+        self.tipos_teste = [
+            "unit",
+            "integration",
+            "e2e"
+        ]
 
-    def executar_teste(self, tipo: str, args: List[str] = None) -> bool:
+    def verificar_ambiente(self) -> bool:
+        """Verifica se o ambiente está pronto para os testes.
+        
+        Returns:
+            bool: True se o ambiente está pronto
+        """
+        logger.info("Verificando ambiente...")
+        
+        # Verifica dependências
+        try:
+            import pytest
+            import pytest_cov
+            import requests
+            import docker
+            import kubernetes
+        except ImportError as e:
+            self.erros.append(f"Dependência não encontrada: {str(e)}")
+            return False
+            
+        # Verifica serviços necessários
+        try:
+            # Verifica Docker
+            subprocess.run(
+                ["docker", "info"],
+                check=True,
+                capture_output=True
+            )
+            
+            # Verifica Kubernetes
+            subprocess.run(
+                ["kubectl", "cluster-info"],
+                check=True,
+                capture_output=True
+            )
+            
+        except subprocess.CalledProcessError as e:
+            self.erros.append(f"Serviço não disponível: {str(e)}")
+            return False
+            
+        return True
+
+    def executar_tipo_teste(self, tipo: str, args: List[str] = None) -> bool:
         """Executa um tipo específico de teste.
         
         Args:
@@ -60,32 +101,21 @@ class ExecutorTestes:
         """
         logger.info(f"Executando testes {tipo}...")
         
-        if tipo not in self.diretorios_teste:
-            self.erros.append(f"Tipo de teste inválido: {tipo}")
+        # Script específico para o tipo de teste
+        script = self.raiz / "scripts" / f"run_tests_{tipo}.py"
+        if not script.exists():
+            self.erros.append(f"Script não encontrado: {script}")
             return False
             
-        diretorio = self.diretorios_teste[tipo]
-        if not (self.raiz / diretorio).exists():
-            self.avisos.append(f"Diretório de testes não encontrado: {diretorio}")
-            return False
-            
-        # Argumentos padrão
-        pytest_args = [
-            sys.executable, "-m", "pytest",
-            str(self.raiz / diretorio),
-            "-v",
-            "--junitxml", str(self.dir_resultados / f"junit_{tipo}.xml"),
-            "--html", str(self.dir_resultados / f"report_{tipo}.html")
-        ]
-        
-        # Adiciona argumentos personalizados
+        # Argumentos para o script
+        cmd = [sys.executable, str(script)]
         if args:
-            pytest_args.extend(args)
+            cmd.extend(args)
             
         try:
-            # Executa testes
+            # Executa script
             resultado = subprocess.run(
-                pytest_args,
+                cmd,
                 check=True,
                 capture_output=True,
                 text=True
@@ -122,9 +152,12 @@ class ExecutorTestes:
         """
         logger.info("Executando todos os testes...")
         
+        if not self.verificar_ambiente():
+            return False
+            
         sucesso = True
-        for tipo in self.diretorios_teste:
-            if not self.executar_teste(tipo, args):
+        for tipo in self.tipos_teste:
+            if not self.executar_tipo_teste(tipo, args):
                 sucesso = False
                 
         return sucesso
@@ -145,7 +178,7 @@ class ExecutorTestes:
         }
         
         # Nome do arquivo de relatório
-        nome_arquivo = f"testes_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        nome_arquivo = f"testes_completos_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         caminho_relatorio = self.dir_resultados / nome_arquivo
         
         # Salvar relatório
@@ -158,24 +191,28 @@ class ExecutorTestes:
         """Executa os testes.
         
         Args:
-            tipo: Tipo de teste específico (opcional)
+            tipo: Tipo específico de teste (opcional)
             args: Argumentos adicionais para pytest
             
         Returns:
             Tuple[bool, str]: (sucesso, caminho_relatorio)
         """
-        logger.info("Iniciando execução de testes...")
+        logger.info("Iniciando execução de todos os testes...")
         
         try:
             if tipo:
-                sucesso = self.executar_teste(tipo, args)
+                if tipo not in self.tipos_teste:
+                    self.erros.append(f"Tipo de teste inválido: {tipo}")
+                    return False, ""
+                    
+                sucesso = self.executar_tipo_teste(tipo, args)
             else:
                 sucesso = self.executar_todos_testes(args)
                 
             relatorio = self.gerar_relatorio()
             
             if sucesso:
-                logger.info("Testes concluídos com sucesso!")
+                logger.info("Todos os testes concluídos com sucesso!")
             else:
                 logger.error("Testes encontraram erros!")
                 
@@ -192,11 +229,11 @@ def main():
     """Função principal."""
     import argparse
     
-    parser = argparse.ArgumentParser(description="Executa testes do projeto AutoCura")
+    parser = argparse.ArgumentParser(description="Executa todos os testes do projeto AutoCura")
     parser.add_argument(
         "--tipo",
         choices=["unit", "integration", "e2e"],
-        help="Tipo de teste a executar"
+        help="Tipo específico de teste a executar"
     )
     parser.add_argument(
         "--args",
@@ -206,7 +243,7 @@ def main():
     
     args = parser.parse_args()
     
-    executor = ExecutorTestes()
+    executor = ExecutorTodosTestes()
     sucesso, relatorio = executor.executar(args.tipo, args.args)
     
     if not sucesso:

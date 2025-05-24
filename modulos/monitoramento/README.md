@@ -1,46 +1,86 @@
-# Módulo de Monitoramento e Observabilidade
+# Módulo de Monitoramento
 
-Este módulo é responsável por monitoramento, métricas e observabilidade do sistema.
+## Descrição
+Módulo responsável pelo monitoramento do sistema, coleta de métricas e geração de alertas.
 
 ## Estrutura
+```
+monitoramento/
+├── src/                    # Código fonte
+│   ├── coletores/         # Coletores de métricas
+│   ├── processadores/     # Processamento de dados
+│   ├── storage/          # Armazenamento de métricas
+│   └── api/              # API REST/GRPC
+├── tests/                 # Testes
+├── config/               # Configurações
+├── docker/              # Dockerfiles
+├── README.md           # Documentação
+└── __init__.py         # Inicialização
+```
 
-- `coletores/`: Coletores de métricas e dados
-  - `base_coletor.py`: Interface base para coletores
-  - `coletor_sistema.py`: Métricas do sistema
-  - `coletor_aplicacao.py`: Métricas da aplicação
-  - `coletor_rede.py`: Métricas de rede
+## Funcionalidades
 
-- `processadores/`: Processamento de dados coletados
-  - `agregador.py`: Agregação de métricas
-  - `normalizador.py`: Normalização de dados
-  - `filtro.py`: Filtros de dados
+### Coletores
+- Coleta de métricas do sistema
+- Coleta de métricas da aplicação
+- Coleta de métricas de rede
 
-- `storage/`: Armazenamento de métricas
-  - `timeseries_storage.py`: Armazenamento de séries temporais
-  - `cache_storage.py`: Cache de métricas
+### Processadores
+- Agregação de métricas
+- Normalização de dados
+- Filtragem de eventos
 
-- `api/`: APIs de acesso
-  - `rest_api.py`: API REST
-  - `grpc_api.py`: API gRPC
+### Storage
+- Armazenamento em séries temporais
+- Cache de métricas
+- Persistência de dados
 
-## Instalação
+### API
+- Endpoints REST
+- Endpoints GRPC
+- Documentação OpenAPI
 
+## Configuração
+
+1. Instale as dependências:
 ```bash
 pip install -r requirements.txt
+```
+
+2. Configure as variáveis de ambiente:
+```bash
+cp .env.example .env
+# Edite o arquivo .env com suas configurações
+```
+
+3. Execute os testes:
+```bash
+pytest tests/
 ```
 
 ## Uso
 
 ```python
-from modulos.monitoramento import MonitorManager
+from monitoramento import Monitor
 
-monitor = MonitorManager()
+# Inicializa o monitor
+monitor = Monitor()
+
+# Inicia a coleta de métricas
 monitor.iniciar_coleta()
+
+# Obtém métricas
+metricas = monitor.obter_metricas()
 ```
 
-## Testes
+## Contribuição
 
-```bash
-pytest tests/
-```
+1. Siga a estrutura modular
+2. Adicione testes
+3. Atualize a documentação
+4. Envie um pull request
+
+## Licença
+
+Este módulo está sob a licença MIT.
 

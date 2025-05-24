@@ -1,139 +1,89 @@
 # Módulo Core
 
-Este é o módulo central do sistema de Inteligência Artificial, responsável por fornecer funcionalidades essenciais como gerenciamento de eventos, middleware de comunicação e sistema de logging.
+## Descrição
+Módulo central do sistema, responsável pelas funcionalidades essenciais e compartilhadas entre todos os outros módulos.
 
-## 🏗️ Estrutura do Módulo
-
+## Estrutura
 ```
-modulos/core/
-├── docker/                 # Configurações Docker
-│   ├── Dockerfile         # Configuração da imagem
-│   ├── docker-compose.yml # Orquestração de containers
-│   ├── .dockerignore     # Arquivos ignorados no build
-│   └── dev.sh            # Script de desenvolvimento
-├── src/                   # Código fonte
-│   ├── events.py         # Sistema de eventos
-│   ├── middleware.py     # Middleware de comunicação
-│   └── logging.py        # Sistema de logging
-├── tests/                # Testes automatizados
-│   ├── test_events.py    # Testes do sistema de eventos
-│   ├── test_middleware.py # Testes do middleware
-│   └── test_logging.py   # Testes do sistema de logging
+core/
+├── src/                    # Código fonte
+│   ├── base/              # Classes e funções base
+│   ├── utils/             # Utilitários compartilhados
+│   ├── config/            # Configurações base
+│   └── api/               # API core
+├── tests/                 # Testes
 ├── config/               # Configurações
-│   └── config.py         # Configurações do módulo
-└── README.md            # Esta documentação
+├── docker/              # Dockerfiles
+├── README.md           # Documentação
+└── __init__.py         # Inicialização
 ```
 
-## 🚀 Funcionalidades
+## Funcionalidades
 
-### Sistema de Eventos
-- Publicação e assinatura de eventos
-- Histórico de eventos
-- Tratamento de erros em handlers
-- Filtragem por tópicos
+### Base
+- Classes base do sistema
+- Interfaces principais
+- Tipos fundamentais
 
-### Middleware de Comunicação
-- Registro de módulos
-- Comunicação entre módulos
-- Broadcast de mensagens
-- Handlers de mensagens
-- Tratamento de erros
+### Utilitários
+- Funções de utilidade
+- Helpers compartilhados
+- Validações comuns
 
-### Sistema de Logging
-- Logs estruturados em JSON
-- Diferentes níveis de log
-- Rotação de logs
-- Filtragem por nível
-- Formatação personalizada
+### Configuração
+- Configurações base
+- Variáveis de ambiente
+- Constantes do sistema
 
-## 🛠️ Desenvolvimento
+### API
+- Endpoints core
+- Middlewares base
+- Autenticação e autorização
 
-### Pré-requisitos
-- Docker
-- Docker Compose
-- Python 3.9+
+## Configuração
 
-### Configuração do Ambiente
-
-1. Clone o repositório
-2. Navegue até o diretório do módulo core:
-   ```bash
-   cd modulos/core
-   ```
-
-3. Use o script de desenvolvimento:
-   ```bash
-   # Construir a imagem
-   ./docker/dev.sh build
-
-   # Iniciar os containers
-   ./docker/dev.sh start
-
-   # Executar testes
-   ./docker/dev.sh test
-
-   # Ver logs
-   ./docker/dev.sh logs
-
-   # Parar containers
-   ./docker/dev.sh stop
-   ```
-
-### Variáveis de Ambiente
-
-O módulo pode ser configurado através das seguintes variáveis de ambiente:
-
-| Variável | Descrição | Padrão |
-|----------|-----------|---------|
-| ENVIRONMENT | Ambiente (development/production) | development |
-| DEBUG | Modo debug | true |
-| LOG_LEVEL | Nível de log | DEBUG |
-| CORE_HOST | Host do servidor | 0.0.0.0 |
-| CORE_PORT | Porta do servidor | 8000 |
-| CORE_WORKERS | Número de workers | 2 |
-| LOG_FORMAT | Formato dos logs | json |
-| LOG_FILE_PATH | Caminho do arquivo de log | /app/logs/app.log |
-| LOG_MAX_SIZE | Tamanho máximo do log (MB) | 100 |
-| LOG_BACKUP_COUNT | Número de backups | 5 |
-| EVENT_HISTORY_SIZE | Tamanho do histórico de eventos | 1000 |
-| EVENT_PROCESSING_TIMEOUT | Timeout de processamento (s) | 5.0 |
-| MIDDLEWARE_TIMEOUT | Timeout do middleware (s) | 10.0 |
-| MIDDLEWARE_RETRY_ATTEMPTS | Tentativas de retry | 3 |
-| MIDDLEWARE_RETRY_DELAY | Delay entre retries (s) | 1.0 |
-
-## 🧪 Testes
-
-Os testes são executados automaticamente ao iniciar o container em modo de desenvolvimento. Para executar os testes manualmente:
-
+1. Instale as dependências:
 ```bash
-./docker/dev.sh test
+pip install -r requirements.txt
 ```
 
-## 📝 Logs
-
-Os logs são armazenados em `/app/logs/app.log` dentro do container e são persistidos através de um volume Docker. Para visualizar os logs:
-
+2. Configure as variáveis de ambiente:
 ```bash
-./docker/dev.sh logs
+cp .env.example .env
+# Edite o arquivo .env com suas configurações
 ```
 
-## 🔒 Segurança
+3. Execute os testes:
+```bash
+pytest tests/
+```
 
-- Todas as comunicações são feitas através de canais seguros
-- Logs sensíveis são mascarados automaticamente
-- Validação de entrada em todos os endpoints
-- Rate limiting implementado
-- Sanitização de dados
+## Uso
 
-## 🤝 Contribuição
+```python
+from core import Core
 
-1. Faça um fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
-3. Commit suas mudanças (`git commit -am 'Adiciona nova feature'`)
-4. Push para a branch (`git push origin feature/nova-feature`)
-5. Crie um Pull Request
+# Inicializa o core
+core = Core()
 
-## 📄 Licença
+# Configura o sistema
+core.configurar(config)
 
-Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](../LICENSE) para detalhes.
+# Inicializa serviços base
+core.inicializar_servicos()
+
+# Obtém utilitários
+utils = core.obter_utils()
+```
+
+## Contribuição
+
+1. Siga a estrutura modular
+2. Adicione testes
+3. Atualize a documentação
+4. Envie um pull request
+
+## Licença
+
+Este módulo está sob a licença MIT.
 

@@ -1,113 +1,282 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""
+Script para monitorar dependências do projeto AutoCura.
+Verifica versões, vulnerabilidades e atualizações disponíveis.
+"""
+
 import os
 import sys
-import time
+import json
 import logging
 import subprocess
+from pathlib import Path
+from typing import List, Dict, Set, Tuple
 from datetime import datetime
-from prometheus_client import start_http_server, Counter, Gauge
-
-# Adiciona o diretório src ao path para importar o módulo de autocura
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from src.autocura.dependencias import GerenciadorDependencias
 
 # Configuração de logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('logs/dependencias.log'),
-        logging.StreamHandler(sys.stdout)
-    ]
+    format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
-# Métricas Prometheus
-DEPENDENCIAS_VERIFICADAS = Counter(
-    'dependencias_verificadas_total',
-    'Total de verificações de dependências realizadas'
-)
-DEPENDENCIAS_PROBLEMAS = Counter(
-    'dependencias_problemas_total',
-    'Total de problemas encontrados com dependências'
-)
-DEPENDENCIAS_AUTOCURADAS = Counter(
-    'dependencias_autocuradas_total',
-    'Total de problemas autocurados com sucesso'
-)
-TEMPO_VERIFICACAO = Gauge(
-    'dependencias_tempo_verificacao_seconds',
-    'Tempo gasto na última verificação de dependências'
-)
+class MonitorDependencias:
+    """Monitor de dependências do projeto AutoCura."""
 
-def verificar_dependencias():
-    """Verifica e tenta autocurar problemas de dependências."""
-    start_time = time.time()
-    
-    gerenciador = GerenciadorDependencias()
-    
-    # Incrementa contador de verificações
-    DEPENDENCIAS_VERIFICADAS.inc()
-    
-    # Verifica compatibilidade do Python
-    if not gerenciador.verificar_compatibilidade_python():
-        DEPENDENCIAS_PROBLEMAS.inc()
-        logger.error("Versão do Python incompatível")
-        return False
-    
-    # Verifica dependências do sistema
-    dependencias = gerenciador.verificar_dependencias_sistema()
-    if not all(dependencias.values()):
-        DEPENDENCIAS_PROBLEMAS.inc()
-        logger.error("Dependências do sistema faltando")
-        return False
-    
-    # Tenta instalar dependências
-    try:
-        subprocess.run(
-            [sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'],
-            check=True
-        )
-        logger.info("Dependências instaladas com sucesso")
-        DEPENDENCIAS_AUTOCURADAS.inc()
+    def __init__(self, raiz: str = "."):
+        """Inicializa o monitor.
         
-        # Atualiza tempo de verificação
-        TEMPO_VERIFICACAO.set(time.time() - start_time)
-        return True
+        Args:
+            raiz: Diretório raiz do projeto
+        """
+        self.raiz = Path(raiz)
+        self.erros: List[str] = []
+        self.avisos: List[str] = []
+        self.dependencias: Dict[str, Dict] = {}
         
-    except subprocess.CalledProcessError as e:
-        DEPENDENCIAS_PROBLEMAS.inc()
-        logger.error(f"Erro ao instalar dependências: {e}")
+        # Arquivos de dependências
+        self.arquivos_deps = {
+            "requirements.txt": "pip",
+            "requirements-test.txt": "pip",
+            "package.json": "npm",
+            "go.mod": "go"
+        }
+
+    def verificar_pip(self, arquivo: Path) -> Dict:
+        """Verifica dependências Python.
         
-        # Tenta sugerir solução baseada no histórico
-        output = e.output.decode() if e.output else str(e)
-        for linha in output.split('\n'):
-            if "No matching distribution found for" in linha:
-                pacote = linha.split("for")[-1].strip()
-                versao = pacote.split("==")[-1] if "==" in pacote else "latest"
-                pacote = pacote.split("==")[0]
+        Args:
+            arquivo: Caminho do arquivo requirements.txt
+            
+        Returns:
+            Dict: Informações das dependências
+        """
+        try:
+            # Instalar pip-tools se necessário
+            subprocess.run(
+                [sys.executable, "-m", "pip", "install", "pip-tools"],
+                check=True,
+                capture_output=True
+            )
+            
+            # Gerar requirements.txt com versões fixas
+            subprocess.run(
+                [sys.executable, "-m", "pip-compile", str(arquivo)],
+                check=True,
+                capture_output=True
+            )
+            
+            # Obter lista de pacotes instalados
+            resultado = subprocess.run(
+                [sys.executable, "-m", "pip", "list", "--format=json"],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            
+            pacotes = json.loads(resultado.stdout)
+            
+            # Verificar vulnerabilidades
+            resultado = subprocess.run(
+                [sys.executable, "-m", "safety", "check", "--json"],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            
+            vulnerabilidades = json.loads(resultado.stdout)
+            
+            return {
+                "tipo": "pip",
+                "pacotes": pacotes,
+                "vulnerabilidades": vulnerabilidades
+            }
+            
+        except subprocess.CalledProcessError as e:
+            self.erros.append(f"Erro ao verificar dependências Python: {str(e)}")
+            return {}
+
+    def verificar_npm(self, arquivo: Path) -> Dict:
+        """Verifica dependências Node.js.
+        
+        Args:
+            arquivo: Caminho do arquivo package.json
+            
+        Returns:
+            Dict: Informações das dependências
+        """
+        try:
+            # Verificar vulnerabilidades
+            resultado = subprocess.run(
+                ["npm", "audit", "--json"],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            
+            vulnerabilidades = json.loads(resultado.stdout)
+            
+            # Listar pacotes
+            resultado = subprocess.run(
+                ["npm", "list", "--json"],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            
+            pacotes = json.loads(resultado.stdout)
+            
+            return {
+                "tipo": "npm",
+                "pacotes": pacotes,
+                "vulnerabilidades": vulnerabilidades
+            }
+            
+        except subprocess.CalledProcessError as e:
+            self.erros.append(f"Erro ao verificar dependências Node.js: {str(e)}")
+            return {}
+
+    def verificar_go(self, arquivo: Path) -> Dict:
+        """Verifica dependências Go.
+        
+        Args:
+            arquivo: Caminho do arquivo go.mod
+            
+        Returns:
+            Dict: Informações das dependências
+        """
+        try:
+            # Verificar vulnerabilidades
+            resultado = subprocess.run(
+                ["gosec", "-fmt", "json", "./..."],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            
+            vulnerabilidades = json.loads(resultado.stdout)
+            
+            # Listar dependências
+            resultado = subprocess.run(
+                ["go", "list", "-m", "all"],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            
+            pacotes = resultado.stdout.splitlines()
+            
+            return {
+                "tipo": "go",
+                "pacotes": pacotes,
+                "vulnerabilidades": vulnerabilidades
+            }
+            
+        except subprocess.CalledProcessError as e:
+            self.erros.append(f"Erro ao verificar dependências Go: {str(e)}")
+            return {}
+
+    def verificar_dependencias(self) -> bool:
+        """Verifica todas as dependências do projeto.
+        
+        Returns:
+            bool: True se não houver erros
+        """
+        logger.info("Verificando dependências...")
+        
+        for arquivo, tipo in self.arquivos_deps.items():
+            caminho = self.raiz / arquivo
+            if not caminho.exists():
+                self.avisos.append(f"Arquivo de dependências não encontrado: {arquivo}")
+                continue
                 
-                solucao = gerenciador.sugerir_solucao(pacote, versao)
-                if solucao:
-                    logger.info(f"Solução sugerida para {pacote}: {solucao}")
+            if tipo == "pip":
+                self.dependencias[arquivo] = self.verificar_pip(caminho)
+            elif tipo == "npm":
+                self.dependencias[arquivo] = self.verificar_npm(caminho)
+            elif tipo == "go":
+                self.dependencias[arquivo] = self.verificar_go(caminho)
+                
+        return len(self.erros) == 0
+
+    def gerar_relatorio(self) -> str:
+        """Gera relatório de dependências.
         
-        # Atualiza tempo de verificação
-        TEMPO_VERIFICACAO.set(time.time() - start_time)
-        return False
+        Returns:
+            str: Caminho do arquivo de relatório
+        """
+        logger.info("Gerando relatório...")
+        
+        relatorio = {
+            "data": datetime.now().isoformat(),
+            "dependencias": self.dependencias,
+            "erros": self.erros,
+            "avisos": self.avisos
+        }
+        
+        # Criar diretório de relatórios se não existir
+        dir_relatorios = self.raiz / "relatorios"
+        dir_relatorios.mkdir(exist_ok=True)
+        
+        # Nome do arquivo de relatório
+        nome_arquivo = f"dependencias_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        caminho_relatorio = dir_relatorios / nome_arquivo
+        
+        # Salvar relatório
+        with open(caminho_relatorio, 'w', encoding='utf-8') as f:
+            json.dump(relatorio, f, indent=2)
+            
+        return str(caminho_relatorio)
+
+    def executar_monitoramento(self) -> Tuple[bool, str]:
+        """Executa o monitoramento de dependências.
+        
+        Returns:
+            Tuple[bool, str]: (sucesso, caminho_relatorio)
+        """
+        logger.info("Iniciando monitoramento de dependências...")
+        
+        try:
+            self.verificar_dependencias()
+            relatorio = self.gerar_relatorio()
+            
+            sucesso = len(self.erros) == 0
+            
+            if sucesso:
+                logger.info("Monitoramento concluído com sucesso!")
+            else:
+                logger.error("Monitoramento encontrou erros!")
+                
+            if self.avisos:
+                logger.warning("Avisos encontrados durante o monitoramento")
+                
+            return sucesso, relatorio
+            
+        except Exception as e:
+            self.erros.append(f"Erro durante monitoramento: {str(e)}")
+            return False, ""
 
 def main():
     """Função principal."""
-    # Inicia servidor de métricas
-    porta = int(os.getenv('PROMETHEUS_PORT', 9092))
-    start_http_server(porta)
-    logger.info(f"Servidor de métricas iniciado na porta {porta}")
+    monitor = MonitorDependencias()
+    sucesso, relatorio = monitor.executar_monitoramento()
     
-    # Loop principal
-    while True:
-        verificar_dependencias()
-        time.sleep(300)  # Verifica a cada 5 minutos
+    if not sucesso:
+        print("\nErros encontrados:")
+        for erro in monitor.erros:
+            print(f"- {erro}")
+            
+    if monitor.avisos:
+        print("\nAvisos:")
+        for aviso in monitor.avisos:
+            print(f"- {aviso}")
+            
+    if relatorio:
+        print(f"\nRelatório gerado: {relatorio}")
+        
+    sys.exit(0 if sucesso else 1)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main() 

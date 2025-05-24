@@ -1,0 +1,117 @@
+# Configurações gerais
+service:
+  name: jaeger
+  environment: production
+
+# Configurações de storage
+storage:
+  type: elasticsearch
+  options:
+    es:
+      server-urls: http://elasticsearch:9200
+      username: elastic
+      password: changeme
+      index-prefix: jaeger
+      max-num-spans: 50000
+      max-num-tags: 1000
+      max-num-services: 1000
+      max-num-operations: 1000
+      max-doc-count: 10000
+      max-span-age: 72h
+      max-service-age: 72h
+      max-operation-age: 72h
+      max-tag-age: 72h
+      max-num-traces: 10000
+      max-num-services-per-query: 1000
+      max-num-operations-per-query: 1000
+      max-num-tags-per-query: 1000
+      max-num-traces-per-query: 1000
+      max-num-spans-per-query: 1000
+      max-num-services-per-query: 1000
+      max-num-operations-per-query: 1000
+      max-num-tags-per-query: 1000
+      max-num-traces-per-query: 1000
+      max-num-spans-per-query: 1000
+
+# Configurações de sampling
+sampling:
+  default_strategy:
+    type: probabilistic
+    param: 0.001
+  service_strategies:
+    - service: autocura
+      type: probabilistic
+      param: 0.1
+
+# Configurações de ingester
+ingester:
+  deadlockInterval: 0s
+  maxSpanAge: 72h
+
+# Configurações de query
+query:
+  base_path: /jaeger
+  port: 16686
+  static_files: /usr/share/jaeger/static
+  ui_config:
+    dependencies:
+      menuEnabled: true
+    menu:
+      - label: "About"
+        url: "https://www.jaegertracing.io/docs/latest"
+    tracking:
+      gaID: UA-000000-2
+    menu:
+      - label: "About"
+        url: "https://www.jaegertracing.io/docs/latest"
+
+# Configurações de collector
+collector:
+  zipkin:
+    host-port: :9411
+  otlp:
+    grpc:
+      host-port: :4317
+    http:
+      host-port: :4318
+
+# Configurações de agent
+agent:
+  http:
+    host-port: :5778
+  grpc:
+    host-port: :5775
+  zipkin:
+    host-port: :5775
+  jaeger:
+    host-port: :6831
+  otlp:
+    grpc:
+      host-port: :4317
+    http:
+      host-port: :4318
+
+# Configurações de metrics
+metrics:
+  backend: prometheus
+  prometheus:
+    endpoint: :9090
+    namespace: jaeger
+    labels:
+      service: jaeger
+    buckets:
+      - 0.001
+      - 0.005
+      - 0.01
+      - 0.025
+      - 0.05
+      - 0.075
+      - 0.1
+      - 0.25
+      - 0.5
+      - 0.75
+      - 1
+      - 2.5
+      - 5
+      - 7.5
+      - 10 

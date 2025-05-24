@@ -1,73 +1,119 @@
-# Sistema de Autocura Cognitiva
+# Sistema de Autocura
 
-Sistema modular de IA com capacidade de autocura e evolução contínua.
+## Descrição
+Sistema de Inteligência Artificial com capacidade de autocura, diagnóstico e evolução contínua, baseado em princípios éticos e segurança.
 
-## Estrutura do Projeto
-
+## Estrutura
 ```
-sistema-autocura/
-├── modulos/
-│   ├── core/                    # Módulo central com interfaces comuns
-│   ├── monitoramento/           # Módulo de monitoramento e observabilidade
-│   ├── diagnostico/             # Módulo de diagnóstico
-│   ├── gerador-acoes/           # Módulo gerador de ações
-│   ├── integracao/              # Módulo de integração
-│   ├── guardiao-cognitivo/      # Módulo guardião cognitivo
-│   └── etica/                   # Módulos ético-operacionais
-│       ├── circuitos-morais/
-│       ├── decisao-hibrida/
-│       ├── auditoria/
-│       ├── governanca/
-│       ├── fluxo-autonomia/
-│       ├── validadores-eticos/
-│       ├── priorizacao-financeira/
-│       └── registro-decisoes/
-├── shared/                      # Bibliotecas compartilhadas
-├── tests/                       # Testes por módulo
-├── docs/                        # Documentação
-└── deployment/                  # Configurações de deployment
+.
+├── modulos/               # Módulos do sistema
+│   ├── core/             # Módulo core
+│   ├── monitoramento/    # Monitoramento
+│   ├── diagnostico/      # Diagnóstico
+│   ├── gerador-acoes/    # Gerador de ações
+│   ├── integracao/       # Integração
+│   ├── observabilidade/  # Observabilidade
+│   ├── guardiao-cognitivo/ # Guardião cognitivo
+│   ├── etica/            # Ética
+│   ├── shared/           # Recursos compartilhados
+│   ├── tests/            # Testes
+│   ├── docker/           # Docker
+│   └── deployment/       # Deployment
+├── docs/                 # Documentação
+├── scripts/              # Scripts de automação
+└── README.md            # Esta documentação
 ```
 
-## Instalação
+## Módulos
 
+### Core
+Módulo central do sistema, responsável pelas funcionalidades essenciais e compartilhadas.
+
+### Monitoramento
+Coleta e processa métricas, logs e traces do sistema.
+
+### Diagnóstico
+Analisa e identifica problemas no sistema.
+
+### Gerador de Ações
+Gera, prioriza e executa ações corretivas.
+
+### Integração
+Gerencia a comunicação entre módulos.
+
+### Observabilidade
+Fornece visibilidade do sistema.
+
+### Guardião Cognitivo
+Protege e evolui o sistema cognitivo.
+
+### Ética
+Garante conformidade ética e regulatória.
+
+### Shared
+Recursos compartilhados entre módulos.
+
+### Tests
+Testes automatizados do sistema.
+
+### Docker
+Containerização do sistema.
+
+### Deployment
+Implantação do sistema.
+
+## Configuração
+
+1. Clone o repositório:
 ```bash
-# Instalar dependências
+git clone https://github.com/seu-usuario/autocura.git
+cd autocura
+```
+
+2. Instale as dependências:
+```bash
 pip install -r requirements.txt
-
-# Instalar dependências de desenvolvimento
-pip install -r requirements-test.txt
 ```
 
-## Desenvolvimento
-
+3. Configure as variáveis de ambiente:
 ```bash
-# Executar testes
-pytest
-
-# Executar linting
-pre-commit run --all-files
-
-# Executar em modo desenvolvimento
-docker-compose -f docker-compose.dev.yml up
+cp .env.example .env
+# Edite o arquivo .env com suas configurações
 ```
 
-## Produção
-
+4. Execute os testes:
 ```bash
-# Construir imagens
-./build-images.sh
-
-# Executar em produção
-docker-compose up -d
+pytest modulos/tests/
 ```
 
-## Documentação
+## Uso
 
-A documentação completa está disponível em `docs/`.
+```python
+from autocura import Autocura
+
+# Inicializa o sistema
+sistema = Autocura()
+
+# Configura o sistema
+sistema.configurar(config)
+
+# Inicia o sistema
+sistema.iniciar()
+
+# Monitora o sistema
+sistema.monitorar()
+
+# Diagnostica problemas
+diagnostico = sistema.diagnosticar()
+
+# Gera e executa ações
+acoes = sistema.gerar_acoes(diagnostico)
+sistema.executar_acoes(acoes)
+```
 
 ## Contribuição
 
-1. Fork o projeto
+1. Faça um fork do projeto
 2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
 3. Commit suas mudanças (`git commit -am 'Adiciona nova feature'`)
 4. Push para a branch (`git push origin feature/nova-feature`)
@@ -75,7 +121,7 @@ A documentação completa está disponível em `docs/`.
 
 ## Licença
 
-Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para detalhes.
+Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
 
 # Sistema de Monitoramento de Recursos
 

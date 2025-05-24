@@ -1,97 +1,109 @@
 version: '3.8'
 
 services:
+  # API Principal
   api:
     build:
       context: .
-      dockerfile: docker/services/api/Dockerfile
+      dockerfile: modulos/docker/images/base/Dockerfile
     ports:
       - "8000:8000"
     environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+    volumes:
+      - .:/app
     depends_on:
       - redis
+      - elasticsearch
+      - jaeger
 
-  monitor:
-    build:
-      context: .
-      dockerfile: docker/services/monitor/Dockerfile
+  # Monitoramento
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./modulos/monitoramento/config/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+  # Logging
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.15.0
     environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-    depends_on:
-      - redis
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch-storage:/usr/share/elasticsearch/data
 
-  observador:
-    build:
-      context: .
-      dockerfile: docker/services/observador/Dockerfile
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.15.0
+    ports:
+      - "5601:5601"
     depends_on:
-      - redis
+      - elasticsearch
 
-  validador:
-    build:
-      context: .
-      dockerfile: docker/services/validador/Dockerfile
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-    depends_on:
-      - redis
+  # Tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686"
+      - "14250:14250"
+      - "14268:14268"
+      - "14269:14269"
+      - "9411:9411"
 
-  guardiao:
-    build:
-      context: .
-      dockerfile: docker/services/guardiao/Dockerfile
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-    depends_on:
-      - redis
-
-  gerador:
-    build:
-      context: .
-      dockerfile: docker/services/gerador/Dockerfile
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-    depends_on:
-      - redis
-
-  diagnostico:
-    build:
-      context: .
-      dockerfile: docker/services/diagnostico/Dockerfile
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-    depends_on:
-      - redis
-
+  # Cache e Mensageria
   redis:
-    image: redis:alpine
+    image: redis:latest
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
+      - redis-storage:/data
 
-  tests:
+  # Banco de Dados
+  postgres:
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=autocura
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-storage:/var/lib/postgresql/data
+
+  # Testes
+  test:
     build:
       context: .
-      dockerfile: docker/tests/Dockerfile
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-    depends_on:
-      - redis
+      dockerfile: modulos/docker/images/dev/Dockerfile
+    volumes:
+      - .:/app
+    command: pytest modulos/tests/
 
 volumes:
-  redis_data:
+  grafana-storage:
+  elasticsearch-storage:
+  redis-storage:
+  postgres-storage:
 
 networks:
   autocura-network:
