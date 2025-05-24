@@ -1,74 +1,134 @@
-# Guia de Desenvolvimento
+# Guia de Desenvolvimento do Sistema AutoCura
 
-## 1. Ambiente de Desenvolvimento
+## 🚀 Início Rápido
 
-### 1.1 Requisitos
+### Requisitos
 - Python 3.8+
 - Docker e Docker Compose
 - Git
-- Editor de código (recomendado: VSCode)
+- VSCode (recomendado)
+- Kubernetes (opcional)
 
-### 1.2 Configuração Inicial
+### Configuração Inicial
 ```bash
 # Clonar repositório
 git clone https://github.com/seu-usuario/autocura.git
 cd autocura
 
+# Configurar ambiente virtual
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+.\venv\Scripts\activate   # Windows
+
 # Instalar dependências
 pip install -r requirements.txt
-pip install -r requirements-test.txt
+pip install -r requirements-dev.txt
 
 # Configurar ambiente
 cp .env.example .env
 # Editar .env com suas configurações
 ```
 
-## 2. Estrutura do Projeto
+## 📁 Estrutura do Projeto
 
-### 2.1 Módulos
-Cada módulo segue a estrutura:
+### Módulos
+```
+modulos/
+├── core/              # Módulo central
+├── monitoramento/     # Sistema de monitoramento
+├── diagnostico/       # Análise e diagnóstico
+├── gerador-acoes/     # Geração de ações
+├── integracao/        # Integração externa
+├── guardiao-cognitivo/# Proteção cognitiva
+└── etica/            # Módulos éticos
+```
+
+### Estrutura de Módulo
 ```
 modulo/
-├── src/           # Código fonte
-├── tests/         # Testes do módulo
-├── docs/          # Documentação específica
-└── scripts/       # Scripts específicos
+├── src/              # Código fonte
+│   ├── api/         # APIs do módulo
+│   ├── core/        # Lógica principal
+│   └── utils/       # Utilitários
+├── tests/           # Testes
+│   ├── unit/       # Testes unitários
+│   └── integration/# Testes de integração
+├── docs/            # Documentação
+└── scripts/         # Scripts específicos
 ```
 
-### 2.2 Convenções
-- **Nomenclatura**:
-  - Módulos: snake_case
-  - Classes: PascalCase
-  - Funções: snake_case
-  - Variáveis: snake_case
-  - Constantes: UPPER_CASE
+## 💻 Desenvolvimento
 
-- **Documentação**:
-  - Docstrings em todas as funções e classes
-  - README.md em cada módulo
-  - Documentação de API em `docs/api/`
+### Convenções
 
-## 3. Desenvolvimento
+#### Código
+- PEP 8 para Python
+- Type hints obrigatórios
+- Docstrings em todos os módulos
+- Testes unitários para novas funcionalidades
 
-### 3.1 Fluxo de Trabalho
-1. Criar branch para feature/bugfix
-2. Desenvolver com testes
-3. Executar validações
-4. Criar Pull Request
+#### Git
+- Conventional Commits
+- Branch Protection
+- Code Review obrigatório
+- Semantic Versioning
 
-### 3.2 Testes
+#### Documentação
+- Markdown para documentação
+- Swagger/OpenAPI para APIs
+- Diagramas atualizados
+- Changelog mantido
+
+### Fluxo de Trabalho
+
+1. **Preparação**
+   ```bash
+   # Criar branch
+   git checkout -b feature/nome-feature
+   
+   # Instalar pre-commit hooks
+   pre-commit install
+   ```
+
+2. **Desenvolvimento**
+   ```bash
+   # Executar testes
+   pytest modulos/seu-modulo/tests/
+   
+   # Validar estilo
+   pre-commit run --all-files
+   ```
+
+3. **Revisão**
+   ```bash
+   # Atualizar documentação
+   # Executar testes completos
+   pytest
+   
+   # Criar Pull Request
+   ```
+
+## 🧪 Testes
+
+### Testes Unitários
 ```bash
-# Executar todos os testes
-pytest
-
-# Executar testes específicos
-pytest modulos/nome_modulo/tests/
+# Executar testes de um módulo
+pytest modulos/seu-modulo/tests/unit/
 
 # Executar com cobertura
-pytest --cov=modulos
+pytest --cov=modulos/seu-modulo
 ```
 
-### 3.3 Validações
+### Testes de Integração
+```bash
+# Executar testes de integração
+pytest modulos/seu-modulo/tests/integration/
+
+# Executar testes end-to-end
+pytest tests/e2e/
+```
+
+### Validações
 ```bash
 # Validar estrutura
 python scripts/validar_estrutura.py
@@ -80,112 +140,125 @@ python scripts/update_imports.py
 pre-commit run --all-files
 ```
 
-## 4. Módulos
+## 🐳 Docker
 
-### 4.1 Core
-- Interfaces base
-- Utilitários comuns
-- Configurações globais
-
-### 4.2 Monitoramento
-- Coletores de métricas
-- Processadores de dados
-- APIs de acesso
-
-### 4.3 Ética
-- Circuitos morais
-- Decisão híbrida
-- Fluxo de autonomia
-
-### 4.4 Diagnóstico
-- Análise de problemas
-- Geração de relatórios
-- Recomendações
-
-## 5. Integração
-
-### 5.1 APIs
-- REST API
-- gRPC
-- WebSocket
-
-### 5.2 Eventos
-- Sistema de eventos
-- Mensageria
-- Notificações
-
-## 6. Deployment
-
-### 6.1 Docker
+### Desenvolvimento
 ```bash
 # Construir imagens
-./build-images.sh
+docker-compose -f docker-compose.dev.yml build
 
-# Executar em desenvolvimento
+# Executar ambiente
 docker-compose -f docker-compose.dev.yml up
+```
 
-# Executar em produção
+### Produção
+```bash
+# Construir imagens
+docker-compose build
+
+# Executar
 docker-compose up -d
 ```
 
-### 6.2 Kubernetes
+## ☸️ Kubernetes
+
+### Configuração
 ```bash
-# Configurar cluster
-./setup-kind.sh
+# Configurar cluster local
+./scripts/setup-kind.sh
 
 # Deploy
 kubectl apply -f deployment/kubernetes/
 ```
 
-## 7. Monitoramento
+### Monitoramento
+```bash
+# Verificar status
+kubectl get pods
+kubectl get services
 
-### 7.1 Métricas
-- Prometheus
-- Grafana
-- Alertas
+# Verificar logs
+kubectl logs -f deployment/seu-deployment
+```
 
-### 7.2 Logs
-- ELK Stack
-- Log aggregation
-- Análise de logs
+## 📊 Monitoramento
 
-## 8. Contribuição
+### Métricas
+- Prometheus para coleta
+- Grafana para visualização
+- Alertas configuráveis
 
-### 8.1 Processo
-1. Fork do projeto
-2. Branch para feature
-3. Desenvolvimento
-4. Testes
-5. Pull Request
+### Logs
+- ELK Stack para agregação
+- Jaeger para tracing
+- Logs centralizados
 
-### 8.2 Padrões
-- Commits semânticos
-- Documentação atualizada
-- Testes incluídos
-- Código revisado
+## 🔒 Segurança
 
-## 9. Troubleshooting
+### Autenticação
+- OAuth2/JWT
+- RBAC
+- MFA quando aplicável
 
-### 9.1 Problemas Comuns
-- Erros de importação
-- Falhas de teste
-- Problemas de Docker
-- Erros de configuração
+### Dados
+- Criptografia em trânsito
+- Criptografia em repouso
+- Sanitização de inputs
 
-### 9.2 Soluções
-- Verificar logs
-- Validar configurações
-- Consultar documentação
-- Abrir issue
+### Auditoria
+- Logs de acesso
+- Logs de operações
+- Rastreamento de mudanças
 
-## 10. Recursos
+## 🚀 Deployment
 
-### 10.1 Documentação
-- [Arquitetura](docs/arquitetura.md)
-- [API](docs/api/)
-- [Guia de Migração](docs/migracao.md)
+### Ambientes
+- Development
+- Staging
+- Production
 
-### 10.2 Links Úteis
-- [GitHub](https://github.com/seu-usuario/autocura)
+### CI/CD
+- GitHub Actions
+- Testes automatizados
+- Deploy automático
+
+## 📝 Documentação
+
+### APIs
+- Swagger/OpenAPI
+- Exemplos de uso
+- Guias de integração
+
+### Arquitetura
+- Diagramas atualizados
+- Fluxos de dados
+- Decisões técnicas
+
+### Guias
+- Guia de desenvolvimento
+- Guia de deployment
+- Guia de troubleshooting
+
+## 🔍 Troubleshooting
+
+### Problemas Comuns
+1. Erros de importação
+   - Verificar PYTHONPATH
+   - Validar imports
+
+2. Falhas de teste
+   - Verificar ambiente
+   - Validar dependências
+
+3. Problemas de Docker
+   - Limpar cache
+   - Reconstruir imagens
+
+4. Erros de configuração
+   - Verificar .env
+   - Validar secrets
+
+### Recursos
 - [Documentação](https://docs.autocura.dev)
-- [Issues](https://github.com/seu-usuario/autocura/issues) 
+- [Issues](https://github.com/seu-usuario/autocura/issues)
+- [Wiki](https://github.com/seu-usuario/autocura/wiki) 

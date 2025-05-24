@@ -1,0 +1,144 @@
+# Configurações de Produção - Sistema AutoCura
+# =========================================
+
+# Configurações Específicas de Produção
+environment: production
+debug: false
+log_level: INFO
+
+# Configurações de API
+api:
+  host: 0.0.0.0
+  port: 8000
+  debug: false
+  docs: false
+  redoc: false
+
+# Configurações de Banco de Dados
+database:
+  host: ${DB_HOST}
+  port: ${DB_PORT}
+  name: ${DB_NAME}
+  user: ${DB_USER}
+  password: ${DB_PASSWORD}
+
+# Configurações de Cache
+cache:
+  host: ${REDIS_HOST}
+  port: ${REDIS_PORT}
+  db: ${REDIS_DB}
+  password: ${REDIS_PASSWORD}
+
+# Configurações de Segurança
+security:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiry: 3600
+  encryption:
+    key: ${ENCRYPTION_KEY}
+
+# Configurações de Email
+email:
+  host: ${SMTP_HOST}
+  port: ${SMTP_PORT}
+  user: ${SMTP_USER}
+  password: ${SMTP_PASSWORD}
+  from: ${SMTP_FROM}
+
+# Configurações de Slack
+slack:
+  webhook: ${SLACK_WEBHOOK}
+  channel: "#prod-notifications"
+
+# Configurações de Monitoramento
+monitoring:
+  prometheus:
+    port: 9090
+  grafana:
+    port: 3000
+
+# Configurações de Testes
+testing:
+  database:
+    name: ${TEST_DB_NAME}
+    user: ${TEST_DB_USER}
+    password: ${TEST_DB_PASSWORD}
+  coverage:
+    threshold: 90
+
+# Configurações de Simulação
+simulation:
+  quantum: false
+  nano: false
+  bio: false
+
+# Configurações de Logs
+logging:
+  main: "/var/log/autocura/autocura.log"
+  audit: "/var/log/autocura/audit.log"
+  error: "/var/log/autocura/error.log"
+
+# Configurações de Backup
+backup:
+  directory: "/var/backups/autocura/"
+  retention: 30
+  compression: true
+  encryption: true
+
+# Configurações de Documentação
+documentation:
+  directory: "/var/www/docs/"
+  format: "html"
+  auto_generate: false
+
+# Configurações de Cache
+cache_config:
+  type: "redis"
+  ttl: 3600
+  prefix: "autocura_prod_"
+
+# Configurações de Filas
+queue:
+  host: ${RABBITMQ_HOST}
+  port: ${RABBITMQ_PORT}
+  user: ${RABBITMQ_USER}
+  password: ${RABBITMQ_PASSWORD}
+  vhost: ${RABBITMQ_VHOST}
+
+# Configurações de Armazenamento
+storage:
+  type: "s3"
+  path: "/"
+  bucket: ${STORAGE_BUCKET}
+
+# Configurações de Serviços Externos
+services:
+  quantum:
+    url: ${QUANTUM_API_URL}
+  nano:
+    url: ${NANO_API_URL}
+  bio:
+    url: ${BIO_API_URL}
+
+# Configurações de Produção
+production:
+  workers: 4
+  threads: 8
+  timeout: 30
+  max_requests: 1000
+  max_requests_jitter: 50
+  keepalive: 5
+  graceful_timeout: 30
+  access_log: "/var/log/autocura/access.log"
+  error_log: "/var/log/autocura/error.log"
+  pid_file: "/var/run/autocura.pid"
+  user: "autocura"
+  group: "autocura"
+  umask: "022"
+  chdir: "/var/www/autocura"
+  bind: "0.0.0.0:8000"
+  backlog: 2048
+  worker_class: "uvicorn.workers.UvicornWorker"
+  worker_connections: 1000
+  worker_tmp_dir: "/dev/shm"
+  worker_abort_on_memory_error: true 

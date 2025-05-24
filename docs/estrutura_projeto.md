@@ -1,92 +1,152 @@
-# Estrutura do Projeto
+# Estrutura do Projeto AutoCura
 
-## 1. Diretórios Principais
+## 🏗️ Visão Geral da Arquitetura
 
-### 1.1 Módulos (`modulos/`)
-- `core/`: Módulo central com interfaces comuns
-- `monitoramento/`: Monitoramento e observabilidade
-- `diagnostico/`: Diagnóstico e análise
-- `gerador-acoes/`: Geração de ações
+O Sistema AutoCura é uma arquitetura modular que combina componentes técnicos e ético-operacionais para criar um sistema de autocura cognitiva robusto e ético.
+
+## 📁 Estrutura de Diretórios
+
+### 1. Módulos Principais (`modulos/`)
+- `core/`: Módulo central com interfaces e contratos comuns
+- `monitoramento/`: Sistema de monitoramento multidimensional
+- `diagnostico/`: Análise e diagnóstico por rede neural
+- `gerador-acoes/`: Geração de ações corretivas
 - `integracao/`: Integração com sistemas externos
-- `guardiao-cognitivo/`: Guardião cognitivo
+- `guardiao-cognitivo/`: Proteção contra degeneração cognitiva
 - `etica/`: Módulos ético-operacionais
 
-### 1.2 Compartilhado (`shared/`)
+### 2. Compartilhado (`shared/`)
 - `api/`: APIs compartilhadas
 - `events/`: Sistema de eventos
 - `utils/`: Utilitários comuns
+- `types/`: Tipos e interfaces compartilhados
 
-### 1.3 Testes (`tests/`)
+### 3. Testes (`tests/`)
 - `integration/`: Testes de integração
 - `e2e/`: Testes end-to-end
-- `unit/`: Testes unitários (migrados para seus módulos)
+- `unit/`: Testes unitários (por módulo)
 
-### 1.4 Deployment (`deployment/`)
+### 4. Deployment (`deployment/`)
 - `scripts/`: Scripts de instalação
 - `build/`: Scripts de build
 - `config/`: Configurações de deployment
+- `kubernetes/`: Manifests Kubernetes
 
-## 2. Scripts
+### 5. Documentação (`docs/`)
+- `api/`: Documentação de APIs
+- `architecture/`: Documentação de arquitetura
+- `deployment/`: Guias de deployment
+- `modulos/`: Documentação específica de módulos
 
-### 2.1 Scripts Principais
-- `autocura.sh`/`autocura.ps1`: Script principal
-- `run_tests_*.py`: Scripts de teste
-- `monitor_dependencias.py`: Monitoramento de dependências
+## 🔄 Fluxos de Dados
 
-### 2.2 Scripts por Módulo
-- `modulos/diagnostico/scripts/`: Scripts específicos de diagnóstico
-- `deployment/scripts/`: Scripts de instalação
-- `deployment/build/`: Scripts de build
+### 1. Fluxo Principal
+1. Monitoramento coleta dados
+2. Diagnóstico analisa e identifica problemas
+3. Gerador de Ações cria planos de correção
+4. Integração implementa as ações
+5. Feedback retorna ao ciclo
 
-## 3. Resultados de Teste
+### 2. Fluxo Ético
+1. Auditoria monitora operações
+2. Validadores Éticos verificam conformidade
+3. Decisão Híbrida envolve humanos quando necessário
+4. Circuitos Morais garantem alinhamento ético
 
-### 3.1 Arquivos Mantidos
-- `report.html`: Relatório de cobertura
-- `junit.xml`: Resultados em formato JUnit
-- `assets/`: Recursos de teste
+## 🛠️ Ferramentas e Tecnologias
 
-## 4. Migração
+### 1. Linguagens e Frameworks
+- Python 3.8+
+- FastAPI
+- TensorFlow/PyTorch
+- Kubernetes
 
-Para migrar para a nova estrutura:
+### 2. Ferramentas de Desenvolvimento
+- Git
+- Docker
+- CI/CD (GitHub Actions)
+- Testes Automatizados
 
-1. Executar script de reorganização:
-```bash
-python scripts/reorganizar_estrutura.py
-```
+### 3. Monitoramento e Observabilidade
+- Prometheus
+- Grafana
+- ELK Stack
+- Jaeger
 
-2. Atualizar imports:
-```bash
-python scripts/update_imports.py
-```
+## 📝 Convenções
 
-3. Validar estrutura:
-```bash
-python scripts/validar_estrutura.py
-```
+### 1. Código
+- PEP 8 para Python
+- Type hints obrigatórios
+- Docstrings em todos os módulos
+- Testes unitários para novas funcionalidades
 
-## 5. Convenções
+### 2. Documentação
+- Markdown para documentação
+- Swagger/OpenAPI para APIs
+- Diagramas atualizados
+- Changelog mantido
 
-### 5.1 Nomenclatura
-- Módulos: snake_case
-- Classes: PascalCase
-- Funções: snake_case
-- Variáveis: snake_case
-- Constantes: UPPER_CASE
+### 3. Versionamento
+- Semantic Versioning
+- Conventional Commits
+- Branch Protection
+- Code Review obrigatório
 
-### 5.2 Organização
-- Cada módulo tem sua própria estrutura de testes
-- Scripts específicos ficam em seus módulos
-- Scripts gerais ficam na raiz
-- Documentação em `docs/`
+## 🔒 Segurança
 
-## 6. Manutenção
+### 1. Autenticação e Autorização
+- OAuth2/JWT
+- RBAC
+- MFA quando aplicável
 
-### 6.1 Limpeza Regular
-- Remover resultados antigos de teste
-- Limpar caches
-- Atualizar documentação
+### 2. Dados
+- Criptografia em trânsito
+- Criptografia em repouso
+- Sanitização de inputs
+- Validação de dados
 
-### 6.2 Atualizações
-- Manter dependências atualizadas
-- Seguir guia de migração
-- Validar após mudanças 
+### 3. Auditoria
+- Logs de acesso
+- Logs de operações
+- Rastreamento de mudanças
+- Alertas de segurança
+
+## 🚀 Deployment
+
+### 1. Ambientes
+- Development
+- Staging
+- Production
+
+### 2. Infraestrutura
+- Kubernetes
+- Terraform
+- Helm Charts
+- CI/CD Pipelines
+
+### 3. Monitoramento
+- Health Checks
+- Métricas de Performance
+- Logs Centralizados
+- Alertas
+
+## 📈 Manutenção
+
+### 1. Rotinas
+- Atualizações de segurança
+- Backup de dados
+- Limpeza de logs
+- Validação de integridade
+
+### 2. Monitoramento
+- Performance
+- Uso de recursos
+- Erros e exceções
+- Métricas de negócio
+
+### 3. Documentação
+- Atualização de APIs
+- Atualização de diagramas
+- Revisão de procedimentos
+- Atualização de changelog 

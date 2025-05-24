@@ -1,203 +1,358 @@
 """
-Sistema de Autocura Cognitiva - Arquivo Principal
+Sistema AutoCura - Arquivo Principal
+===================================
 
-Este arquivo serve como ponto de entrada do sistema, orquestrando todos os componentes
-e gerenciando o fluxo de autocura. Ele integra:
-- Monitoramento Multidimensional
-- Diagnóstico Neural
-- Gerador de Ações
-- Interface Web (Portal)
+Este módulo integra todos os componentes do sistema de autocura,
+fornecendo uma interface unificada para inicialização e controle.
 """
 
-from fastapi import FastAPI, Request
-from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
-import uvicorn
 import logging
-from datetime import datetime
-import argparse
-import json
-import os
-import re
+from typing import Dict, Optional
 
-# Importação dos módulos principais do sistema
-from .monitoramento import MonitoramentoMultidimensional
-from .diagnostico import DiagnosticoSistema
-from .gerador import GeradorAcoes
-from .portal.routes.acao_necessaria import router as acao_router
+from core.interfaces.universal_interface import UniversalModuleInterface
+from core.plugins.plugin_manager import PluginManager
+from core.registry.capability_registry import CapabilityRegistry, TechnologyType
+from versioning.version_manager import VersionManager, VersionType
+from core.memoria.gerenciador_memoria import GerenciadorMemoria
+from core.memoria.registrador_contexto import RegistradorContexto
 
-# Configuração de logging para rastreamento de operações
+# Configuração de logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
-# Inicialização da aplicação FastAPI
-app = FastAPI(title="Sistema de Autocura Cognitiva")
-
-# Configuração de arquivos estáticos e templates
-app.mount("/static", StaticFiles(directory="src/portal/static"), name="static")
-templates = Jinja2Templates(directory="src/portal/templates")
-
-# Inicialização dos componentes principais do sistema
-monitoramento = MonitoramentoMultidimensional()  # Responsável pela coleta de dados
-diagnostico = DiagnosticoSistema()      # Responsável pela análise
-gerador = GeradorAcoes()         # Responsável pela geração de ações
-
-# Integração da interface de ações necessárias
-app.include_router(acao_router)
-
-# Função utilitária de dry-run (baseada no main2.py)
-PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
-MAPPING_FILE = os.path.join(PROJECT_ROOT, "../directory_mapping.json")
-DRY_RUN_REPORT_FILE = os.path.join(PROJECT_ROOT, "../dry_run_report.md")
-RELEVANT_EXTENSIONS = [
-    ".py", ".go", ".md", ".txt", ".yaml", ".yml", ".json", ".sh", ".cmd", 
-    "Dockerfile", ".tf", ".hcl", ".js", ".html", ".css"
-]
-IGNORE_FILES = ["generate_mapping.py", "dry_run_script.py", "directory_mapping.json", "dry_run_report.md"]
-IGNORE_DIRS = [".git", ".pytest_cache", "__pycache__", "venv", "node_modules", "build", "dist"]
-
-def is_binary_string(bytes_content):
-    textchars = bytearray({7,8,9,10,12,13,27} | set(range(0x20, 0x100)) - {0x7f})
-    return bool(bytes_content.translate(None, textchars))
-
-def generate_dry_run_report():
-    report_content = "# Relatório de Dry-Run - Refatoração de Nomes de Diretório\n\n"
-    report_content += "Este relatório simula as alterações que seriam feitas nos nomes dos diretórios e nas referências a esses diretórios em arquivos do projeto. **Nenhuma alteração real foi aplicada.**\n\n"
-    try:
-        with open(MAPPING_FILE, "r") as f:
-            path_mappings = json.load(f)
-    except FileNotFoundError:
-        report_content += "**ERRO: Arquivo de mapeamento `directory_mapping.json` não encontrado.**\n"
-        with open(DRY_RUN_REPORT_FILE, "w") as f_report:
-            f_report.write(report_content)
-        print(f"Relatório de dry-run (com erro) salvo em {DRY_RUN_REPORT_FILE}")
-        return False
-    changed_mappings = [m for m in path_mappings if m["original_full_path"] != m["new_full_path"]]
-    if not changed_mappings:
-        report_content += "Nenhuma alteração de nome de diretório foi mapeada. Nenhuma referência seria alterada.\n"
-        with open(DRY_RUN_REPORT_FILE, "w") as f_report:
-            f_report.write(report_content)
-        print(f"Relatório de dry-run salvo em {DRY_RUN_REPORT_FILE}")
-        return True
-    report_content += "## Mapeamento de Diretórios a Serem Renomeados:\n\n"
-    for mapping_item in changed_mappings:
-        report_content += f"- **Original**: `{mapping_item['original_full_path']}`\n"
-        report_content += f"  - **Novo (Simulado)**: `{mapping_item['new_full_path']}`\n"
-        report_content += f"  - **Tipo de Transformação**: {mapping_item['transformation_type']}\n\n"
-    report_content += "## Arquivos que Seriam Afetados por Atualizações de Referência:\n\n"
-    for root, dirs, files in os.walk(PROJECT_ROOT, topdown=True):
-        dirs[:] = [d for d in dirs if d not in IGNORE_DIRS]
-        for file_name in files:
-            if file_name in IGNORE_FILES:
-                continue
-            file_path = os.path.join(root, file_name)
-            file_ext = os.path.splitext(file_name)[1]
-            base_name_no_ext = os.path.splitext(file_name)[0]
-            if not (file_ext.lower() in RELEVANT_EXTENSIONS or base_name_no_ext in RELEVANT_EXTENSIONS or file_ext == ""):
-                continue
-            try:
-                with open(file_path, "rb") as f_bin_check:
-                    if is_binary_string(f_bin_check.read(1024)):
-                        continue
-                with open(file_path, "r", encoding="utf-8", errors="ignore") as f_content:
-                    lines = f_content.readlines()
-            except Exception as e:
-                continue
-            for i, line_content in enumerate(lines):
-                for mapping_item in changed_mappings:
-                    original_path_str = mapping_item["original_full_path"].replace(PROJECT_ROOT + "/", "")
-                    new_path_str = mapping_item["new_full_path"].replace(PROJECT_ROOT + "/", "")
-                    original_basename = os.path.basename(mapping_item["original_full_path"])
-                    new_basename = os.path.basename(mapping_item["new_full_path"])
-                    search_patterns = [
-                        re.escape(mapping_item["original_full_path"]),
-                        re.escape(original_path_str),
-                        re.escape(original_basename)
-                    ]
-                    for pattern in search_patterns:
-                        if re.search(pattern, line_content):
-                            report_content += f"- Arquivo: `{file_path}` (linha {i+1})\n"
-                            report_content += f"  - Ocorrência: `{line_content.strip()}`\n"
-    with open(DRY_RUN_REPORT_FILE, "w") as f_report:
-        f_report.write(report_content)
-    print(f"Relatório de dry-run salvo em {DRY_RUN_REPORT_FILE}")
-    return True
-
-@app.get("/")
-async def home(request: Request):
+class AutoCura:
     """
-    Página inicial do sistema.
-    Renderiza o dashboard principal com status dos componentes.
+    Classe principal do sistema AutoCura.
+    Integra e gerencia todos os componentes do sistema.
     """
-    return templates.TemplateResponse(
-        "home.html",
-        {
-            "request": request,
-            "timestamp": datetime.now()
-        }
-    )
-
-@app.post("/api/ciclo-autocura")
-async def iniciar_ciclo_autocura():
-    """
-    Inicia um novo ciclo de autocura.
     
-    Fluxo de execução:
-    1. Coleta dados do monitoramento
-    2. Realiza diagnóstico dos dados coletados
-    3. Gera ações corretivas baseadas no diagnóstico
+    def __init__(self):
+        """Inicializa o sistema AutoCura."""
+        logger.info("Inicializando sistema AutoCura...")
+        
+        # Inicializa componentes principais
+        self.interface = UniversalModuleInterface()
+        self.plugin_manager = PluginManager()
+        self.capability_registry = CapabilityRegistry()
+        self.version_manager = VersionManager()
+        self.memoria = GerenciadorMemoria()
+        self.registrador = RegistradorContexto()
+        
+        # Estado do sistema
+        self._initialized = False
+        self._running = False
+        self._config: Dict = {}
+        
+        # Registra inicialização
+        self.registrador.registrar_evento(
+            "inicializacao_sistema",
+            "Sistema AutoCura inicializado"
+        )
+        
+        logger.info("Componentes principais inicializados")
     
-    Retorna:
-        dict: Resultado do ciclo com status e diagnóstico
-    """
-    try:
-        # 1. Coleta dados do monitoramento
-        dados = monitoramento.coletar_dados()
+    def initialize(self, config: Optional[Dict] = None) -> bool:
+        """
+        Inicializa o sistema com configurações opcionais.
         
-        # 2. Realiza diagnóstico
-        resultado_diagnostico = diagnostico.analisar(dados)
+        Args:
+            config: Configurações do sistema
+            
+        Returns:
+            bool: True se a inicialização foi bem sucedida
+        """
+        try:
+            if config:
+                self._config = config
+                self.registrador.registrar_evento(
+                    "configuracao_carregada",
+                    f"Configurações carregadas: {config}"
+                )
+            
+            # Carrega módulos base
+            self.plugin_manager.load_module("core", "1.0.0")
+            self.registrador.registrar_evento(
+                "modulo_carregado",
+                "Módulo core carregado com sucesso"
+            )
+            
+            # Registra capacidades base
+            self._register_base_capabilities()
+            
+            # Verifica versões
+            self._check_versions()
+            
+            # Atualiza memória compartilhada
+            self.memoria.atualizar_contexto(
+                tarefa="inicializacao_sistema",
+                status="em_andamento",
+                proximos_passos=["carregar_modulos", "verificar_capabilidades"]
+            )
+            
+            # Registra instrução para próximas IAs
+            self.registrador.registrar_instrucao(
+                "Verificar estado de inicialização e continuar desenvolvimento",
+                "Sistema inicializado, verificar capacidades e módulos carregados",
+                prioridade=1
+            )
+            
+            self._initialized = True
+            logger.info("Sistema inicializado com sucesso")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Erro na inicialização: {e}")
+            self.registrador.registrar_evento(
+                "erro_inicializacao",
+                f"Erro durante inicialização: {str(e)}"
+            )
+            return False
+    
+    def _register_base_capabilities(self) -> None:
+        """Registra capacidades base do sistema."""
+        # Capacidades clássicas
+        self.capability_registry.enable_capability("classical_computing")
         
-        # 3. Gera ações baseadas no diagnóstico
-        if resultado_diagnostico['necessita_acao']:
-            # Gera ações para cada tipo (hotfix, refatoracao, redesign)
-            for tipo in ['hotfix', 'refatoracao', 'redesign']:
-                if resultado_diagnostico['prioridade_' + tipo] > 0:
-                    acao = gerador.gerar_acao(resultado_diagnostico, tipo)
-                    logger.info(f"Ação gerada: {acao.id} - {acao.tipo}")
+        # Capacidades em desenvolvimento
+        self.capability_registry.register_capability(
+            self.capability_registry.get_capability("quantum_computing")
+        )
+        self.capability_registry.register_capability(
+            self.capability_registry.get_capability("nano_technology")
+        )
+        self.capability_registry.register_capability(
+            self.capability_registry.get_capability("bio_computing")
+        )
         
+        # Registra ação na memória
+        self.memoria.registrar_acao(
+            "registro_capabilidades",
+            "Registro das capacidades base do sistema"
+        )
+        
+        # Registra evento
+        self.registrador.registrar_evento(
+            "capabilidades_registradas",
+            "Capacidades base do sistema registradas com sucesso"
+        )
+    
+    def _check_versions(self) -> None:
+        """Verifica compatibilidade entre versões dos componentes."""
+        versions = self.version_manager.list_versions(stable_only=True)
+        for version in versions:
+            if not version.is_stable:
+                logger.warning(f"Componente {version.component} em versão instável: {version.version}")
+                self.registrador.registrar_evento(
+                    "aviso_versao_instavel",
+                    f"Componente {version.component} em versão instável: {version.version}"
+                )
+        
+        # Registra ação na memória
+        self.memoria.registrar_acao(
+            "verificacao_versoes",
+            "Verificação de compatibilidade entre versões"
+        )
+    
+    def start(self) -> bool:
+        """
+        Inicia o sistema.
+        
+        Returns:
+            bool: True se o sistema foi iniciado com sucesso
+        """
+        if not self._initialized:
+            logger.error("Sistema não inicializado")
+            self.registrador.registrar_evento(
+                "erro_inicio",
+                "Tentativa de iniciar sistema não inicializado"
+            )
+            return False
+        
+        try:
+            # Inicia interface universal
+            self.interface.initialize()
+            
+            # Inicia gerenciador de plugins
+            self.plugin_manager.initialize()
+            
+            # Atualiza memória compartilhada
+            self.memoria.atualizar_contexto(
+                tarefa="execucao_sistema",
+                status="em_andamento",
+                proximos_passos=["monitorar_sistema", "processar_eventos"]
+            )
+            
+            # Registra instrução para próximas IAs
+            self.registrador.registrar_instrucao(
+                "Monitorar execução do sistema e processar eventos",
+                "Sistema em execução, monitorar eventos e processar ações",
+                prioridade=2
+            )
+            
+            self._running = True
+            logger.info("Sistema iniciado com sucesso")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Erro ao iniciar sistema: {e}")
+            self.registrador.registrar_evento(
+                "erro_inicio",
+                f"Erro ao iniciar sistema: {str(e)}"
+            )
+            return False
+    
+    def stop(self) -> bool:
+        """
+        Para o sistema.
+        
+        Returns:
+            bool: True se o sistema foi parado com sucesso
+        """
+        if not self._running:
+            logger.warning("Sistema já está parado")
+            return True
+        
+        try:
+            # Para gerenciador de plugins
+            self.plugin_manager.shutdown()
+            
+            # Para interface universal
+            self.interface.shutdown()
+            
+            # Atualiza memória compartilhada
+            self.memoria.atualizar_contexto(
+                tarefa="parada_sistema",
+                status="concluido",
+                proximos_passos=["salvar_estado", "gerar_relatorio"]
+            )
+            
+            # Registra instrução para próximas IAs
+            self.registrador.registrar_instrucao(
+                "Salvar estado do sistema e gerar relatório",
+                "Sistema parado, salvar estado e gerar relatório de execução",
+                prioridade=3
+            )
+            
+            self._running = False
+            logger.info("Sistema parado com sucesso")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Erro ao parar sistema: {e}")
+            self.registrador.registrar_evento(
+                "erro_parada",
+                f"Erro ao parar sistema: {str(e)}"
+            )
+            return False
+    
+    def get_status(self) -> Dict:
+        """
+        Retorna o status atual do sistema.
+        
+        Returns:
+            Dict: Status do sistema
+        """
         return {
-            "success": True,
-            "message": "Ciclo de autocura iniciado com sucesso",
-            "diagnostico": resultado_diagnostico
+            "initialized": self._initialized,
+            "running": self._running,
+            "capabilities": {
+                cap.name: cap.enabled 
+                for cap in self.capability_registry.list_capabilities()
+            },
+            "versions": {
+                ver.component: ver.version
+                for ver in self.version_manager.list_versions()
+            },
+            "contexto": self.memoria.obter_estado_atual()["contexto_atual"],
+            "instrucoes_pendentes": self.registrador.obter_instrucoes_pendentes(),
+            "eventos_recentes": self.registrador.obter_eventos_recentes()
         }
     
-    except Exception as e:
-        logger.error(f"Erro no ciclo de autocura: {str(e)}")
-        return {
-            "success": False,
-            "message": f"Erro no ciclo de autocura: {str(e)}"
-        }
+    def upgrade_capability(self, name: str) -> bool:
+        """
+        Tenta fazer upgrade de uma capacidade.
+        
+        Args:
+            name: Nome da capacidade
+            
+        Returns:
+            bool: True se o upgrade foi bem sucedido
+        """
+        capability = self.capability_registry.get_capability(name)
+        if not capability:
+            logger.error(f"Capacidade {name} não encontrada")
+            self.registrador.registrar_evento(
+                "erro_upgrade",
+                f"Capacidade {name} não encontrada"
+            )
+            return False
+        
+        try:
+            # Verifica dependências
+            for dep in capability.dependencies:
+                if not self.capability_registry.get_capability(dep).enabled:
+                    logger.error(f"Dependência {dep} não satisfeita")
+                    self.registrador.registrar_evento(
+                        "erro_dependencia",
+                        f"Dependência {dep} não satisfeita para {name}"
+                    )
+                    return False
+            
+            # Habilita capacidade
+            self.capability_registry.enable_capability(name)
+            
+            # Registra ação na memória
+            self.memoria.registrar_acao(
+                "upgrade_capacidade",
+                f"Upgrade da capacidade {name} realizado com sucesso"
+            )
+            
+            # Registra instrução para próximas IAs
+            self.registrador.registrar_instrucao(
+                f"Verificar integração da capacidade {name}",
+                f"Capacidade {name} atualizada, verificar integração e funcionamento",
+                prioridade=2
+            )
+            
+            logger.info(f"Capacidade {name} atualizada com sucesso")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Erro ao atualizar capacidade {name}: {e}")
+            self.registrador.registrar_evento(
+                "erro_upgrade",
+                f"Erro ao atualizar capacidade {name}: {str(e)}"
+            )
+            return False
 
-@app.post("/api/dry-run")
-async def dry_run_endpoint():
+def main():
+    """Função principal para execução do sistema."""
+    # Cria instância do sistema
+    sistema = AutoCura()
+    
+    # Inicializa com configurações padrão
+    if not sistema.initialize():
+        logger.error("Falha na inicialização do sistema")
+        return
+    
+    # Inicia o sistema
+    if not sistema.start():
+        logger.error("Falha ao iniciar o sistema")
+        return
+    
     try:
-        result = generate_dry_run_report()
-        if result:
-            return {"success": True, "message": "Relatório de dry-run gerado com sucesso."}
-        else:
-            return {"success": False, "message": "Erro ao gerar relatório de dry-run."}
-    except Exception as e:
-        return {"success": False, "message": str(e)}
+        # Loop principal do sistema
+        while sistema._running:
+            # TODO: Implementar lógica principal
+            pass
+            
+    except KeyboardInterrupt:
+        logger.info("Interrupção recebida, parando sistema...")
+    finally:
+        sistema.stop()
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Sistema de Autocura Cognitiva")
-    parser.add_argument("--dry-run", action="store_true", help="Executa o utilitário de dry-run de renomeação de diretórios")
-    args = parser.parse_args()
-    if args.dry_run:
-        generate_dry_run_report()
-    else:
-        # Inicia o servidor FastAPI normalmente
-        uvicorn.run(app, host="0.0.0.0", port=8000)
+    main()

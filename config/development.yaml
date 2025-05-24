@@ -1,0 +1,127 @@
+# Ambiente de Desenvolvimento - Sistema AutoCura
+# ============================================
+
+# Configurações Gerais
+environment: development
+debug: true
+log_level: DEBUG
+
+# Configurações de API
+api:
+  host: localhost
+  port: 8000
+  debug: true
+  docs: true
+  redoc: true
+
+# Configurações de Banco de Dados
+database:
+  host: localhost
+  port: 5432
+  name: autocura_dev
+  user: postgres
+  password: postgres
+
+# Configurações de Cache
+cache:
+  host: localhost
+  port: 6379
+  db: 0
+  password: ""
+
+# Configurações de Segurança
+security:
+  jwt:
+    secret: "dev-secret-key-change-in-production"
+    expiry: 3600
+  encryption:
+    key: "dev-encryption-key-change-in-production"
+
+# Configurações de Email
+email:
+  host: smtp.gmail.com
+  port: 587
+  user: dev@exemplo.com
+  password: dev-password
+  from: dev@exemplo.com
+
+# Configurações de Slack
+slack:
+  webhook: "https://hooks.slack.com/services/xxx/yyy/zzz"
+  channel: "#dev-notifications"
+
+# Configurações de Monitoramento
+monitoring:
+  prometheus:
+    port: 9090
+  grafana:
+    port: 3000
+
+# Configurações de Testes
+testing:
+  database:
+    name: autocura_test
+    user: postgres
+    password: postgres
+  coverage:
+    threshold: 80
+
+# Configurações de Simulação
+simulation:
+  quantum: true
+  nano: true
+  bio: true
+
+# Configurações de Logs
+logging:
+  main: "logs/autocura_dev.log"
+  audit: "logs/audit_dev.log"
+  error: "logs/error_dev.log"
+
+# Configurações de Backup
+backup:
+  directory: "backups/dev/"
+  retention: 7
+  compression: true
+  encryption: true
+
+# Configurações de Documentação
+documentation:
+  directory: "docs/"
+  format: "markdown"
+  auto_generate: true
+
+# Configurações de Cache
+cache_config:
+  type: "redis"
+  ttl: 3600
+  prefix: "autocura_dev_"
+
+# Configurações de Filas
+queue:
+  host: localhost
+  port: 5672
+  user: guest
+  password: guest
+  vhost: "/"
+
+# Configurações de Armazenamento
+storage:
+  type: "local"
+  path: "storage/dev/"
+  bucket: "autocura-dev"
+
+# Configurações de Serviços Externos
+services:
+  quantum:
+    url: "http://localhost:8080"
+  nano:
+    url: "http://localhost:8081"
+  bio:
+    url: "http://localhost:8082"
+
+# Configurações de Desenvolvimento
+development:
+  python_path: "src/"
+  unbuffered: true
+  dont_write_bytecode: true 

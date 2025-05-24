@@ -1,129 +1,137 @@
-# Glossário de Termos
+# Glossário do Sistema AutoCura
 
-## A
+## 🔄 Termos Gerais
 
-**Algoritmo de Tokenização de Impacto (TI)**: Sistema que transforma conceitos abstratos de benefício social em métricas quantificáveis que podem ser incorporadas em modelos financeiros e decisórios.
-
-**Análise de Conformidade**: Componente do Sistema de Auditoria que avalia operações contra múltiplos frameworks éticos, regulatórios e políticas internas.
-
-**Análise de Viés e Equidade**: Processo sistemático que examina decisões e ações do sistema para identificar padrões de tratamento diferencial ou impacto desproporcional em diferentes grupos.
-
-**Armazenamento Imutável**: Mecanismo que garante que registros de decisões não possam ser alterados, deletados ou falsificados após sua criação, geralmente implementado com tecnologias blockchain.
-
-**Autocura Cognitiva**: Capacidade de um sistema de diagnosticar problemas em seu próprio funcionamento cognitivo, gerar ações corretivas e implementá-las autonomamente.
-
-## B
-
-**Bloqueio Automático**: Mecanismo dos Circuitos Morais que impede a execução de ações que violam restrições éticas absolutas.
-
-## C
-
-**Camada de Integração**: Módulo técnico que facilita comunicação eficiente entre componentes internos e sistemas externos.
-
-**Circuitos Morais**: Módulo ético-operacional que funciona como o núcleo ético inviolável do sistema, implementando restrições absolutas que não podem ser contornadas durante operação normal.
-
-**Codificação de Pilares Éticos**: Processo de transformar princípios éticos abstratos em regras formais e verificáveis que podem ser aplicadas a operações concretas.
-
-**Controle Humano Residual**: Princípio ético que estabelece que humanos devem manter autoridade final sobre decisões críticas e capacidade de intervenção em qualquer momento.
-
-## D
-
-**Dashboard de Governança**: Interface que fornece visualizações intuitivas e interativas do estado atual do sistema, incluindo métricas de desempenho, conformidade ética e níveis de autonomia.
-
-**Decisão Híbrida**: Abordagem para tomada de decisões que combina inteligência artificial e julgamento humano, especialmente para decisões com complexidade ética ou alto impacto.
+**AutoCura Cognitiva**: Capacidade de um sistema de diagnosticar problemas em seu próprio funcionamento cognitivo, gerar ações corretivas e implementá-las autonomamente.
 
 **Degeneração Cognitiva**: Deterioração progressiva das capacidades cognitivas de um sistema autônomo, manifestada como inconsistências lógicas, falhas de aprendizado ou comportamento errático.
 
-## E
+**Controle Humano Residual**: Princípio ético que estabelece que humanos devem manter autoridade final sobre decisões críticas e capacidade de intervenção em qualquer momento.
 
-**Equidade Distributiva**: Princípio que avalia como benefícios e custos de decisões são distribuídos entre diferentes grupos e regiões, buscando justiça e redução de desigualdades.
+## 🏗️ Arquitetura
 
-**Equidade Global**: Pilar ético que exige que o sistema considere impactos distributivos de suas decisões e priorize redução de desigualdades.
+**Camada de Integração**: Módulo técnico que facilita comunicação eficiente entre componentes internos e sistemas externos.
 
-**Escalação**: Processo de transferir decisões de níveis mais autônomos para níveis com maior envolvimento humano, geralmente acionado por complexidade ética ou incerteza.
+**Módulo Core**: Componente central que fornece interfaces e contratos comuns para todos os outros módulos.
 
-## F
+**Observabilidade 4D**: Sistema que integra dimensões espaciais e temporais para visualização e controle do sistema.
 
-**Fluxo de Autonomia**: Módulo ético-operacional que gerencia a transição gradual e controlada do sistema entre diferentes níveis de independência operacional.
+## 🧠 Módulos Técnicos
 
-## G
+### Monitoramento
+**Módulo de Monitoramento**: Sistema que coleta continuamente dados sobre o estado interno e o ambiente operacional.
 
-**Gerador de Ações**: Módulo técnico que transforma diagnósticos em intervenções concretas para resolver problemas ou otimizar operações.
+**Análise de Fluxo Contínuo**: Processamento em tempo real de dados coletados para detecção imediata de anomalias.
 
-**Gerador de Alertas**: Componente do Sistema de Auditoria que produz notificações contextualizadas quando detecta violações potenciais ou reais.
+### Diagnóstico
+**Módulo de Diagnóstico**: Sistema que interpreta dados coletados para identificar causas-raiz de problemas.
 
-**Guardião Cognitivo**: Módulo técnico que protege contra degeneração cognitiva e falhas catastróficas, monitorando coerência, eficácia e estabilidade do sistema.
+**Rede Neural de Alta Ordem**: Arquitetura neural avançada para análise em múltiplos níveis de abstração.
 
-## I
+### Ações
+**Gerador de Ações**: Módulo que transforma diagnósticos em intervenções concretas.
 
-**Interface de Diálogo Decisório**: Sistema de comunicação bidirecional entre o sistema de IA e operadores humanos para deliberação conjunta.
+**Orquestrador de Prioridades**: Sistema que gerencia a execução de ações baseado em critérios de priorização.
 
-**Interface de Governança Adaptativa**: Módulo ético-operacional que serve como painel de controle central para configuração e evolução do sistema.
+## 🛡️ Módulos Éticos
 
-## M
+### Circuitos Morais
+**Circuitos Morais**: Núcleo ético inviolável que implementa restrições absolutas.
 
-**Matriz de Transição de Autonomia**: Framework que define níveis discretos de autonomia, critérios para transição entre níveis, e mecanismos de segurança para evolução controlada do sistema.
+**Verificação Prévia**: Análise de ações propostas antes da implementação.
 
-**Mecanismo de Decisão Híbrida**: Módulo ético-operacional que implementa colaboração entre inteligência humana e artificial em processos decisórios críticos.
+**Bloqueio Automático**: Mecanismo que impede ações que violam restrições éticas.
 
-**Mecanismo de Escalação**: Componente que determina quais decisões podem ser tomadas autonomamente pelo sistema e quais requerem diferentes níveis de envolvimento humano.
+### Decisão
+**Decisão Híbrida**: Sistema que combina IA e julgamento humano.
 
-**Mecanismo de Simulação**: Componente que permite testar mudanças propostas em um ambiente seguro antes de sua implementação.
+**Interface de Diálogo Decisório**: Comunicação bidirecional entre IA e operadores humanos.
 
-**Métricas de Desempenho para Avanço**: Critérios quantitativos e qualitativos que o sistema deve satisfazer consistentemente antes de avançar para um nível superior de autonomia.
+**Sistema de Votação Ponderada**: Mecanismo para decisões coletivas com múltiplos agentes.
 
-**Módulo de Diagnóstico**: Módulo técnico que interpreta dados coletados para identificar causas-raiz de problemas e oportunidades de melhoria.
+### Autonomia
+**Fluxo de Autonomia**: Gerenciamento de transição entre níveis de independência.
 
-**Módulo de Monitoramento**: Módulo técnico que coleta continuamente dados sobre o estado interno e o ambiente operacional do sistema.
+**Níveis de Autonomia**: Estados que especificam operações permitidas.
 
-**Módulo de Observabilidade**: Módulo técnico que proporciona visibilidade profunda sobre o estado e comportamento do sistema.
+**Reversão de Autonomia**: Processo de retorno a níveis inferiores de autonomia.
 
-**Monitoramento Contínuo**: Componente do Sistema de Auditoria que observa todas as operações significativas do sistema através de sensores distribuídos.
+## 📊 Monitoramento e Auditoria
 
-**Monitoramento de Coerência**: Componente do Guardião Cognitivo que verifica consistência lógica de diagnósticos e decisões.
+### Auditoria
+**Sistema de Auditoria**: Monitoramento contínuo de operações para conformidade.
 
-## N
+**Análise de Conformidade**: Avaliação contra frameworks éticos e regulatórios.
 
-**Níveis de Autonomia**: Estados claramente delineados que especificam quais operações o sistema pode realizar independentemente, quais requerem aprovação humana, e quais estão completamente fora de escopo.
+**Gerador de Alertas**: Sistema de notificações para violações potenciais.
 
-**Núcleo de Priorização Financeira Ética**: Módulo ético-operacional que garante que decisões relacionadas a recursos estejam alinhadas com pilares éticos fundamentais.
+### Métricas
+**Algoritmo de Tokenização de Impacto**: Transformação de benefícios sociais em métricas.
 
-## P
+**Métricas de Desempenho**: Critérios para avaliação de avanço de autonomia.
 
-**Preservação da Vida**: Pilar ético que estabelece a proteção da vida humana e bem-estar como valor supremo e inviolável.
+**Validador de Equidade**: Análise de distribuição de benefícios e custos.
 
-**Protocolos de Emergência**: Mecanismos de segurança que podem assumir controle do sistema em caso de falhas severas ou degeneração cognitiva.
+## 🔒 Segurança e Governança
 
-## R
+### Governança
+**Interface de Governança**: Painel de controle para configuração do sistema.
 
-**Registro de Decisões**: Módulo ético-operacional que mantém histórico completo, imutável e transparente de todas as decisões significativas tomadas pelo sistema.
+**Sistema de Propostas**: Processo para mudanças nos parâmetros.
 
-**Reversão de Autonomia**: Processo de retornar o sistema para um nível inferior de autonomia em resposta a problemas detectados ou aumento de risco.
+**Mecanismo de Simulação**: Teste de mudanças em ambiente seguro.
 
-## S
+### Segurança
+**Protocolos de Emergência**: Mecanismos de segurança para falhas severas.
 
-**Simulações de Cenários Extremos**: Ambientes virtuais complexos onde o sistema pode operar sem risco de danos reais, permitindo avaliação de comportamento em situações que seriam perigosas para testar no mundo real.
+**Armazenamento Imutável**: Registros que não podem ser alterados.
 
-**Simulador de Cenários Macroeconômicos**: Componente que emprega técnicas avançadas de modelagem para prever consequências de longo prazo de decisões financeiras.
+**Monitoramento de Coerência**: Verificação de consistência lógica.
 
-**Sistema de Auditoria em Tempo Real**: Módulo ético-operacional que monitora continuamente todas as operações para garantir conformidade com princípios éticos, regulações e políticas.
+## 📝 Documentação e Registro
 
-**Sistema de Propostas e Aprovações**: Processo estruturado para sugerir, avaliar e implementar mudanças nos parâmetros de governança.
+### Registro
+**Registro de Decisões**: Histórico imutável de decisões significativas.
 
-**Sistema de Votação Ponderada**: Mecanismo que permite que múltiplos agentes, tanto humanos quanto artificiais, contribuam para decisões coletivas com diferentes pesos.
+**Transparência Radical**: Princípio de transparência total em operações.
 
-**Sustentabilidade**: Pilar ético que exige que o sistema considere impactos de longo prazo e intergeracionais em todas as suas decisões.
+**Dashboard de Governança**: Visualização do estado do sistema.
 
-## T
+### Testes
+**Testes de Estresse Ético**: Cenários para testar limites éticos.
 
-**Testes de Estresse Ético**: Cenários extremos projetados para testar os limites do alinhamento do sistema com valores fundamentais.
+**Simulações de Cenários**: Ambientes virtuais para testes seguros.
 
-**Transparência Radical**: Pilar ético que exige que todos os processos decisórios e operações do sistema sejam completamente transparentes e auditáveis.
+**Análise de Viés**: Exame de padrões de tratamento diferencial.
 
-## V
+## 🌍 Impacto Social
 
-**Validador de Equidade Distributiva**: Componente que analisa como benefícios e custos de decisões financeiras são distribuídos entre diferentes grupos e regiões.
+### Equidade
+**Equidade Distributiva**: Princípio de distribuição justa de benefícios.
 
-**Validadores Éticos**: Módulo ético-operacional que implementa testes específicos e rigorosos para cada pilar ético do sistema.
+**Equidade Global**: Consideração de impactos distributivos.
 
-**Verificação Prévia**: Componente dos Circuitos Morais que examina ações propostas antes de sua implementação para garantir conformidade com pilares éticos.
+**Sustentabilidade**: Foco em impactos de longo prazo.
+
+### Priorização
+**Núcleo de Priorização**: Alinhamento de decisões com pilares éticos.
+
+**Simulador Macroeconômico**: Previsão de consequências de decisões.
+
+**Preservação da Vida**: Valor supremo de proteção à vida.
+
+## 🔄 Processos
+
+### Escalação
+**Mecanismo de Escalação**: Transferência de decisões para níveis superiores.
+
+**Matriz de Transição**: Framework para evolução de autonomia.
+
+**Codificação Ética**: Transformação de princípios em regras.
+
+### Monitoramento
+**Monitoramento Contínuo**: Observação de operações significativas.
+
+**Análise de Viés**: Identificação de tratamento diferencial.
+
+**Validação Ética**: Testes específicos para pilares éticos.

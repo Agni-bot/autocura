@@ -1,89 +1,156 @@
-# Módulo Core
+# Módulo Core - Sistema de Autocura Cognitiva
 
-## Descrição
-Módulo central do sistema, responsável pelas funcionalidades essenciais e compartilhadas entre todos os outros módulos.
+## 🎯 Visão Geral
 
-## Estrutura
+O módulo Core é o coração do Sistema de Autocura Cognitiva, fornecendo as interfaces fundamentais e mecanismos de coordenação entre todos os outros módulos. Este módulo implementa os padrões de design e contratos que garantem a interoperabilidade e consistência do sistema como um todo.
+
+## 🏗️ Arquitetura
+
 ```
-core/
-├── src/                    # Código fonte
-│   ├── base/              # Classes e funções base
-│   ├── utils/             # Utilitários compartilhados
-│   ├── config/            # Configurações base
-│   └── api/               # API core
-├── tests/                 # Testes
-├── config/               # Configurações
-├── docker/              # Dockerfiles
-├── README.md           # Documentação
-└── __init__.py         # Inicialização
+┌─────────────────────────────────────────────────────────┐
+│                      Módulo Core                         │
+│                                                         │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐  │
+│  │  Interfaces │    │  Contratos  │    │  Padrões de │  │
+│  │  Base       │    │  Comuns     │    │  Design     │  │
+│  └─────────────┘    └─────────────┘    └─────────────┘  │
+│          ▲                ▲                  ▲          │
+│          │                │                  │          │
+│          ▼                ▼                  ▼          │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │           Coordenador de Módulos                │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
 ```
 
-## Funcionalidades
+## 📦 Componentes Principais
 
-### Base
-- Classes base do sistema
-- Interfaces principais
-- Tipos fundamentais
+### 1. Interfaces Base
+- Definições de interfaces comuns para todos os módulos
+- Contratos de comunicação padronizados
+- Tipos e estruturas de dados compartilhados
 
-### Utilitários
-- Funções de utilidade
-- Helpers compartilhados
-- Validações comuns
+### 2. Contratos Comuns
+- Protocolos de comunicação entre módulos
+- Formatos de dados padronizados
+- Convenções de nomenclatura
 
-### Configuração
-- Configurações base
-- Variáveis de ambiente
-- Constantes do sistema
+### 3. Padrões de Design
+- Padrões arquiteturais do sistema
+- Padrões de implementação
+- Guias de estilo e boas práticas
 
-### API
-- Endpoints core
-- Middlewares base
-- Autenticação e autorização
+### 4. Coordenador de Módulos
+- Gerenciamento do ciclo de vida dos módulos
+- Orquestração de dependências
+- Controle de fluxo de dados
 
-## Configuração
+## 🔄 Fluxo de Dados
 
-1. Instale as dependências:
+1. **Entrada de Dados**
+   - Recebimento de eventos dos módulos
+   - Validação de formato e conteúdo
+   - Roteamento para processamento
+
+2. **Processamento**
+   - Aplicação de regras de negócio
+   - Transformação de dados
+   - Coordenação de ações
+
+3. **Saída de Dados**
+   - Distribuição de resultados
+   - Notificação de eventos
+   - Atualização de estado
+
+## 🛠️ Integração com Outros Módulos
+
+### Módulos Técnicos
+- Monitoramento
+- Diagnóstico
+- Gerador de Ações
+- Integração
+- Observabilidade
+- Orquestração
+- Guardião Cognitivo
+
+### Módulos Ético-Operacionais
+- Núcleo de Priorização Financeira Ética
+- Mecanismo de Decisão Híbrida
+- Sistema de Auditoria
+- Interface de Governança
+- Circuitos Morais
+- Fluxo de Autonomia
+
+## 📝 Documentação
+
+### Arquivos Principais
+- `interfaces/`: Definições de interfaces
+- `contracts/`: Contratos de comunicação
+- `patterns/`: Padrões de design
+- `coordinator/`: Lógica de coordenação
+
+### Exemplos
+- Exemplos de implementação
+- Casos de uso
+- Padrões de integração
+
+## 🔍 Testes
+
+### Testes Unitários
+- Testes de interfaces
+- Testes de contratos
+- Testes de padrões
+
+### Testes de Integração
+- Testes de coordenação
+- Testes de fluxo
+- Testes de performance
+
+## 🚀 Deployment
+
+### Requisitos
+- Python 3.8+
+- Dependências listadas em `requirements.txt`
+- Configurações em `config.yaml`
+
+### Instalação
 ```bash
 pip install -r requirements.txt
+python setup.py install
 ```
 
-2. Configure as variáveis de ambiente:
-```bash
-cp .env.example .env
-# Edite o arquivo .env com suas configurações
+### Configuração
+```yaml
+core:
+  coordinator:
+    enabled: true
+    max_threads: 4
+  interfaces:
+    timeout: 30
+    retry_attempts: 3
 ```
 
-3. Execute os testes:
-```bash
-pytest tests/
-```
+## 📈 Monitoramento
 
-## Uso
+### Métricas
+- Tempo de resposta
+- Taxa de erros
+- Uso de recursos
 
-```python
-from core import Core
+### Logs
+- Logs de coordenação
+- Logs de interface
+- Logs de erro
 
-# Inicializa o core
-core = Core()
+## 🔒 Segurança
 
-# Configura o sistema
-core.configurar(config)
+### Autenticação
+- Validação de tokens
+- Controle de acesso
+- Criptografia
 
-# Inicializa serviços base
-core.inicializar_servicos()
-
-# Obtém utilitários
-utils = core.obter_utils()
-```
-
-## Contribuição
-
-1. Siga a estrutura modular
-2. Adicione testes
-3. Atualize a documentação
-4. Envie um pull request
-
-## Licença
-
-Este módulo está sob a licença MIT.
-
+### Auditoria
+- Logs de acesso
+- Registro de operações
+- Rastreamento de mudanças

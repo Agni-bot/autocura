@@ -1,119 +1,199 @@
-# Módulo de Testes
+# Documentação de Testes
 
-## Descrição
-Módulo responsável por gerenciar e executar todos os tipos de testes do sistema, garantindo a qualidade e confiabilidade do código.
+## Visão Geral
 
-## Estrutura
+Este documento descreve a estrutura, configuração e execução dos testes automatizados do sistema de autocura.
+
+## Estrutura de Testes
+
 ```
 tests/
-├── unit/                  # Testes unitários
-├── integration/           # Testes de integração
-├── contract/             # Testes de contrato
-├── performance/          # Testes de performance
-├── ethical/              # Testes éticos
-├── fixtures/             # Fixtures de teste
-└── mocks/                # Mocks e stubs
+├── unit/           # Testes unitários
+├── integration/    # Testes de integração
+├── e2e/           # Testes end-to-end
+├── fixtures/      # Fixtures compartilhadas
+└── data/          # Dados de teste
 ```
-
-## Funcionalidades
-
-### Testes Unitários
-- Testes de funções
-- Testes de classes
-- Testes de módulos
-- Cobertura de código
-
-### Testes de Integração
-- Testes de fluxos
-- Testes de APIs
-- Testes de banco de dados
-- Testes de serviços
-
-### Testes de Contrato
-- Testes de interfaces
-- Testes de APIs
-- Testes de schemas
-- Validação de contratos
-
-### Testes de Performance
-- Testes de carga
-- Testes de stress
-- Testes de escalabilidade
-- Análise de performance
-
-### Testes Éticos
-- Testes de viés
-- Testes de privacidade
-- Testes de segurança
-- Testes de conformidade
-
-### Fixtures
-- Dados de teste
-- Configurações
-- Ambientes
-- Estados
-
-### Mocks
-- Simulações
-- Stubs
-- Fakes
-- Spies
 
 ## Configuração
 
-1. Instale as dependências:
+### Arquivos de Configuração
+
+- `config/testes.yaml`: Configurações gerais dos testes
+- `config/prometheus/testes.yml`: Configurações do Prometheus
+- `config/grafana/provisioning/dashboards/testes.json`: Dashboard do Grafana
+
+### Variáveis de Ambiente
+
 ```bash
-pip install -r requirements.txt
+# Configurações de Teste
+TEST_DB_NAME=autocura_test
+TEST_REDIS_DB=1
+COVERAGE_THRESHOLD=80
+
+# Configurações de Monitoramento
+PROMETHEUS_PORT=9091
+GRAFANA_PORT=3001
+LOKI_PORT=3101
 ```
 
-2. Configure as variáveis de ambiente:
+## Execução de Testes
+
+### Execução Local
+
 ```bash
-cp .env.example .env
-# Edite o arquivo .env com suas configurações
+# Executar todos os testes
+python scripts/run_tests_monitored.py
+
+# Executar testes específicos
+pytest tests/unit/test_seu_caso.py -v
+
+# Executar com cobertura
+pytest --cov=src --cov-report=html
 ```
 
-3. Execute os testes:
+### Execução no CI/CD
+
+Os testes são executados automaticamente no GitHub Actions quando:
+- Um push é feito para as branches `main` ou `develop`
+- Um pull request é aberto para as branches `main` ou `develop`
+
+## Monitoramento
+
+### Métricas Coletadas
+
+- Total de testes executados
+- Testes passados/falhados
+- Tempo de execução
+- Cobertura de código
+
+### Alertas
+
+- Cobertura abaixo de 80%
+- Testes falhando
+- Tempo de execução alto
+- Múltiplas falhas consecutivas
+
+### Dashboards
+
+O dashboard do Grafana (`http://localhost:3000/d/testes`) mostra:
+- Gráfico de tempo de execução
+- Estatísticas de testes
+- Cobertura de código
+
+## Relatórios
+
+### Relatórios Gerados
+
+- `coverage/`: Relatório de cobertura em HTML
+- `test-results.xml`: Relatório JUnit
+- `logs/testes.log`: Logs de execução
+
+### Acesso aos Relatórios
+
+- Relatórios de cobertura: `coverage/index.html`
+- Relatórios de teste: `test-results.xml`
+- Logs: `logs/testes.log`
+
+## Boas Práticas
+
+1. **Organização**
+   - Mantenha os testes organizados por tipo
+   - Use fixtures para setup/teardown
+   - Documente casos de teste complexos
+
+2. **Cobertura**
+   - Mantenha cobertura acima de 80%
+   - Teste casos de borda
+   - Inclua testes negativos
+
+3. **Performance**
+   - Execute testes em paralelo
+   - Use mocks quando apropriado
+   - Mantenha testes rápidos
+
+4. **Manutenção**
+   - Atualize testes ao modificar código
+   - Revise periodicamente
+   - Remova testes obsoletos
+
+## Troubleshooting
+
+### Problemas Comuns
+
+1. **Testes Falhando**
+   - Verifique logs em `logs/testes.log`
+   - Consulte relatórios de cobertura
+   - Verifique configurações em `config/testes.yaml`
+
+2. **Cobertura Baixa**
+   - Execute `coverage report` para detalhes
+   - Verifique exclusões em `config/testes.yaml`
+   - Adicione testes para código não coberto
+
+3. **Performance**
+   - Use `pytest --durations=10` para identificar testes lentos
+   - Verifique configurações de paralelismo
+   - Otimize fixtures e setup
+
+### Comandos Úteis
+
 ```bash
-# Testes unitários
-pytest tests/unit/
+# Limpar cache de testes
+pytest --cache-clear
 
-# Testes de integração
-pytest tests/integration/
+# Ver testes mais lentos
+pytest --durations=10
 
-# Testes de contrato
-pytest tests/contract/
+# Executar com debug
+pytest -v --pdb
 
-# Testes de performance
-pytest tests/performance/
-
-# Testes éticos
-pytest tests/ethical/
-```
-
-## Uso
-
-```python
-from tests import fixtures, mocks
-
-# Usa fixtures
-dados_teste = fixtures.obter_dados_teste()
-
-# Usa mocks
-servico_mock = mocks.criar_servico_mock()
-
-# Executa testes
-def test_exemplo(dados_teste, servico_mock):
-    resultado = servico_mock.processar(dados_teste)
-    assert resultado == esperado
+# Gerar relatório detalhado
+pytest --html=report.html
 ```
 
 ## Contribuição
 
-1. Siga a estrutura modular
-2. Adicione testes
-3. Atualize a documentação
-4. Envie um pull request
+1. Siga o padrão de nomenclatura
+2. Documente novos testes
+3. Mantenha cobertura alta
+4. Execute testes localmente antes de commitar
 
-## Licença
+## Suporte
 
-Este módulo está sob a licença MIT. 
+Para suporte adicional:
+- Consulte a documentação em `docs/`
+- Abra uma issue no GitHub
+- Entre em contato com a equipe de desenvolvimento 
+
+## Status Atual dos Testes (21/05/2025)
+
+### Resumo da Execução
+- Total de testes executados: 349
+- Testes passados: 9
+- Testes falharam: 3 (última execução parou após 3 falhas)
+- Cobertura total: 14.49% (abaixo do threshold de 80%)
+
+### Situação por Módulo
+- **Guardião Cognitivo**: Todos os testes de integração passaram após correções recentes nos endpoints e mocks.
+- **Monitoramento**: Testes básicos passaram, mas cobertura ainda baixa.
+- **Dependências**: Falhas em testes de persistência e verificação de compatibilidade de Python (espera Python <= 3.13).
+- **Sistema Completo**: Falha em teste de processamento por ausência de log esperado.
+
+### Principais Falhas Atuais
+- `test_fluxo_completo_autocura`: Falha na verificação de compatibilidade do Python.
+- `test_historico_persistencia`: Persistência do histórico de dependências duplicando registros.
+- `test_fluxo_completo_processamento`: Log "Iniciando processamento" não capturado.
+
+### Próximos Passos
+- Corrigir lógica de verificação de versão do Python no módulo de dependências.
+- Revisar persistência do histórico para evitar duplicidade.
+- Garantir que logs relevantes sejam emitidos e capturados nos testes de sistema completo.
+- Aumentar cobertura de testes unitários e integração para todos os módulos.
+
+### Histórico de Evolução
+- **21/05/2025**: Corrigidos todos os testes do Guardião Cognitivo. Falhas remanescentes isoladas em dependências e sistema completo.
+- **20/05/2025**: Ajustes no monitoramento e início da padronização dos testes de integração.
+
+---
+> **Este status será atualizado a cada ciclo de correção relevante. Consulte esta seção para acompanhar a evolução dos testes e priorizar correções.** 
