@@ -1,0 +1,115 @@
+version: '3.8'
+
+services:
+  monitor:
+    image: docker.io/autocura/monitor:latest
+    container_name: autocura-monitor
+    networks:
+      - autocura_net
+    ports:
+      - "9090:9090"
+    environment:
+      - LOG_LEVEL=INFO
+      - PROMETHEUS_MULTIPROC_DIR=/tmp
+    volumes:
+      - ./data/monitor:/app/data
+    depends_on:
+      - redis
+      - prometheus
+
+  observador:
+    image: docker.io/autocura/observador:latest
+    container_name: autocura-observador
+    networks:
+      - autocura_net
+    ports:
+      - "8080:8080"
+    environment:
+      - LOG_LEVEL=INFO
+      - ELASTICSEARCH_HOSTS=elasticsearch:9200
+    volumes:
+      - ./data/observador:/app/data
+    depends_on:
+      - redis
+      - elasticsearch
+
+  validador:
+    image: docker.io/autocura/validador:latest
+    container_name: autocura-validador
+    networks:
+      - autocura_net
+    environment:
+      - LOG_LEVEL=INFO
+      - REDIS_HOST=redis
+    volumes:
+      - ./data/validador:/app/data
+    depends_on:
+      - redis
+
+  guardiao:
+    image: docker.io/autocura/guardiao:latest
+    container_name: autocura-guardiao
+    networks:
+      - autocura_net
+    environment:
+      - LOG_LEVEL=INFO
+      - REDIS_HOST=redis
+    volumes:
+      - ./data/guardiao:/app/data
+    depends_on:
+      - redis
+      - elasticsearch
+
+  redis:
+    image: redis:8.0.1
+    container_name: autocura-redis
+    networks:
+      - autocura_net
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: autocura-prometheus
+    networks:
+      - autocura_net
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./config/prometheus:/etc/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+
+  elasticsearch:
+    image: elasticsearch:7.9.3
+    container_name: autocura-elasticsearch
+    networks:
+      - autocura_net
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: autocura-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+      - ./config/prometheus/dashboards:/etc/grafana/provisioning/dashboards
+    depends_on:
+      - prometheus
+
+volumes:
+  redis_data:
+  es_data:
+
+networks:
+  autocura_net:
+    driver: bridge 

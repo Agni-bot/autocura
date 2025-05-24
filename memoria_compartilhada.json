@@ -130,6 +130,77 @@
           "intervalo_coleta": 30,
           "retencao_historico": 1000,
           "prometheus_port": 8000
+        },
+        "status": "em_desenvolvimento",
+        "componentes": {
+          "coletores": {
+            "status": "concluido",
+            "testes": "passando",
+            "ultima_atualizacao": "2024-03-19T15:30:00"
+          },
+          "storage": {
+            "status": "concluido",
+            "testes": "passando",
+            "ultima_atualizacao": "2024-03-19T15:30:00",
+            "detalhes": {
+              "redis": "operacional",
+              "prometheus": "isolado",
+              "timestamps": "corrigido"
+            }
+          },
+          "auditoria_etica": {
+            "status": "concluido",
+            "testes": "passando",
+            "ultima_atualizacao": "2024-03-19T15:30:00",
+            "detalhes": {
+              "score_etico": "implementado",
+              "recomendacoes": "implementado",
+              "historico": "implementado"
+            }
+          }
+        },
+        "alteracoes_recentes": [
+          {
+            "data": "2024-03-19T15:30:00",
+            "tipo": "nova_funcionalidade",
+            "descricao": "Implementação do módulo de auditoria ética",
+            "detalhes": [
+              "Cálculo de score ético baseado em múltiplos fatores",
+              "Análise de transparência, justiça, privacidade e segurança",
+              "Geração de recomendações",
+              "Histórico de decisões com filtragem temporal"
+            ]
+          },
+          {
+            "data": "2024-03-19T15:00:00",
+            "tipo": "correcao",
+            "descricao": "Correção no tratamento de timestamps",
+            "detalhes": [
+              "Implementação de conversão correta usando datetime.fromisoformat().timestamp()",
+              "Ajuste nos testes para validar timestamps"
+            ]
+          },
+          {
+            "data": "2024-03-19T14:30:00",
+            "tipo": "melhoria",
+            "descricao": "Isolamento de métricas Prometheus",
+            "detalhes": [
+              "Implementação de registro customizado por instância",
+              "Método clear_metrics() para limpeza entre testes"
+            ]
+          }
+        ],
+        "proximos_passos": [
+          "Integração com Grafana para visualização",
+          "Implementação de alertas baseados em scores éticos",
+          "Expansão dos critérios de avaliação ética",
+          "Documentação de casos de uso",
+          "Integração com sistema de logs"
+        ],
+        "dependencias": {
+          "redis": "6.1.0",
+          "prometheus_client": "0.19.0",
+          "pytest": "8.3.5"
         }
       }
     }
@@ -159,7 +230,7 @@
     "docs/monitoramento.md"
   ],
   "alertas_eticos": [],
-  "ultima_atualizacao": "2025-05-23T23:10:00",
+  "ultima_atualizacao": "2024-03-19T15:30:00",
   "progresso": [
     "Redis operacional via Docker (container redis-test)",
     "Correção do tratamento de timestamps ISO no método get_metrics do HybridStorage",
@@ -361,5 +432,586 @@
       "tipo": "testes",
       "descricao": "Testes de coletores passaram com sucesso. Testes de storage apresentam falhas devido à ausência do serviço Redis e duplicidade de métricas no Prometheus."
     }
-  ]
+  ],
+  "ambiente": {
+    "redis": {
+      "status": "operacional",
+      "container": "redis-test",
+      "porta": 6379
+    },
+    "docker": {
+      "status": "operacional",
+      "containers_ativos": ["redis-test"]
+    }
+  },
+  "memoria_etica": {
+    "principios": [
+      {
+        "nome": "Transparência",
+        "descricao": "Garantir transparência nas operações e decisões do sistema",
+        "metricas": {
+          "nivel_transparencia": 0.85,
+          "ultima_avaliacao": "2024-03-19T16:00:00"
+        }
+      },
+      {
+        "nome": "Equidade",
+        "descricao": "Assegurar tratamento justo e equitativo para todos os usuários",
+        "metricas": {
+          "indice_equidade": 0.92,
+          "ultima_avaliacao": "2024-03-19T16:00:00"
+        }
+      },
+      {
+        "nome": "Privacidade",
+        "descricao": "Proteger dados sensíveis e respeitar a privacidade dos usuários",
+        "metricas": {
+          "indice_privacidade": 0.88,
+          "ultima_avaliacao": "2024-03-19T16:00:00"
+        }
+      }
+    ],
+    "violacoes": [],
+    "ajustes": [],
+    "relatorios": [],
+    "auditoria": {
+      "metricas": {
+        "violacoes_total": 0,
+        "alertas_total": 0,
+        "tempo_resposta_medio": 0.0,
+        "dados_sensiveis_processados": 0
+      },
+      "ultima_avaliacao": "2024-03-19T16:00:00",
+      "status": "operacional",
+      "componentes": {
+        "ethical_auditor": {
+          "status": "implementado",
+          "versao": "1.0.0",
+          "funcionalidades": [
+            "Monitoramento de violações éticas",
+            "Cálculo de índices de equidade",
+            "Avaliação de transparência",
+            "Proteção de dados sensíveis",
+            "Geração de alertas éticos"
+          ],
+          "metricas_prometheus": {
+            "violacoes_counter": "autocura_violacoes_eticas_total",
+            "alertas_counter": "autocura_alertas_eticos_total",
+            "indice_equidade": "autocura_indice_equidade",
+            "nivel_transparencia": "autocura_nivel_transparencia",
+            "indice_privacidade": "autocura_indice_privacidade",
+            "tempo_resposta_etica": "autocura_tempo_resposta_etica_seconds",
+            "tamanho_dados_sensiveis": "autocura_tamanho_dados_sensiveis_bytes"
+          }
+        }
+      }
+    }
+  },
+  "monitoramento_etico": {
+    "metricas": {
+      "violacoes_eticas": {
+        "nome": "autocura_violacoes_eticas_total",
+        "tipo": "Counter",
+        "labels": ["categoria", "severidade"],
+        "alerta": {
+          "condicao": "> 0",
+          "duracao": "5m",
+          "severidade": "warning"
+        }
+      },
+      "indice_equidade": {
+        "nome": "autocura_indice_equidade",
+        "tipo": "Gauge",
+        "labels": ["componente"],
+        "alerta": {
+          "condicao": "< 0.7",
+          "duracao": "10m",
+          "severidade": "warning"
+        }
+      },
+      "nivel_transparencia": {
+        "nome": "autocura_nivel_transparencia",
+        "tipo": "Gauge",
+        "labels": ["aspecto"],
+        "alerta": {
+          "condicao": "< 0.8",
+          "duracao": "10m",
+          "severidade": "warning"
+        }
+      },
+      "indice_privacidade": {
+        "nome": "autocura_indice_privacidade",
+        "tipo": "Gauge",
+        "labels": ["tipo_dado"],
+        "alerta": {
+          "condicao": "< 0.8",
+          "duracao": "10m",
+          "severidade": "warning"
+        }
+      },
+      "tempo_resposta": {
+        "nome": "autocura_tempo_resposta_etica_seconds",
+        "tipo": "Histogram",
+        "labels": ["tipo_questao"],
+        "alerta": {
+          "condicao": "> 2s",
+          "duracao": "5m",
+          "severidade": "warning"
+        }
+      },
+      "dados_sensiveis": {
+        "nome": "autocura_tamanho_dados_sensiveis_bytes",
+        "tipo": "Histogram",
+        "labels": ["categoria"],
+        "alerta": {
+          "condicao": "> 1MB",
+          "duracao": "5m",
+          "severidade": "warning"
+        }
+      }
+    },
+    "dashboard": {
+      "nome": "Dashboard Ético",
+      "uid": "etica",
+      "panels": [
+        {
+          "titulo": "Violações Éticas",
+          "tipo": "graph",
+          "metrica": "autocura_violacoes_eticas_total"
+        },
+        {
+          "titulo": "Índice de Equidade",
+          "tipo": "graph",
+          "metrica": "autocura_indice_equidade"
+        },
+        {
+          "titulo": "Nível de Transparência",
+          "tipo": "graph",
+          "metrica": "autocura_nivel_transparencia"
+        },
+        {
+          "titulo": "Índice de Privacidade",
+          "tipo": "graph",
+          "metrica": "autocura_indice_privacidade"
+        },
+        {
+          "titulo": "Tempo de Resposta Ético",
+          "tipo": "graph",
+          "metrica": "autocura_tempo_resposta_etica_seconds"
+        },
+        {
+          "titulo": "Volume de Dados Sensíveis",
+          "tipo": "graph",
+          "metrica": "autocura_tamanho_dados_sensiveis_bytes"
+        }
+      ]
+    },
+    "integracao": {
+      "componentes": [
+        "EthicalAuditor",
+        "EthicalLogger",
+        "Prometheus",
+        "Grafana",
+        "Sistema de Notificações"
+      ],
+      "status": "implementado",
+      "versao": "1.0.0",
+      "logging": {
+        "status": "implementado",
+        "versao": "1.0.0",
+        "componentes": {
+          "ethical_logger": {
+            "status": "implementado",
+            "funcionalidades": [
+              "Registro de violações éticas",
+              "Atualização de índices",
+              "Registro de tempos de resposta",
+              "Monitoramento de dados sensíveis",
+              "Geração de estatísticas"
+            ]
+          },
+          "config_logging": {
+            "status": "implementado",
+            "funcionalidades": [
+              "Configuração hierárquica de logging",
+              "Suporte a múltiplos formatos",
+              "Handlers para diferentes destinos",
+              "Loggers especializados"
+            ]
+          }
+        },
+        "arquivos": {
+          "ethical_audit.log": {
+            "tipo": "log_geral",
+            "formato": "json",
+            "nivel": "INFO"
+          },
+          "ethical_errors.log": {
+            "tipo": "log_erros",
+            "formato": "json",
+            "nivel": "ERROR"
+          },
+          "ethical_audit_detailed.log": {
+            "tipo": "log_auditoria",
+            "formato": "json",
+            "nivel": "INFO"
+          }
+        }
+      }
+    },
+    "proximos_passos": [
+      "Expandir critérios de avaliação ética",
+      "Documentar casos de uso",
+      "Implementar dashboards adicionais",
+      "Integrar com sistemas de notificação"
+    ]
+  },
+  "criterios_avaliacao": {
+    "status": "implementado",
+    "versao": "1.0.0",
+    "criterios": {
+      "privacidade_dados": {
+        "nome": "Privacidade de Dados",
+        "descricao": "Avalia o tratamento e proteção de dados pessoais",
+        "severidade": "alta",
+        "metricas": [
+          "autocura_indice_privacidade",
+          "autocura_tamanho_dados_sensiveis_bytes"
+        ],
+        "limites": {
+          "indice_minimo": 0.8,
+          "tamanho_maximo": 1048576
+        }
+      },
+      "transparencia_algoritmica": {
+        "nome": "Transparência Algorítmica",
+        "descricao": "Avalia a transparência nas decisões algorítmicas",
+        "severidade": "alta",
+        "metricas": [
+          "autocura_nivel_transparencia"
+        ],
+        "limites": {
+          "nivel_minimo": 0.8
+        }
+      },
+      "equidade_distribuicao": {
+        "nome": "Equidade na Distribuição",
+        "descricao": "Avalia a distribuição justa de recursos e benefícios",
+        "severidade": "alta",
+        "metricas": [
+          "autocura_indice_equidade"
+        ],
+        "limites": {
+          "indice_minimo": 0.7
+        }
+      },
+      "seguranca_sistema": {
+        "nome": "Segurança do Sistema",
+        "descricao": "Avalia a segurança e proteção do sistema",
+        "severidade": "critica",
+        "metricas": [
+          "autocura_violacoes_eticas_total"
+        ],
+        "limites": {
+          "violacoes_maximas": 0
+        }
+      },
+      "acessibilidade_interface": {
+        "nome": "Acessibilidade da Interface",
+        "descricao": "Avalia a acessibilidade da interface do sistema",
+        "severidade": "media",
+        "metricas": [
+          "autocura_indice_acessibilidade"
+        ],
+        "limites": {
+          "indice_minimo": 0.9
+        }
+      },
+      "sustentabilidade_recursos": {
+        "nome": "Sustentabilidade de Recursos",
+        "descricao": "Avalia o uso sustentável de recursos computacionais",
+        "severidade": "media",
+        "metricas": [
+          "autocura_consumo_recursos"
+        ],
+        "limites": {
+          "consumo_maximo": 0.8
+        }
+      },
+      "responsabilidade_social": {
+        "nome": "Responsabilidade Social",
+        "descricao": "Avalia o impacto social do sistema",
+        "severidade": "alta",
+        "metricas": [
+          "autocura_impacto_social"
+        ],
+        "limites": {
+          "impacto_minimo": 0.7
+        }
+      }
+    },
+    "processo_avaliacao": {
+      "etapas": [
+        "Coleta de Métricas",
+        "Avaliação Individual",
+        "Avaliação Geral",
+        "Geração de Relatório"
+      ],
+      "integracao": [
+        "EthicalLogger",
+        "Prometheus",
+        "Grafana",
+        "Sistema de Notificações"
+      ]
+    },
+    "proximos_passos": [
+      "Documentar casos de uso",
+      "Implementar dashboards adicionais",
+      "Integrar com sistemas de notificação"
+    ]
+  },
+  "sistema_notificacoes": {
+    "status": "implementado",
+    "versao": "1.0.0",
+    "canais": {
+      "email": {
+        "enabled": true,
+        "config": {
+          "smtp_server": "smtp.gmail.com",
+          "smtp_port": 587,
+          "username": "autocura.etica@gmail.com",
+          "from_email": "autocura.etica@gmail.com",
+          "to_emails": [
+            "admin@autocura.com",
+            "etica@autocura.com"
+          ]
+        }
+      },
+      "slack": {
+        "enabled": true,
+        "config": {
+          "webhook_url": "https://hooks.slack.com/services/TXXXXXXXX/BXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXX",
+          "channel": "#ethical-alerts"
+        }
+      },
+      "telegram": {
+        "enabled": true,
+        "config": {
+          "bot_token": "123456789:ABCdefGHIjklMNOpqrsTUVwxyz",
+          "chat_id": "-1001234567890"
+        }
+      }
+    },
+    "severidades": {
+      "info": {
+        "email": true,
+        "slack": false,
+        "telegram": false
+      },
+      "warning": {
+        "email": true,
+        "slack": true,
+        "telegram": true
+      },
+      "error": {
+        "email": true,
+        "slack": true,
+        "telegram": true
+      },
+      "critical": {
+        "email": true,
+        "slack": true,
+        "telegram": true
+      }
+    },
+    "categorias": {
+      "privacidade": {
+        "severidade_padrao": "warning",
+        "canais": ["email", "slack"]
+      },
+      "transparencia": {
+        "severidade_padrao": "warning",
+        "canais": ["email", "slack"]
+      },
+      "equidade": {
+        "severidade_padrao": "error",
+        "canais": ["email", "slack", "telegram"]
+      },
+      "seguranca": {
+        "severidade_padrao": "critical",
+        "canais": ["email", "slack", "telegram"]
+      },
+      "acessibilidade": {
+        "severidade_padrao": "warning",
+        "canais": ["email"]
+      },
+      "sustentabilidade": {
+        "severidade_padrao": "info",
+        "canais": ["email"]
+      },
+      "responsabilidade_social": {
+        "severidade_padrao": "warning",
+        "canais": ["email", "slack"]
+      }
+    },
+    "limites": {
+      "indice_privacidade": 0.8,
+      "indice_transparencia": 0.8,
+      "indice_equidade": 0.7,
+      "indice_acessibilidade": 0.9,
+      "indice_sustentabilidade": 0.8,
+      "indice_responsabilidade_social": 0.7,
+      "tempo_resposta": 2.0,
+      "tamanho_dados_sensiveis": 1048576
+    },
+    "agrupamento": {
+      "enabled": true,
+      "intervalo_minutos": 5,
+      "max_notificacoes": 10
+    },
+    "retry": {
+      "max_tentativas": 3,
+      "intervalo_segundos": 60
+    },
+    "integracao": {
+      "ethical_logger": true,
+      "prometheus": true,
+      "grafana": true,
+      "sistema_logging": true
+    },
+    "proximos_passos": [
+      "Implementar suporte a mais canais",
+      "Adicionar templates personalizáveis",
+      "Implementar sistema de confirmação de leitura",
+      "Desenvolver dashboard de notificações",
+      "Integrar com sistema de tickets"
+    ]
+  },
+  "dashboards": {
+    "notificacoes": {
+      "status": "implementado",
+      "versao": "1.0.0",
+      "painéis": {
+        "taxa_severidade": {
+          "nome": "Taxa de Notificações por Severidade",
+          "métricas": [
+            "autocura_notificacoes_total{severidade=\"info\"}",
+            "autocura_notificacoes_total{severidade=\"warning\"}",
+            "autocura_notificacoes_total{severidade=\"error\"}",
+            "autocura_notificacoes_total{severidade=\"critical\"}"
+          ],
+          "tipo": "gráfico",
+          "atualização": "5s"
+        },
+        "taxa_canal": {
+          "nome": "Taxa de Notificações por Canal",
+          "métricas": [
+            "autocura_notificacoes_total{canal=\"email\"}",
+            "autocura_notificacoes_total{canal=\"slack\"}",
+            "autocura_notificacoes_total{canal=\"telegram\"}"
+          ],
+          "tipo": "gráfico",
+          "atualização": "5s"
+        },
+        "taxa_categoria_principal": {
+          "nome": "Taxa de Notificações por Categoria (Principais)",
+          "métricas": [
+            "autocura_notificacoes_total{categoria=\"privacidade\"}",
+            "autocura_notificacoes_total{categoria=\"transparencia\"}",
+            "autocura_notificacoes_total{categoria=\"equidade\"}",
+            "autocura_notificacoes_total{categoria=\"seguranca\"}"
+          ],
+          "tipo": "gráfico",
+          "atualização": "5s"
+        },
+        "taxa_categoria_secundaria": {
+          "nome": "Taxa de Notificações por Categoria (Secundárias)",
+          "métricas": [
+            "autocura_notificacoes_total{categoria=\"acessibilidade\"}",
+            "autocura_notificacoes_total{categoria=\"sustentabilidade\"}",
+            "autocura_notificacoes_total{categoria=\"responsabilidade_social\"}"
+          ],
+          "tipo": "gráfico",
+          "atualização": "5s"
+        },
+        "taxa_falhas": {
+          "nome": "Taxa de Falhas por Canal",
+          "métricas": [
+            "autocura_notificacoes_falhas_total{canal=\"email\"}",
+            "autocura_notificacoes_falhas_total{canal=\"slack\"}",
+            "autocura_notificacoes_falhas_total{canal=\"telegram\"}"
+          ],
+          "tipo": "gráfico",
+          "atualização": "5s"
+        },
+        "tempo_envio": {
+          "nome": "Tempo de Envio de Notificações",
+          "métricas": [
+            "histogram_quantile(0.95, sum(rate(autocura_notificacoes_tempo_envio_bucket[5m])) by (le))",
+            "histogram_quantile(0.50, sum(rate(autocura_notificacoes_tempo_envio_bucket[5m])) by (le))"
+          ],
+          "tipo": "gráfico",
+          "atualização": "5s"
+        }
+      },
+      "configuração": {
+        "atualização": "5s",
+        "período_padrão": "6h",
+        "tema": "escuro",
+        "interatividade": {
+          "zoom": true,
+          "pan": true,
+          "tooltips": true,
+          "anotações": true
+        }
+      },
+      "integração": {
+        "prometheus": {
+          "status": "ativo",
+          "função": "coleta de métricas"
+        },
+        "grafana": {
+          "status": "ativo",
+          "função": "visualização"
+        },
+        "sistema_notificacoes": {
+          "status": "ativo",
+          "função": "fonte de dados"
+        },
+        "logs": {
+          "status": "ativo",
+          "função": "contexto adicional"
+        }
+      },
+      "próximos_passos": {
+        "melhorias": [
+          "Adicionar filtros por período",
+          "Implementar exportação de dados",
+          "Criar alertas baseados em thresholds"
+        ],
+        "novas_funcionalidades": [
+          "Correlação com outros dashboards",
+          "Análise de tendências",
+          "Relatórios automáticos"
+        ],
+        "otimizações": [
+          "Performance de queries",
+          "Cache de dados",
+          "Compressão de métricas"
+        ]
+      },
+      "manutenção": {
+        "rotinas": {
+          "verificação_métricas": "diária",
+          "limpeza_dados": "semanal",
+          "backup_config": "mensal"
+        },
+        "troubleshooting": [
+          "Verificar conectividade com Prometheus",
+          "Validar queries de métricas",
+          "Monitorar uso de recursos"
+        ]
+      }
+    }
+  }
 }

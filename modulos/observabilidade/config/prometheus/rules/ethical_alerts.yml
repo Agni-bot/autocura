@@ -1,0 +1,56 @@
+groups:
+  - name: ethical_alerts
+    rules:
+      - alert: LowEthicalScore
+        expr: ethical_score < 0.6
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Score ético baixo detectado"
+          description: "O score ético está abaixo do threshold por mais de 5 minutos"
+
+      - alert: HighEthicalAlerts
+        expr: rate(ethical_alerts_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Alta taxa de alertas éticos"
+          description: "Taxa de alertas éticos está acima do normal"
+
+      - alert: LowTransparencyScore
+        expr: transparency_score < 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Score de transparência baixo"
+          description: "O score de transparência está abaixo do threshold por mais de 5 minutos"
+
+      - alert: LowFairnessScore
+        expr: fairness_score < 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Score de justiça baixo"
+          description: "O score de justiça está abaixo do threshold por mais de 5 minutos"
+
+      - alert: LowPrivacyScore
+        expr: privacy_score < 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Score de privacidade baixo"
+          description: "O score de privacidade está abaixo do threshold por mais de 5 minutos"
+
+      - alert: LowSafetyScore
+        expr: safety_score < 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Score de segurança baixo"
+          description: "O score de segurança está abaixo do threshold por mais de 5 minutos" 

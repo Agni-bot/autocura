@@ -1,12 +1,35 @@
-FROM autocura-base:latest
+# Imagem base
+FROM python:3.10-slim
 
-# Copiar código fonte
-COPY src/observabilidade /app/observabilidade
+# Define diretório de trabalho
+WORKDIR /app
+
+# Instala dependências do sistema
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copia arquivos de dependências
+COPY requirements.txt .
+
+# Instala dependências Python
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copia código fonte
+COPY src/monitoring /app/monitoring
 COPY src/core /app/core
-COPY src/metricas /app/metricas
+COPY src/utils /app/utils
 
-# Expor porta
+# Cria diretórios necessários
+RUN mkdir -p logs data
+
+# Define variáveis de ambiente
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+
+# Expõe porta do serviço
 EXPOSE 8080
 
-# Comando para iniciar o observador
-CMD ["python", "-m", "observabilidade.main"] 
+# Comando para executar o módulo
+CMD ["python", "-m", "monitoring.main"] 

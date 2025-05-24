@@ -1,14 +1,201 @@
 # Módulo de Observabilidade
 
+## Visão Geral
+
+O módulo de observabilidade fornece funcionalidades para coleta de métricas, armazenamento híbrido e auditoria ética do sistema. Ele inclui:
+
+- Coleta de métricas do sistema, aplicação e componentes quânticos
+- Armazenamento híbrido usando Redis e Prometheus
+- Auditoria ética com métricas e alertas
+- Visualização via Grafana
+
+## Componentes
+
+### Collectors
+
+- `SystemCollector`: Coleta métricas do sistema operacional
+- `ApplicationCollector`: Coleta métricas da aplicação
+- `QuantumCollector`: Coleta métricas dos componentes quânticos
+
+### Storage
+
+- `HybridStorage`: Utiliza Redis para armazenamento temporário e Prometheus para métricas de longo prazo
+  - Redis: Armazena métricas recentes e dados de alta frequência
+  - Prometheus: Armazena métricas históricas e gera alertas
+
+### Auditoria Ética
+
+- `EthicalAuditor`: Monitora e valida decisões do sistema
+  - Calcula score ético baseado em múltiplos fatores
+  - Analisa transparência, justiça, privacidade e segurança
+  - Gera recomendações baseadas na análise
+  - Mantém histórico de decisões
+  - Expõe métricas via Prometheus
+  - Gera alertas baseados em thresholds
+
+## Configuração
+
+### Redis
+
+```yaml
+redis:
+  host: localhost
+  port: 6379
+  db: 0
+```
+
+### Prometheus
+
+```yaml
+prometheus:
+  host: localhost
+  port: 9090
+  scrape_interval: 15s
+```
+
+### Auditor Ético
+
+```yaml
+ethical_auditor:
+  ethical_threshold: 0.8
+  monitoring_interval: 300
+  alert_threshold: 0.6
+  max_decisions_history: 1000
+  prometheus_port: 8000
+```
+
+## Uso
+
+### Coleta de Métricas
+
+```python
+from modulos.observabilidade.collectors import SystemCollector, ApplicationCollector
+
+# Coleta métricas do sistema
+system_metrics = SystemCollector().collect()
+
+# Coleta métricas da aplicação
+app_metrics = ApplicationCollector().collect()
+```
+
+### Armazenamento
+
+```python
+from modulos.observabilidade.storage import HybridStorage
+
+storage = HybridStorage()
+
+# Armazena métricas
+storage.store_metrics(system_metrics)
+storage.store_metrics(app_metrics)
+
+# Recupera métricas
+metrics = storage.get_metrics(start_time="2024-03-19T00:00:00")
+```
+
+### Auditoria Ética
+
+```python
+from modulos.observabilidade.auditoria import EthicalAuditor
+
+auditor = EthicalAuditor()
+
+# Audita uma decisão
+decision = auditor.audit_decision(
+    decision_type="classificação",
+    context={
+        "reasoning": "Análise de padrões",
+        "alternatives": ["A", "B", "C"],
+        "stakeholders": ["usuários", "sistema"]
+    },
+    impact_analysis={
+        "bias_analysis": {"bias_score": 0.1},
+        "risk_assessment": {"risk_score": 0.2}
+    }
+)
+
+# Recupera histórico
+history = auditor.get_decisions_history(
+    start_time="2024-03-19T00:00:00"
+)
+```
+
+## Métricas Prometheus
+
+O módulo expõe as seguintes métricas via Prometheus:
+
+- `ethical_score`: Score ético atual (0-1)
+- `transparency_score`: Score de transparência (0-1)
+- `fairness_score`: Score de justiça (0-1)
+- `privacy_score`: Score de privacidade (0-1)
+- `safety_score`: Score de segurança (0-1)
+- `ethical_decisions_total`: Total de decisões éticas
+- `ethical_alerts_total`: Total de alertas éticos
+
+## Alertas
+
+O sistema gera alertas quando:
+
+- Score ético fica abaixo de 0.6 por 5 minutos
+- Taxa de alertas éticos está acima do normal
+- Scores individuais (transparência, justiça, privacidade, segurança) ficam abaixo de 0.5 por 5 minutos
+
+## Visualização
+
+O dashboard Grafana "Ética" fornece visualizações para:
+
+- Score ético ao longo do tempo
+- Fatores de avaliação ética
+- Taxa de decisões éticas
+- Taxa de alertas éticos
+
 ## Atualizações Recentes
 
-- **Dependências**: Atualizadas para versões mais recentes, garantindo compatibilidade entre pacotes.
-- **Estrutura de Pacotes**: Adicionados arquivos `__init__.py` em todos os diretórios necessários para reconhecimento como pacotes Python.
-- **Imports**: Ajustados para formato absoluto nos testes, garantindo execução correta.
-- **Testes**: 
-  - Testes de coletores passaram com sucesso.
-  - Testes de storage apresentam falhas devido à ausência do serviço Redis e duplicidade de métricas no Prometheus.
-  - Recomenda-se iniciar o Redis localmente e isolar o registro do Prometheus entre testes.
+- Implementação de métricas Prometheus para auditoria ética
+- Configuração de alertas baseados em thresholds
+- Dashboard Grafana para visualização de métricas éticas
+- Correção no tratamento de timestamps
+- Isolamento de métricas Prometheus
+- Redis operacional via Docker
+- Testes automatizados passando
+
+## Próximos Passos
+
+- Integração com sistema de logs
+- Expansão dos critérios de avaliação ética
+- Documentação de casos de uso
+- Implementação de dashboards adicionais
+- Integração com sistemas de notificação
+
+## Troubleshooting
+
+### Timestamps
+
+Se encontrar erros com timestamps, verifique se:
+- O formato está em ISO 8601
+- A conversão para float está correta
+- O timezone está configurado adequadamente
+
+### Redis
+
+Se o Redis não estiver respondendo:
+- Verifique se o container está rodando
+- Confirme as credenciais de acesso
+- Verifique a conexão na porta correta
+
+### Prometheus
+
+Se as métricas não estiverem aparecendo:
+- Verifique se o servidor está rodando
+- Confirme a configuração de scrape
+- Verifique os logs do Prometheus
+
+### Auditoria Ética
+
+Se os scores estiverem inconsistentes:
+- Verifique os thresholds configurados
+- Confirme os pesos dos fatores
+- Analise o contexto e impacto das decisões
 
 ## Atualização - Progresso de Maio/2025
 

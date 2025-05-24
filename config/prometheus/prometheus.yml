@@ -3,11 +3,25 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
-  - job_name: 'autocura'
+  - job_name: 'monitor'
     static_configs:
-      - targets: ['autocura:9090']
+      - targets: ['monitor:9090']
     metrics_path: '/metrics'
-    scheme: 'http'
+
+  - job_name: 'observador'
+    static_configs:
+      - targets: ['observador:8080']
+    metrics_path: '/metrics'
+
+  - job_name: 'validador'
+    static_configs:
+      - targets: ['validador:8080']
+    metrics_path: '/metrics'
+
+  - job_name: 'guardiao'
+    static_configs:
+      - targets: ['guardiao:8080']
+    metrics_path: '/metrics'
 
   - job_name: 'prometheus'
     static_configs:

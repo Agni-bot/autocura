@@ -1,0 +1,56 @@
+version: 1
+disable_existing_loggers: false
+
+formatters:
+  padrao:
+    format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  json:
+    format: '%(message)s'
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: INFO
+    formatter: padrao
+    stream: ext://sys.stdout
+
+  arquivo:
+    class: logging.FileHandler
+    level: INFO
+    formatter: json
+    filename: logs/ethical_audit.log
+    mode: a
+
+  arquivo_erro:
+    class: logging.FileHandler
+    level: ERROR
+    formatter: json
+    filename: logs/ethical_errors.log
+    mode: a
+
+  arquivo_auditoria:
+    class: logging.FileHandler
+    level: INFO
+    formatter: json
+    filename: logs/ethical_audit_detailed.log
+    mode: a
+
+loggers:
+  ethical_logger:
+    level: INFO
+    handlers: [console, arquivo, arquivo_erro, arquivo_auditoria]
+    propagate: false
+
+  ethical_auditor:
+    level: INFO
+    handlers: [console, arquivo, arquivo_erro]
+    propagate: false
+
+  ethical_metrics:
+    level: INFO
+    handlers: [console, arquivo]
+    propagate: false
+
+root:
+  level: INFO
+  handlers: [console] 

@@ -1,33 +1,34 @@
-# Sistema AutoCura
+# AutoCura - Sistema de Autocura Cognitiva
 
-Sistema de autocura cognitiva com capacidade de evolução contínua e integração com tecnologias emergentes.
+## 📋 Visão Geral
 
-## 🎯 Visão Geral
-
-O Sistema AutoCura é uma plataforma modular e extensível que implementa capacidades de autocura cognitiva, preparada para integração com tecnologias quânticas, nano e bio. O sistema é projetado para evoluir continuamente, mantendo compatibilidade e estabilidade.
+O AutoCura é um sistema de autocura cognitiva que utiliza inteligência artificial para monitorar, validar e proteger operações em tempo real. O sistema é composto por módulos independentes que trabalham em conjunto para garantir a segurança e confiabilidade das operações.
 
 ## 🏗️ Arquitetura
 
-O sistema é composto por três camadas principais:
+O sistema é composto pelos seguintes módulos:
 
-### 1. Camada Base (Core)
-- Interface Universal de Módulos
-- Gerenciador de Plugins
-- Registro de Capacidades
-- Sistema de Versionamento
+- **Monitor**: Responsável por coletar e analisar métricas do sistema
+- **Observador**: Registra e analisa logs de operações
+- **Validador**: Valida requisições e operações
+- **Guardião**: Protege o sistema contra ameaças e anomalias
 
-### 2. Camada de Processamento
-- Módulo Clássico (Ativo)
-- Módulo Quântico (Alpha)
-- Módulo Nano (Alpha)
-- Módulo Bio (Alpha)
+### Serviços de Suporte
 
-### 3. Camada de Integração
-- APIs de Comunicação
-- Adaptadores de Tecnologia
-- Sistema de Eventos
+- **Redis**: Cache e mensageria
+- **Elasticsearch**: Armazenamento e busca de logs
+- **Prometheus**: Coleta de métricas
+- **Grafana**: Visualização de métricas e dashboards
 
-## 🚀 Instalação
+## 🚀 Início Rápido
+
+### Pré-requisitos
+
+- Docker e Docker Compose
+- PowerShell (Windows) ou Bash (Linux/Mac)
+- Python 3.8+
+
+### Instalação
 
 1. Clone o repositório:
 ```bash
@@ -35,80 +36,79 @@ git clone https://github.com/seu-usuario/autocura.git
 cd autocura
 ```
 
-2. Crie um ambiente virtual:
+2. Execute o script de inicialização:
+```powershell
+# Windows
+.\scripts\start_environment.ps1
+
+# Linux/Mac
+./scripts/start_environment.sh
+```
+
+3. Acesse os endpoints:
+- Monitor: http://localhost:9090
+- Observador: http://localhost:8080
+- Prometheus: http://localhost:9091
+- Grafana: http://localhost:3000
+- Elasticsearch: http://localhost:9200
+
+## 📊 Monitoramento
+
+### Grafana Dashboard
+
+O sistema inclui um dashboard predefinido no Grafana com as seguintes métricas:
+
+- Taxa de validações
+- Tempo de resposta (p50, p95)
+- Taxa de erros
+- Alertas ativos
+
+Para acessar o dashboard:
+1. Acesse http://localhost:3000
+2. Use as credenciais padrão:
+   - Usuário: admin
+   - Senha: admin
+3. O dashboard "AutoCura" estará disponível automaticamente
+
+### Logs
+
+Os logs podem ser acessados através do endpoint do Observador:
 ```bash
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
+curl -H "Authorization: Bearer seu-token-jwt" http://localhost:8080/logs?limit=10&level=INFO
 ```
 
-3. Instale as dependências:
-```bash
-pip install -r requirements.txt
+## 🧪 Testes
+
+### Testes de Integração
+
+Para executar os testes de integração:
+
+```powershell
+# Windows
+.\scripts\run_tests.ps1
+
+# Linux/Mac
+./scripts/run_tests.sh
 ```
 
-## 📦 Estrutura do Projeto
-
-```
-autocura/
-├── src/
-│   ├── core/
-│   │   ├── interfaces/
-│   │   │   └── universal_interface.py
-│   │   ├── plugins/
-│   │   │   └── plugin_manager.py
-│   │   └── registry/
-│   │       └── capability_registry.py
-│   ├── versioning/
-│   │   └── version_manager.py
-│   └── main.py
-├── tests/
-├── docs/
-├── requirements.txt
-└── README.md
-```
-
-## 🛠️ Uso
-
-### Inicialização do Sistema
-
-```python
-from src.core.interfaces.universal_interface import UniversalModuleInterface
-from src.core.plugins.plugin_manager import PluginManager
-from src.core.registry.capability_registry import CapabilityRegistry
-from src.versioning.version_manager import VersionManager
-
-# Inicializa os componentes principais
-interface = UniversalModuleInterface()
-plugin_manager = PluginManager()
-capability_registry = CapabilityRegistry()
-version_manager = VersionManager()
-
-# Carrega módulos disponíveis
-plugin_manager.load_module("core", "1.0.0")
-```
-
-### Registro de Novas Capacidades
-
-```python
-from src.core.registry.capability_registry import TechnologyCapability, TechnologyType
-
-# Registra uma nova capacidade
-nova_capacidade = TechnologyCapability(
-    name="quantum_processing",
-    type=TechnologyType.QUANTUM,
-    version="0.1.0"
-)
-capability_registry.register_capability(nova_capacidade)
-```
+O script irá:
+1. Verificar se todos os containers estão rodando
+2. Executar os testes de integração
+3. Gerar um relatório de cobertura
 
 ## 📚 Documentação
 
-A documentação completa está disponível em `docs/`:
+- [Documentação da API](docs/api.md)
+- [Guia de Desenvolvimento](docs/desenvolvimento.md)
+- [Arquitetura do Sistema](docs/arquitetura.md)
 
-- [Manual do Desenvolvedor](docs/manual_desenvolvedor.md)
-- [Guia de Arquitetura](docs/arquitetura.md)
-- [API Reference](docs/api.md)
+## 🔒 Segurança
+
+- Todas as APIs requerem autenticação via token JWT
+- Rate limiting: 100 requisições por minuto por IP
+- Todas as comunicações são via HTTPS
+- Logs são criptografados em repouso
+- Métricas são anonimizadas
 
 ## 🤝 Contribuindo
 
@@ -120,28 +120,4 @@ A documentação completa está disponível em `docs/`:
 
 ## 📝 Licença
 
-Este projeto está licenciado sob a MIT License - veja o arquivo [LICENSE](LICENSE) para detalhes.
-
-## 🔮 Roadmap
-
-### Fase Alpha (Atual)
-- [x] Interface Universal de Módulos
-- [x] Gerenciador de Plugins
-- [x] Registro de Capacidades
-- [x] Sistema de Versionamento
-
-### Fase Beta (Próxima)
-- [ ] Integração Quântica
-- [ ] Suporte Nano
-- [ ] Interface Bio
-- [ ] Sistema de Eventos
-
-### Fase Gamma (Futura)
-- [ ] Autocura Avançada
-- [ ] Integração Multi-tecnologia
-- [ ] Sistema de Decisão Autônomo
-- [ ] Interface Cognitiva
-
-## 📞 Suporte
-
-Para suporte, por favor abra uma issue no GitHub ou entre em contato através de [email@exemplo.com](mailto:email@exemplo.com). 
+Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes. 

@@ -13,8 +13,6 @@ RUN apt-get update && apt-get install -y \
 
 # Copia arquivos de dependências
 COPY requirements.txt .
-COPY setup.py .
-COPY pyproject.toml .
 
 # Instala dependências Python
 RUN pip install --no-cache-dir -r requirements.txt
@@ -35,4 +33,4 @@ ENV PYTHONUNBUFFERED=1
 EXPOSE 9090
 
 # Comando para executar o sistema
-CMD ["python", "scripts/run_autocura.py"] 
+CMD ["python", "src/main.py"] 
