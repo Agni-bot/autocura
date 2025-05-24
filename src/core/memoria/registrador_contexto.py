@@ -1,21 +1,19 @@
 """
-Registrador de Contexto - Sistema AutoCura
-=======================================
+Registrador de Contexto Automático - Sistema AutoCura
+=====================================================
 
-Este módulo gerencia o registro automático de contexto,
-salvando todas as interações e instruções no arquivo de memória.
+Este módulo mantém registro automático de todas as interações e eventos do sistema.
 """
 
 import json
 import os
 from datetime import datetime
 from typing import Dict, List, Optional, Any
-from pathlib import Path
+from .gerenciador_memoria import GerenciadorMemoria
 
 class RegistradorContexto:
     """
-    Gerencia o registro automático de contexto do sistema.
-    Salva todas as interações e instruções no arquivo de memória.
+    Registra automaticamente o contexto e eventos do sistema.
     """
     
     def __init__(self, arquivo_memoria: str = "memoria_compartilhada.json"):
@@ -25,224 +23,183 @@ class RegistradorContexto:
         Args:
             arquivo_memoria: Caminho do arquivo de memória compartilhada
         """
-        self.arquivo_memoria = arquivo_memoria
-        self.memoria = self._carregar_memoria()
+        self.gerenciador_memoria = GerenciadorMemoria(arquivo_memoria)
+        self.eventos_recentes = []
+        self.instrucoes_pendentes = []
     
-    def _carregar_memoria(self) -> Dict:
+    def registrar_evento(self, tipo_evento: str, descricao: str, dados_extras: Optional[Dict] = None) -> bool:
         """
-        Carrega a memória compartilhada do arquivo.
-        
-        Returns:
-            Dict: Memória carregada
-        """
-        try:
-            if os.path.exists(self.arquivo_memoria):
-                with open(self.arquivo_memoria, 'r', encoding='utf-8') as f:
-                    return json.load(f)
-            return self._criar_memoria_inicial()
-        except Exception as e:
-            print(f"Erro ao carregar memória: {e}")
-            return self._criar_memoria_inicial()
-    
-    def _criar_memoria_inicial(self) -> Dict:
-        """
-        Cria uma memória inicial vazia.
-        
-        Returns:
-            Dict: Memória inicial
-        """
-        return {
-            "ultima_atualizacao": datetime.now().isoformat(),
-            "estado_atual": {
-                "configuracoes": {},
-                "estrutura_diretorios": {},
-                "ultimas_acoes": [],
-                "contexto_atual": {
-                    "tarefa": "",
-                    "status": "inicial",
-                    "proximos_passos": []
-                }
-            },
-            "historico_interacoes": [],
-            "instrucoes_ia": [],
-            "log_eventos": []
-        }
-    
-    def salvar_memoria(self) -> bool:
-        """
-        Salva a memória compartilhada no arquivo.
-        
-        Returns:
-            bool: True se salvou com sucesso
-        """
-        try:
-            self.memoria["ultima_atualizacao"] = datetime.now().isoformat()
-            with open(self.arquivo_memoria, 'w', encoding='utf-8') as f:
-                json.dump(self.memoria, f, indent=2, ensure_ascii=False)
-            return True
-        except Exception as e:
-            print(f"Erro ao salvar memória: {e}")
-            return False
-    
-    def registrar_interacao(self, tipo: str, conteudo: str, detalhes: Optional[Dict] = None) -> bool:
-        """
-        Registra uma nova interação no histórico.
+        Registra um evento no sistema.
         
         Args:
-            tipo: Tipo da interação (comando, resposta, erro, etc)
-            conteudo: Conteúdo da interação
-            detalhes: Detalhes adicionais da interação
+            tipo_evento: Tipo do evento
+            descricao: Descrição do evento
+            dados_extras: Dados adicionais opcionais
             
         Returns:
             bool: True se registrou com sucesso
         """
         try:
-            interacao = {
+            evento = {
                 "timestamp": datetime.now().isoformat(),
-                "tipo": tipo,
-                "conteudo": conteudo
+                "tipo": tipo_evento,
+                "descricao": descricao,
+                "dados": dados_extras or {}
             }
             
-            if detalhes:
-                interacao["detalhes"] = detalhes
+            self.eventos_recentes.append(evento)
             
-            self.memoria["historico_interacoes"].append(interacao)
-            return self.salvar_memoria()
-        except Exception as e:
-            print(f"Erro ao registrar interação: {e}")
-            return False
-    
-    def registrar_instrucao(self, instrucao: str, contexto: str, prioridade: int = 1) -> bool:
-        """
-        Registra uma nova instrução para IAs.
-        
-        Args:
-            instrucao: Instrução a ser registrada
-            contexto: Contexto da instrução
-            prioridade: Prioridade da instrução (1-5)
+            # Mantém apenas os últimos 100 eventos na memória
+            if len(self.eventos_recentes) > 100:
+                self.eventos_recentes.pop(0)
             
-        Returns:
-            bool: True se registrou com sucesso
-        """
-        try:
-            self.memoria["instrucoes_ia"].append({
-                "timestamp": datetime.now().isoformat(),
-                "instrucao": instrucao,
-                "contexto": contexto,
-                "prioridade": prioridade,
-                "status": "pendente"
-            })
-            return self.salvar_memoria()
-        except Exception as e:
-            print(f"Erro ao registrar instrução: {e}")
-            return False
-    
-    def registrar_evento(self, evento: str, detalhes: str) -> bool:
-        """
-        Registra um novo evento no log.
-        
-        Args:
-            evento: Nome do evento
-            detalhes: Detalhes do evento
+            # Registra no gerenciador de memória
+            return self.gerenciador_memoria.registrar_acao(tipo_evento, descricao)
             
-        Returns:
-            bool: True se registrou com sucesso
-        """
-        try:
-            self.memoria["log_eventos"].append({
-                "data": datetime.now().isoformat(),
-                "evento": evento,
-                "detalhes": detalhes
-            })
-            return self.salvar_memoria()
         except Exception as e:
             print(f"Erro ao registrar evento: {e}")
             return False
     
+    def registrar_instrucao(self, titulo: str, descricao: str, prioridade: int = 1) -> bool:
+        """
+        Registra uma instrução para outras IAs.
+        
+        Args:
+            titulo: Título da instrução
+            descricao: Descrição detalhada
+            prioridade: Prioridade (1-5)
+            
+        Returns:
+            bool: True se registrou com sucesso
+        """
+        try:
+            instrucao = {
+                "id": len(self.instrucoes_pendentes) + 1,
+                "timestamp": datetime.now().isoformat(),
+                "titulo": titulo,
+                "descricao": descricao,
+                "prioridade": prioridade,
+                "status": "pendente"
+            }
+            
+            self.instrucoes_pendentes.append(instrucao)
+            
+            return self.registrar_evento("instrucao_criada", f"Instrução criada: {titulo}")
+            
+        except Exception as e:
+            print(f"Erro ao registrar instrução: {e}")
+            return False
+    
+    def obter_eventos_recentes(self, limit: int = 20) -> List[Dict]:
+        """
+        Retorna eventos recentes.
+        
+        Args:
+            limit: Número máximo de eventos a retornar
+            
+        Returns:
+            List[Dict]: Lista de eventos recentes
+        """
+        return self.eventos_recentes[-limit:]
+    
     def obter_instrucoes_pendentes(self) -> List[Dict]:
         """
-        Retorna as instruções pendentes para IAs.
+        Retorna instruções pendentes.
         
         Returns:
             List[Dict]: Lista de instruções pendentes
         """
-        return [
-            inst for inst in self.memoria["instrucoes_ia"]
-            if inst["status"] == "pendente"
-        ]
+        return [i for i in self.instrucoes_pendentes if i["status"] == "pendente"]
     
-    def marcar_instrucao_concluida(self, timestamp: str) -> bool:
+    def marcar_instrucao_concluida(self, instrucao_id: int) -> bool:
         """
         Marca uma instrução como concluída.
         
         Args:
-            timestamp: Timestamp da instrução
+            instrucao_id: ID da instrução
             
         Returns:
             bool: True se marcou com sucesso
         """
         try:
-            for inst in self.memoria["instrucoes_ia"]:
-                if inst["timestamp"] == timestamp:
-                    inst["status"] = "concluida"
-                    return self.salvar_memoria()
+            for instrucao in self.instrucoes_pendentes:
+                if instrucao["id"] == instrucao_id:
+                    instrucao["status"] = "concluida"
+                    instrucao["concluida_em"] = datetime.now().isoformat()
+                    
+                    return self.registrar_evento(
+                        "instrucao_concluida", 
+                        f"Instrução {instrucao_id} concluída: {instrucao['titulo']}"
+                    )
+            
             return False
+            
         except Exception as e:
-            print(f"Erro ao marcar instrução: {e}")
+            print(f"Erro ao marcar instrução como concluída: {e}")
             return False
     
-    def obter_historico_recente(self, limite: int = 10) -> List[Dict]:
+    def obter_estado_atual(self) -> Dict:
         """
-        Retorna o histórico recente de interações.
-        
-        Args:
-            limite: Número máximo de interações
-            
-        Returns:
-            List[Dict]: Histórico recente
-        """
-        return self.memoria["historico_interacoes"][-limite:]
-    
-    def obter_eventos_recentes(self, limite: int = 10) -> List[Dict]:
-        """
-        Retorna os eventos recentes.
-        
-        Args:
-            limite: Número máximo de eventos
-            
-        Returns:
-            List[Dict]: Eventos recentes
-        """
-        return self.memoria["log_eventos"][-limite:]
-    
-    def limpar_historico(self) -> bool:
-        """
-        Limpa o histórico de interações.
+        Retorna o estado atual do sistema.
         
         Returns:
-            bool: True se limpou com sucesso
+            Dict: Estado atual
         """
         try:
-            self.memoria["historico_interacoes"] = []
-            return self.salvar_memoria()
+            estado = self.gerenciador_memoria.obter_estado_atual()
+            
+            # Adiciona informações do registrador
+            estado["eventos_recentes_count"] = len(self.eventos_recentes)
+            estado["instrucoes_pendentes_count"] = len(self.obter_instrucoes_pendentes())
+            estado["ultima_atualizacao"] = datetime.now().isoformat()
+            
+            return estado
+            
         except Exception as e:
-            print(f"Erro ao limpar histórico: {e}")
-            return False
+            print(f"Erro ao obter estado atual: {e}")
+            return {}
     
-    def exportar_contexto(self, arquivo: str) -> bool:
+    def exportar_contexto(self, arquivo_destino: str) -> bool:
         """
-        Exporta o contexto atual para um arquivo.
+        Exporta todo o contexto para um arquivo.
         
         Args:
-            arquivo: Caminho do arquivo de saída
+            arquivo_destino: Caminho do arquivo de destino
             
         Returns:
             bool: True se exportou com sucesso
         """
         try:
-            with open(arquivo, 'w', encoding='utf-8') as f:
-                json.dump(self.memoria, f, indent=2, ensure_ascii=False)
+            contexto_completo = {
+                "timestamp_exportacao": datetime.now().isoformat(),
+                "estado_sistema": self.obter_estado_atual(),
+                "eventos_recentes": self.eventos_recentes,
+                "instrucoes_pendentes": self.instrucoes_pendentes,
+                "historico_interacoes": self.gerenciador_memoria.obter_historico()
+            }
+            
+            with open(arquivo_destino, 'w', encoding='utf-8') as f:
+                json.dump(contexto_completo, f, indent=2, ensure_ascii=False)
+            
             return True
+            
         except Exception as e:
             print(f"Erro ao exportar contexto: {e}")
+            return False
+    
+    def limpar_historico(self) -> bool:
+        """
+        Limpa o histórico de eventos e instruções.
+        
+        Returns:
+            bool: True se limpou com sucesso
+        """
+        try:
+            self.eventos_recentes.clear()
+            self.instrucoes_pendentes.clear()
+            
+            return self.gerenciador_memoria.limpar_historico()
+            
+        except Exception as e:
+            print(f"Erro ao limpar histórico: {e}")
             return False 

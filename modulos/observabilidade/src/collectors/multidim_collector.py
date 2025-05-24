@@ -10,36 +10,46 @@ class MultiDimensionalCollector:
     
     def collect_classical_metrics(self) -> Dict[str, Any]:
         """Coleta métricas tradicionais do sistema"""
-        metrics = {
-            "timestamp": datetime.now().isoformat(),
-            "cpu": {
-                "percent": psutil.cpu_percent(interval=1),
-                "per_cpu": psutil.cpu_percent(interval=1, percpu=True),
-                "frequency": psutil.cpu_freq()._asdict() if psutil.cpu_freq() else None
-            },
-            "memory": {
-                "total": psutil.virtual_memory().total,
-                "available": psutil.virtual_memory().available,
-                "percent": psutil.virtual_memory().percent,
-                "used": psutil.virtual_memory().used,
-                "free": psutil.virtual_memory().free
-            },
-            "disk": {
-                "total": psutil.disk_usage('/').total,
-                "used": psutil.disk_usage('/').used,
-                "free": psutil.disk_usage('/').free,
-                "percent": psutil.disk_usage('/').percent
+        try:
+            metrics = {
+                "timestamp": datetime.now().isoformat(),
+                "cpu": {
+                    "percent": psutil.cpu_percent(interval=0.1),
+                    "per_cpu": psutil.cpu_percent(interval=0.1, percpu=True),
+                    "frequency": psutil.cpu_freq()._asdict() if psutil.cpu_freq() else None
+                },
+                "memory": {
+                    "total": psutil.virtual_memory().total,
+                    "available": psutil.virtual_memory().available,
+                    "percent": psutil.virtual_memory().percent,
+                    "used": psutil.virtual_memory().used,
+                    "free": psutil.virtual_memory().free
+                },
+                "disk": {
+                    "total": psutil.disk_usage('C:\\').total,
+                    "used": psutil.disk_usage('C:\\').used,
+                    "free": psutil.disk_usage('C:\\').free,
+                    "percent": psutil.disk_usage('C:\\').percent
+                }
             }
-        }
-        
-        self.last_collection = metrics
-        self.metrics_history.append(metrics)
-        
-        # Mantém histórico limitado
-        if len(self.metrics_history) > 1000:
-            self.metrics_history.pop(0)
             
-        return metrics
+            self.last_collection = metrics
+            self.metrics_history.append(metrics)
+            
+            # Mantém histórico limitado
+            if len(self.metrics_history) > 1000:
+                self.metrics_history.pop(0)
+                
+            return metrics
+        except Exception as e:
+            # Retorna métricas básicas em caso de erro
+            return {
+                "timestamp": datetime.now().isoformat(),
+                "cpu": {"percent": 0, "per_cpu": [0], "frequency": None},
+                "memory": {"total": 0, "available": 0, "percent": 0, "used": 0, "free": 0},
+                "disk": {"total": 0, "used": 0, "free": 0, "percent": 0},
+                "error": str(e)
+            }
     
     def prepare_quantum_metrics(self) -> None:
         """Prepara estrutura para métricas quânticas futuras"""
@@ -67,4 +77,14 @@ class MultiDimensionalCollector:
         
         disk_equity = 1.0 - (self.last_collection["disk"]["percent"] / 100.0)
         
-        return (cpu_equity + memory_equity + disk_equity) / 3.0 
+        return (cpu_equity + memory_equity + disk_equity) / 3.0
+    
+    async def collect(self) -> Dict[str, Any]:
+        """Método assíncrono para coleta de métricas (compatibilidade com API)"""
+        metrics = self.collect_classical_metrics()
+        
+        # Adiciona informações extras para compatibilidade
+        metrics["collection_type"] = "classical"
+        metrics["equity_index"] = self.calculate_equity()
+        
+        return metrics 

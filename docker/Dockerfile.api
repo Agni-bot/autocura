@@ -1,13 +1,13 @@
 FROM autocura/base:latest
 
-# Copiar código fonte
-COPY src/core /app/core
-COPY src/memoria /app/memoria
-COPY src/seguranca /app/seguranca
-COPY src/integracao /app/integracao
+WORKDIR /app
+
+COPY ./src/ /app/src/
+
+ENV PYTHONPATH=/app/src:/app
 
 # Expor porta
 EXPOSE 8000
 
 # Comando para iniciar a API
-CMD ["python", "-m", "api.main"] 
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/src", "--reload-dir", "/app", "--reload-dir", "/app/src/api", "--reload-dir", "/app/src/api/main.py", "--reload-dir", "/app/src/api/__init__.py", "--reload-dir", "/app/src/api/__pycache__", "--reload-dir", "/app/src/api/__pycache__/main.cpython-39.pyc"] 

@@ -56,7 +56,7 @@ class GerenciadorMemoria:
             "estado_atual": {
                 "configuracoes": {},
                 "estrutura_diretorios": {},
-                "ultimas_acoes": [],
+                "acoes_recentes": [],
                 "contexto_atual": {
                     "tarefa": "",
                     "status": "inicial",

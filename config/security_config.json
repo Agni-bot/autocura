@@ -1,0 +1,13 @@
+{
+    "algorithms": {
+        "key_exchange": "CRYSTALS-Kyber",
+        "signature": "CRYSTALS-Dilithium",
+        "encryption": "CRYSTALS-Kyber"
+    },
+    "key_sizes": {
+        "CRYSTALS-Kyber": 2048,
+        "CRYSTALS-Dilithium": 2048
+    },
+    "hybrid_mode": true,
+    "rotation_interval": 86400
+}

@@ -4,8 +4,8 @@ services:
   # API Principal
   api:
     build:
-      context: .
-      dockerfile: modulos/docker/images/base/Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile.api
     ports:
       - "8000:8000"
     environment:
@@ -25,7 +25,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./modulos/monitoramento/config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ../modulos/monitoramento/config/prometheus.yml:/etc/prometheus/prometheus.yml
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
 
@@ -93,11 +93,11 @@ services:
   # Testes
   test:
     build:
-      context: .
-      dockerfile: modulos/docker/images/dev/Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile.test
     volumes:
       - .:/app
-    command: pytest modulos/tests/
+    command: pytest tests/
 
 volumes:
   grafana-storage:
