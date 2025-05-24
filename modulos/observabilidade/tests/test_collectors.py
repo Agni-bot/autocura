@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime
-from ..src.collectors.multidim_collector import MultiDimensionalCollector
+from modulos.observabilidade.src.collectors.multidim_collector import MultiDimensionalCollector
 
 @pytest.fixture
 def collector():

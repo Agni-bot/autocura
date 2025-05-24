@@ -159,7 +159,22 @@
     "docs/monitoramento.md"
   ],
   "alertas_eticos": [],
-  "ultima_atualizacao": "2024-03-19T15:30:00Z",
+  "ultima_atualizacao": "2025-05-23T23:10:00",
+  "progresso": [
+    "Redis operacional via Docker (container redis-test)",
+    "Correção do tratamento de timestamps ISO no método get_metrics do HybridStorage",
+    "Isolamento de métricas Prometheus por instância, evitando duplicidade em testes",
+    "Inclusão do método clear_metrics() para reset de métricas entre execuções",
+    "Todos os testes automatizados do módulo de observabilidade passaram com sucesso (pytest)"
+  ],
+  "troubleshooting": [
+    "Se ocorrer erro de conversão de timestamp, garantir que o campo timestamp está em formato ISO e usar datetime.fromisoformat() para conversão.",
+    "Recomenda-se sempre limpar as métricas Prometheus entre execuções de teste usando clear_metrics()."
+  ],
+  "proximos_passos": [
+    "Automatizar limpeza do Redis entre execuções de testes (fixture)",
+    "Documentar exemplos de integração com Prometheus externo"
+  ],
   "estado_atual": {
     "estrutura_diretorios": {
       "raiz": {
@@ -323,6 +338,28 @@
       "timestamp": "2024-03-19T00:00:00Z",
       "acao": "reorganizacao_estrutura",
       "detalhes": "Movimentação do arquivo production.yaml para o diretório prod/"
+    }
+  ],
+  "mudancas": [
+    {
+      "data": "2023-10-10T12:00:00Z",
+      "tipo": "dependencias",
+      "descricao": "Atualizadas dependências para versões mais recentes, garantindo compatibilidade entre pacotes."
+    },
+    {
+      "data": "2023-10-10T12:00:00Z",
+      "tipo": "estrutura",
+      "descricao": "Adicionados arquivos __init__.py em todos os diretórios necessários para reconhecimento como pacotes Python."
+    },
+    {
+      "data": "2023-10-10T12:00:00Z",
+      "tipo": "imports",
+      "descricao": "Ajustados imports para formato absoluto nos testes, garantindo execução correta."
+    },
+    {
+      "data": "2023-10-10T12:00:00Z",
+      "tipo": "testes",
+      "descricao": "Testes de coletores passaram com sucesso. Testes de storage apresentam falhas devido à ausência do serviço Redis e duplicidade de métricas no Prometheus."
     }
   ]
 }

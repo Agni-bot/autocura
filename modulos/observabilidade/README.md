@@ -1,5 +1,42 @@
 # Módulo de Observabilidade
 
+## Atualizações Recentes
+
+- **Dependências**: Atualizadas para versões mais recentes, garantindo compatibilidade entre pacotes.
+- **Estrutura de Pacotes**: Adicionados arquivos `__init__.py` em todos os diretórios necessários para reconhecimento como pacotes Python.
+- **Imports**: Ajustados para formato absoluto nos testes, garantindo execução correta.
+- **Testes**: 
+  - Testes de coletores passaram com sucesso.
+  - Testes de storage apresentam falhas devido à ausência do serviço Redis e duplicidade de métricas no Prometheus.
+  - Recomenda-se iniciar o Redis localmente e isolar o registro do Prometheus entre testes.
+
+## Atualização - Progresso de Maio/2025
+
+- Redis operacional via Docker (`redis-test`)
+- Correção do tratamento de timestamps ISO no método `get_metrics` (`HybridStorage`)
+- Isolamento de métricas Prometheus por instância, evitando duplicidade em testes
+- Inclusão do método `clear_metrics()` para reset de métricas entre execuções
+- Todos os testes automatizados do módulo de observabilidade passaram com sucesso (`pytest`)
+
+### Troubleshooting
+- Se ocorrer erro de conversão de timestamp, garantir que o campo `timestamp` está em formato ISO e usar `datetime.fromisoformat()` para conversão.
+- Recomenda-se sempre limpar as métricas Prometheus entre execuções de teste usando `clear_metrics()`.
+
+### Próximos passos sugeridos
+- Automatizar limpeza do Redis entre execuções de testes (fixture)
+- Documentar exemplos de integração com Prometheus externo
+
+## Requisitos de Ambiente
+
+- Redis ativo em `localhost:6379` para testes integrais.
+- Prometheus configurado para evitar duplicidade de métricas.
+
+## Próximos Passos
+
+- Iniciar o serviço Redis localmente.
+- Ajustar os testes do Prometheus para isolar o registro global.
+- Atualizar a documentação conforme evolução do projeto.
+
 ## Descrição
 Módulo responsável pela coleta, processamento e análise de métricas, logs e traces do sistema para garantir visibilidade e monitoramento efetivo.
 

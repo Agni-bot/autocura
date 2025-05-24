@@ -1,11 +1,13 @@
 import pytest
 from datetime import datetime
 import redis
-from ..src.storage.hybrid_storage import HybridStorage
+from modulos.observabilidade.src.storage.hybrid_storage import HybridStorage
 
 @pytest.fixture
 def storage():
-    return HybridStorage(redis_url="redis://localhost:6379/0")
+    storage = HybridStorage(redis_url="redis://localhost:6379/0")
+    storage.clear_metrics()  # Limpa métricas antes do teste
+    return storage
 
 @pytest.fixture
 def sample_metrics():
@@ -60,7 +62,7 @@ def test_get_metrics_time_range(storage, sample_metrics):
     )
     
     assert len(metrics) > 0
-    assert all(start_time <= float(m["timestamp"]) <= end_time 
+    assert all(start_time <= datetime.fromisoformat(m["timestamp"]).timestamp() <= end_time 
               for m in metrics)
 
 def test_prepare_quantum_storage(storage):
