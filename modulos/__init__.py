@@ -1,1 +1,0 @@
-# Pacote raiz dos módulos do AutoCura 

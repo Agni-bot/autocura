@@ -1,1 +1,0 @@
-"""Módulo registro-decisoes"""

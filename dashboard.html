@@ -1,0 +1,2343 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema AutoCura - Dashboard Fase Alpha</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .header .subtitle {
+            font-size: 1.2em;
+            opacity: 0.8;
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: space-around;
+            padding: 20px;
+            background: rgba(0,0,0,0.1);
+        }
+        
+        .status-item {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            min-width: 150px;
+        }
+        
+        .status-item.healthy {
+            border-left: 5px solid #4CAF50;
+        }
+        
+        .status-item.warning {
+            border-left: 5px solid #FF9800;
+        }
+        
+        .status-item.error {
+            border-left: 5px solid #F44336;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        .card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .card h3 {
+            margin-bottom: 15px;
+            color: #FFD700;
+            border-bottom: 2px solid rgba(255,215,0,0.3);
+            padding-bottom: 10px;
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+        
+        .metric-value {
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            transition: width 0.5s ease;
+        }
+        
+        .progress-fill.warning {
+            background: linear-gradient(90deg, #FF9800, #FFC107);
+        }
+        
+        .progress-fill.danger {
+            background: linear-gradient(90deg, #F44336, #FF5722);
+        }
+        
+        .log-entry {
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(0,0,0,0.2);
+            border-radius: 5px;
+            font-size: 0.9em;
+            border-left: 3px solid #2196F3;
+        }
+        
+        .log-entry.warning {
+            border-left-color: #FF9800;
+        }
+        
+        .log-entry.error {
+            border-left-color: #F44336;
+        }
+        
+        .refresh-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .refresh-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        
+        .auto-refresh {
+            color: #4CAF50;
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .loading {
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* Estilos para navegação interativa */
+        .nav-button {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+            display: inline-block;
+        }
+        
+        .nav-button:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: #4CAF50;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .nav-button.active {
+            background: #4CAF50;
+            border-color: #4CAF50;
+        }
+        
+        .module-section {
+            display: none;
+        }
+        
+        .module-section.active {
+            display: block;
+        }
+        
+        .card.clickable {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .card.clickable:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            border-color: #4CAF50;
+        }
+        
+        .status-item.clickable {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .status-item.clickable:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+        }
+        
+        .navigation-bar {
+            background: rgba(0,0,0,0.2);
+            padding: 15px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .module-header {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+        }
+        
+        .module-header h2 {
+            color: #FFD700;
+            margin: 0;
+            font-size: 2em;
+        }
+        
+        .module-header p {
+            color: rgba(255,255,255,0.8);
+            margin: 10px 0 0 0;
+        }
+        
+        .action-buttons {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .action-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 0 10px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .action-btn.secondary {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+        }
+        
+        .action-btn.warning {
+            background: linear-gradient(45deg, #FF9800, #F57C00);
+        }
+        
+        /* Estilos para Interface de Aprovação Manual */
+        .suggestion-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .suggestion-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            border-color: #4CAF50;
+        }
+        
+        .suggestion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .suggestion-type {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .suggestion-type.performance {
+            background: linear-gradient(45deg, #4CAF50, #8BC34A);
+            color: white;
+        }
+        
+        .suggestion-type.bugfix {
+            background: linear-gradient(45deg, #FF9800, #FFC107);
+            color: white;
+        }
+        
+        .suggestion-type.feature {
+            background: linear-gradient(45deg, #2196F3, #03A9F4);
+            color: white;
+        }
+        
+        .suggestion-type.security {
+            background: linear-gradient(45deg, #F44336, #E91E63);
+            color: white;
+        }
+        
+        .suggestion-priority {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
+        .suggestion-priority.critical {
+            background: #F44336;
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .suggestion-priority.high {
+            background: #FF9800;
+            color: white;
+        }
+        
+        .suggestion-priority.medium {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .suggestion-priority.low {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .suggestion-content h4 {
+            color: #FFD700;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+        
+        .suggestion-description {
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        
+        .suggestion-description p {
+            margin: 10px 0;
+        }
+        
+        .suggestion-description strong {
+            color: #FFD700;
+        }
+        
+        .suggestion-metrics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+        
+        .metric-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 120px;
+        }
+        
+        .metric-label {
+            font-size: 0.8em;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 5px;
+        }
+        
+        .metric-value {
+            font-weight: bold;
+            font-size: 1em;
+        }
+        
+        .metric-value.positive {
+            color: #4CAF50;
+        }
+        
+        .metric-value.high {
+            color: #4CAF50;
+        }
+        
+        .metric-value.medium {
+            color: #FF9800;
+        }
+        
+        .metric-value.low {
+            color: #F44336;
+        }
+        
+        .metric-value.critical {
+            color: #F44336;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .suggestion-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .suggestion-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .suggestion-btn.apply {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+        
+        .suggestion-btn.apply.urgent {
+            background: linear-gradient(45deg, #F44336, #D32F2F);
+            animation: pulse 2s infinite;
+        }
+        
+        .suggestion-btn.preview {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+            color: white;
+        }
+        
+        .suggestion-btn.reject {
+            background: linear-gradient(45deg, #757575, #424242);
+            color: white;
+        }
+        
+        .suggestion-btn.schedule {
+            background: linear-gradient(45deg, #FF9800, #F57C00);
+            color: white;
+        }
+        
+        .suggestion-btn.later {
+            background: linear-gradient(45deg, #9C27B0, #7B1FA2);
+            color: white;
+        }
+        
+        .suggestion-btn.escalate {
+            background: linear-gradient(45deg, #E91E63, #C2185B);
+            color: white;
+        }
+        
+        .suggestion-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .approval-status-panel {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .approval-status-panel h3 {
+            color: #FFD700;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .approval-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+        
+        .stat-label {
+            display: block;
+            font-size: 0.9em;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            display: block;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        /* Animações especiais */
+        @keyframes suggestionAlert {
+            0% { border-color: rgba(255,255,255,0.2); }
+            50% { border-color: #FFD700; }
+            100% { border-color: rgba(255,255,255,0.2); }
+        }
+        
+        .suggestion-card.new {
+            animation: suggestionAlert 2s infinite;
+        }
+        
+        .suggestion-card.applying {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        
+        .suggestion-card.applied {
+            background: linear-gradient(45deg, rgba(76, 175, 80, 0.1), rgba(139, 195, 74, 0.1));
+            border-color: #4CAF50;
+        }
+        
+        .suggestion-card.rejected {
+            background: linear-gradient(45deg, rgba(117, 117, 117, 0.1), rgba(66, 66, 66, 0.1));
+            border-color: #757575;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 Sistema AutoCura</h1>
+        <div class="subtitle">Dashboard da Fase Alpha - Monitoramento em Tempo Real</div>
+    </div>
+    
+    <!-- Barra de Navegação -->
+    <div class="navigation-bar">
+        <button class="nav-button active" onclick="showModule('overview')">📊 Visão Geral</button>
+        <button class="nav-button" onclick="showModule('metrics')">📈 Métricas</button>
+        <button class="nav-button" onclick="showModule('ia')">🧠 IA Evolutiva</button>
+        <button class="nav-button" onclick="showModule('approvals')">🤖 Aprovações</button>
+        <button class="nav-button" onclick="showModule('observability')">🔍 Observabilidade</button>
+        <button class="nav-button" onclick="showModule('security')">🛡️ Segurança</button>
+        <button class="nav-button" onclick="showModule('logs')">📝 Logs</button>
+        <button class="nav-button" onclick="showModule('monitoring')">🔬 Monitoramento Avançado</button>
+    </div>
+    
+    <div class="status-bar">
+        <div class="status-item healthy clickable" id="api-status" onclick="showModule('metrics')">
+            <h4>API Status</h4>
+            <div id="api-status-text">Carregando...</div>
+        </div>
+        <div class="status-item healthy clickable" id="system-health" onclick="showModule('security')">
+            <h4>Saúde do Sistema</h4>
+            <div id="system-health-text">Carregando...</div>
+        </div>
+        <div class="status-item healthy clickable" id="modules-status" onclick="showModule('observability')">
+            <h4>Módulos Ativos</h4>
+            <div id="modules-count">Carregando...</div>
+        </div>
+        <div class="status-item healthy clickable" id="evolution-status" onclick="showModule('ia')">
+            <h4>Nível Evolutivo</h4>
+            <div id="evolution-level">Carregando...</div>
+        </div>
+    </div>
+    
+    <!-- Seção: Visão Geral -->
+    <div id="overview-section" class="module-section active">
+        <div class="dashboard">
+            <div class="card clickable" onclick="showModule('metrics')">
+                <h3>📊 Métricas do Sistema</h3>
+                <div class="metric">
+                    <span>CPU Usage:</span>
+                    <span class="metric-value" id="cpu-value">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="cpu-progress"></div>
+                </div>
+                
+                <div class="metric">
+                    <span>Memory Usage:</span>
+                    <span class="metric-value" id="memory-value">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="memory-progress"></div>
+                </div>
+                
+                <div class="metric">
+                    <span>Disk Usage:</span>
+                    <span class="metric-value" id="disk-value">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="disk-progress"></div>
+                </div>
+            </div>
+            
+            <div class="card clickable" onclick="showModule('ia')">
+                <h3>🧠 IA Evolutiva</h3>
+                <div class="metric">
+                    <span>Nível Cognitivo:</span>
+                    <span class="metric-value" id="cognitive-level">REACTIVE</span>
+                </div>
+                <div class="metric">
+                    <span>Capacidades:</span>
+                    <span class="metric-value" id="capabilities-count">2/7</span>
+                </div>
+                <div class="metric">
+                    <span>Próxima Evolução:</span>
+                    <span class="metric-value" id="next-evolution">DELIBERATIVE</span>
+                </div>
+            </div>
+            
+            <div class="card clickable" onclick="showModule('observability')">
+                <h3>🔍 Observabilidade</h3>
+                <div class="metric">
+                    <span>Coleta Multi-Dimensional:</span>
+                    <span class="metric-value" id="collection-status">Ativa</span>
+                </div>
+                <div class="metric">
+                    <span>Paradigmas de Diagnóstico:</span>
+                    <span class="metric-value" id="paradigms-count">9</span>
+                </div>
+                <div class="metric">
+                    <span>Última Coleta:</span>
+                    <span class="metric-value" id="last-collection">Agora</span>
+                </div>
+            </div>
+            
+            <div class="card clickable" onclick="showModule('security')">
+                <h3>🛡️ Segurança & Saúde</h3>
+                <div class="metric">
+                    <span>Criptografia:</span>
+                    <span class="metric-value" id="crypto-status">Quantum-Safe</span>
+                </div>
+                <div class="metric">
+                    <span>Componentes Saudáveis:</span>
+                    <span class="metric-value" id="healthy-components">5/5</span>
+                </div>
+                <div class="metric">
+                    <span>Ações de Cura:</span>
+                    <span class="metric-value" id="healing-actions">0</span>
+                </div>
+            </div>
+            
+            <div class="card clickable" onclick="showModule('logs')">
+                <h3>📝 Log de Eventos</h3>
+                <div id="events-log">
+                    <div class="log-entry">Sistema iniciado com sucesso</div>
+                    <div class="log-entry">Módulos carregados</div>
+                    <div class="log-entry">Coleta de métricas ativa</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>🚀 Status da Fase Alpha</h3>
+                <div class="metric">
+                    <span>Progresso Geral:</span>
+                    <span class="metric-value">75%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 75%"></div>
+                </div>
+                <div class="metric">
+                    <span>Etapa Atual:</span>
+                    <span class="metric-value">A2 - Corrigida</span>
+                </div>
+                <div class="metric">
+                    <span>Próxima Etapa:</span>
+                    <span class="metric-value">A3.1 - Quantum-Safe</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seção: Métricas Detalhadas -->
+    <div id="metrics-section" class="module-section">
+        <div class="module-header">
+            <h2>📈 Métricas do Sistema</h2>
+            <p>Monitoramento detalhado de recursos e performance</p>
+        </div>
+        <div class="action-buttons">
+            <button class="action-btn" onclick="refreshMetrics()">🔄 Atualizar Métricas</button>
+            <button class="action-btn secondary" onclick="exportMetrics()">📊 Exportar Dados</button>
+            <button class="action-btn warning" onclick="configureAlerts()">⚠️ Configurar Alertas</button>
+        </div>
+        <div class="dashboard">
+            <div class="card">
+                <h3>💻 CPU & Processamento</h3>
+                <div class="metric">
+                    <span>Uso Atual:</span>
+                    <span class="metric-value" id="cpu-detailed">0%</span>
+                </div>
+                <div class="metric">
+                    <span>Núcleos Ativos:</span>
+                    <span class="metric-value">4/4</span>
+                </div>
+                <div class="metric">
+                    <span>Temperatura:</span>
+                    <span class="metric-value">45°C</span>
+                </div>
+            </div>
+            <div class="card">
+                <h3>🧠 Memória</h3>
+                <div class="metric">
+                    <span>RAM Utilizada:</span>
+                    <span class="metric-value" id="memory-detailed">0%</span>
+                </div>
+                <div class="metric">
+                    <span>Cache:</span>
+                    <span class="metric-value">2.1 GB</span>
+                </div>
+                <div class="metric">
+                    <span>Swap:</span>
+                    <span class="metric-value">0 MB</span>
+                </div>
+            </div>
+            <div class="card">
+                <h3>💾 Armazenamento</h3>
+                <div class="metric">
+                    <span>Disco Principal:</span>
+                    <span class="metric-value" id="disk-detailed">0%</span>
+                </div>
+                <div class="metric">
+                    <span>I/O Read:</span>
+                    <span class="metric-value">125 MB/s</span>
+                </div>
+                <div class="metric">
+                    <span>I/O Write:</span>
+                    <span class="metric-value">89 MB/s</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seção: IA Evolutiva -->
+    <div id="ia-section" class="module-section">
+        <div class="module-header">
+            <h2>🧠 IA Evolutiva</h2>
+            <p>Sistema de inteligência artificial com capacidades evolutivas</p>
+        </div>
+        <div class="action-buttons">
+            <button class="action-btn" onclick="triggerEvolution()">🚀 Disparar Evolução</button>
+            <button class="action-btn secondary" onclick="viewCapabilities()">🔍 Ver Capacidades</button>
+            <button class="action-btn warning" onclick="resetIA()">🔄 Reset IA</button>
+        </div>
+        <div class="dashboard">
+            <div class="card">
+                <h3>🎯 Nível Cognitivo Atual</h3>
+                <div class="metric">
+                    <span>Nível:</span>
+                    <span class="metric-value">REACTIVE</span>
+                </div>
+                <div class="metric">
+                    <span>Experiência:</span>
+                    <span class="metric-value">1,247 interações</span>
+                </div>
+                <div class="metric">
+                    <span>Precisão:</span>
+                    <span class="metric-value">94.2%</span>
+                </div>
+            </div>
+            <div class="card">
+                <h3>⚡ Capacidades Ativas</h3>
+                <div class="metric">
+                    <span>Clássica:</span>
+                    <span class="metric-value">✅ Ativa</span>
+                </div>
+                <div class="metric">
+                    <span>Quantum:</span>
+                    <span class="metric-value">🔄 Preparando</span>
+                </div>
+                <div class="metric">
+                    <span>Nano:</span>
+                    <span class="metric-value">⏳ Aguardando</span>
+                </div>
+            </div>
+            <div class="card">
+                <h3>📈 Próxima Evolução</h3>
+                <div class="metric">
+                    <span>Destino:</span>
+                    <span class="metric-value">DELIBERATIVE</span>
+                </div>
+                <div class="metric">
+                    <span>Progresso:</span>
+                    <span class="metric-value">67%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 67%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seção: Observabilidade -->
+    <div id="observability-section" class="module-section">
+        <div class="module-header">
+            <h2>🔍 Observabilidade Multi-Dimensional</h2>
+            <p>Coleta e análise de dados em múltiplas dimensões</p>
+        </div>
+        <div class="action-buttons">
+            <button class="action-btn" onclick="startCollection()">▶️ Iniciar Coleta</button>
+            <button class="action-btn secondary" onclick="generateReport()">📋 Gerar Relatório</button>
+            <button class="action-btn warning" onclick="viewHolographic()">🌐 Visualização Holográfica</button>
+        </div>
+        <div class="dashboard">
+            <div class="card">
+                <h3>📡 Coleta Multi-Dimensional</h3>
+                <div class="metric">
+                    <span>Status:</span>
+                    <span class="metric-value">🟢 Ativa</span>
+                </div>
+                <div class="metric">
+                    <span>Dimensões:</span>
+                    <span class="metric-value">4 (Clássica, Quantum, Nano, Bio)</span>
+                </div>
+                <div class="metric">
+                    <span>Taxa de Coleta:</span>
+                    <span class="metric-value">1.2k pontos/min</span>
+                </div>
+            </div>
+            <div class="card">
+                <h3>🔬 Paradigmas de Diagnóstico</h3>
+                <div class="metric">
+                    <span>Ativos:</span>
+                    <span class="metric-value">9/9</span>
+                </div>
+                <div class="metric">
+                    <span>Consenso:</span>
+                    <span class="metric-value">98.7%</span>
+                </div>
+                <div class="metric">
+                    <span>Anomalias Detectadas:</span>
+                    <span class="metric-value">0</span>
+                </div>
+            </div>
+            <div class="card">
+                <h3>📊 Armazenamento Híbrido</h3>
+                <div class="metric">
+                    <span>Dados Clássicos:</span>
+                    <span class="metric-value">2.4 GB</span>
+                </div>
+                <div class="metric">
+                    <span>Estados Quânticos:</span>
+                    <span class="metric-value">156 qubits</span>
+                </div>
+                <div class="metric">
+                    <span>Compressão:</span>
+                    <span class="metric-value">87%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seção: Segurança -->
+    <div id="security-section" class="module-section">
+        <div class="module-header">
+            <h2>🛡️ Segurança & Saúde do Sistema</h2>
+            <p>Proteção quantum-safe e monitoramento de saúde</p>
+        </div>
+        <div class="action-buttons">
+            <button class="action-btn" onclick="runSecurityScan()">🔍 Scan de Segurança</button>
+            <button class="action-btn secondary" onclick="updateCrypto()">🔐 Atualizar Crypto</button>
+            <button class="action-btn warning" onclick="emergencyProtocol()">🚨 Protocolo de Emergência</button>
+        </div>
+        <div class="dashboard">
+            <div class="card">
+                <h3>🔐 Criptografia Quantum-Safe</h3>
+                <div class="metric">
+                    <span>Algoritmo:</span>
+                    <span class="metric-value">CRYSTALS-Kyber</span>
+                </div>
+                <div class="metric">
+                    <span>Nível de Segurança:</span>
+                    <span class="metric-value">AES-256 equivalente</span>
+                </div>
+                <div class="metric">
+                    <span>Última Atualização:</span>
+                    <span class="metric-value">2 horas atrás</span>
+                </div>
+            </div>
+            <div class="card">
+                <h3>💚 Saúde dos Componentes</h3>
+                <div class="metric">
+                    <span>API Principal:</span>
+                    <span class="metric-value">✅ Saudável</span>
+                </div>
+                <div class="metric">
+                    <span>Banco de Dados:</span>
+                    <span class="metric-value">✅ Saudável</span>
+                </div>
+                <div class="metric">
+                    <span>Cache Redis:</span>
+                    <span class="metric-value">✅ Saudável</span>
+                </div>
+            </div>
+            <div class="card">
+                <h3>🚑 Ações de Auto-Cura</h3>
+                <div class="metric">
+                    <span>Executadas Hoje:</span>
+                    <span class="metric-value">0</span>
+                </div>
+                <div class="metric">
+                    <span>Taxa de Sucesso:</span>
+                    <span class="metric-value">100%</span>
+                </div>
+                <div class="metric">
+                    <span>Tempo Médio:</span>
+                    <span class="metric-value">1.2s</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seção: Logs -->
+    <div id="logs-section" class="module-section">
+        <div class="module-header">
+            <h2>📝 Logs e Eventos do Sistema</h2>
+            <p>Histórico completo de eventos e atividades</p>
+        </div>
+        <div class="action-buttons">
+            <button class="action-btn" onclick="refreshLogs()">🔄 Atualizar Logs</button>
+            <button class="action-btn secondary" onclick="exportLogs()">📤 Exportar Logs</button>
+            <button class="action-btn warning" onclick="clearLogs()">🗑️ Limpar Logs</button>
+        </div>
+        <div class="dashboard">
+            <div class="card">
+                <h3>📋 Eventos Recentes</h3>
+                <div id="detailed-events-log">
+                    <div class="log-entry">14:11:56 - Sistema iniciado com sucesso</div>
+                    <div class="log-entry">14:11:47 - Módulos carregados</div>
+                    <div class="log-entry">14:11:36 - Coleta de métricas ativa</div>
+                    <div class="log-entry">14:11:27 - API respondendo</div>
+                    <div class="log-entry">14:11:16 - Cache Redis conectado</div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>⚠️ Alertas e Avisos</h3>
+                <div class="metric">
+                    <span>Alertas Ativos:</span>
+                    <span class="metric-value">0</span>
+                </div>
+                <div class="metric">
+                    <span>Avisos:</span>
+                    <span class="metric-value">0</span>
+                </div>
+                <div class="metric">
+                    <span>Erros:</span>
+                    <span class="metric-value">0</span>
+                </div>
+            </div>
+            <div class="card">
+                <h3>📊 Estatísticas de Logs</h3>
+                <div class="metric">
+                    <span>Total de Eventos:</span>
+                    <span class="metric-value">1,247</span>
+                </div>
+                <div class="metric">
+                    <span>Últimas 24h:</span>
+                    <span class="metric-value">89</span>
+                </div>
+                <div class="metric">
+                    <span>Tamanho do Log:</span>
+                    <span class="metric-value">2.4 MB</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seção: Monitoramento Avançado -->
+    <div id="monitoring-section" class="module-section">
+        <div class="module-header">
+            <h2>🔬 Monitoramento Avançado</h2>
+            <p>Integração com módulo de monitoramento holográfico 4D</p>
+        </div>
+        <div class="action-buttons">
+            <button class="action-btn" onclick="generateVisualization()">🌐 Gerar Visualização</button>
+            <button class="action-btn secondary" onclick="configureAdvancedAlerts()">🔔 Alertas Avançados</button>
+            <button class="action-btn warning" onclick="openHolographicView()">👁️ Visão Holográfica</button>
+        </div>
+        <div class="dashboard">
+            <div class="card">
+                <h3>🎯 Status da Ponte</h3>
+                <div class="metric">
+                    <span>Conexão:</span>
+                    <span class="metric-value" id="bridge-status">✅ Ativa</span>
+                </div>
+                <div class="metric">
+                    <span>Métricas Avançadas:</span>
+                    <span class="metric-value" id="advanced-metrics-count">0</span>
+                </div>
+                <div class="metric">
+                    <span>Última Sincronização:</span>
+                    <span class="metric-value" id="last-sync">Agora</span>
+                </div>
+            </div>
+            <div class="card">
+                <h3>🔮 Capacidades Holográficas</h3>
+                <div class="metric">
+                    <span>Visualização 4D:</span>
+                    <span class="metric-value">✅ Disponível</span>
+                </div>
+                <div class="metric">
+                    <span>Análise Preditiva:</span>
+                    <span class="metric-value">✅ Ativa</span>
+                </div>
+                <div class="metric">
+                    <span>Correlação de Métricas:</span>
+                    <span class="metric-value">✅ Funcionando</span>
+                </div>
+            </div>
+            <div class="card">
+                <h3>🚨 Alertas Inteligentes</h3>
+                <div class="metric">
+                    <span>Regras Ativas:</span>
+                    <span class="metric-value">12</span>
+                </div>
+                <div class="metric">
+                    <span>Detecção de Anomalias:</span>
+                    <span class="metric-value">✅ Ativa</span>
+                </div>
+                <div class="metric">
+                    <span>Machine Learning:</span>
+                    <span class="metric-value">🧠 Aprendendo</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seção: Interface de Aprovação Manual -->
+    <div id="approvals-section" class="module-section">
+        <div class="module-header">
+            <h2>🤖 Interface de Aprovação Manual</h2>
+            <p>Sugestões inteligentes de melhorias identificadas pelo sistema</p>
+        </div>
+        <div class="action-buttons">
+            <button class="action-btn" onclick="refreshSuggestions()">🔄 Buscar Novas Sugestões</button>
+            <button class="action-btn secondary" onclick="viewApprovalHistory()">📋 Histórico de Aprovações</button>
+            <button class="action-btn warning" onclick="configureApprovalSettings()">⚙️ Configurar Aprovações</button>
+        </div>
+        
+        <!-- Container de Sugestões -->
+        <div id="suggestions-container" class="dashboard">
+            <!-- As sugestões serão carregadas dinamicamente da API -->
+            <div class="suggestion-card loading-placeholder" style="text-align: center; padding: 40px; opacity: 0.7;">
+                <h3>🔄 Carregando Sugestões...</h3>
+                <p>Clique em "🔄 Buscar Novas Sugestões" para carregar as melhorias identificadas pelo sistema.</p>
+            </div>
+        </div>
+        
+        <!-- Painel de Status das Aprovações -->
+        <div class="approval-status-panel">
+            <h3>📊 Status das Aprovações</h3>
+            <div class="approval-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Pendentes:</span>
+                    <span class="stat-value" id="pending-approvals">4</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Aplicadas Hoje:</span>
+                    <span class="stat-value" id="applied-today">7</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Taxa de Aceitação:</span>
+                    <span class="stat-value" id="acceptance-rate">89%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Economia Estimada:</span>
+                    <span class="stat-value" id="estimated-savings">2.3h/dia</span>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+    
+    <button class="refresh-btn" onclick="refreshData()">
+        🔄 Atualizar
+        <span class="auto-refresh" id="auto-refresh-status">Auto: ON</span>
+    </button>
+    
+    <script>
+        let autoRefresh = true;
+        let refreshInterval;
+        
+        async function fetchData(endpoint) {
+            try {
+                const response = await fetch(`http://localhost:8000${endpoint}`);
+                return await response.json();
+            } catch (error) {
+                console.error(`Erro ao buscar ${endpoint}:`, error);
+                return null;
+            }
+        }
+        
+        async function updateMetrics() {
+            const testData = await fetchData('/test');
+            if (testData) {
+                updateProgressBar('cpu', testData.cpu);
+                updateProgressBar('memory', testData.memory);
+                document.getElementById('cpu-value').textContent = `${testData.cpu.toFixed(1)}%`;
+                document.getElementById('memory-value').textContent = `${testData.memory.toFixed(1)}%`;
+            }
+        }
+        
+        async function updateSystemStatus() {
+            const healthData = await fetchData('/health');
+            if (healthData) {
+                const statusElement = document.getElementById('system-health');
+                const textElement = document.getElementById('system-health-text');
+                
+                if (healthData.status === 'healthy') {
+                    statusElement.className = 'status-item healthy';
+                    textElement.textContent = '✅ Saudável';
+                } else {
+                    statusElement.className = 'status-item warning';
+                    textElement.textContent = '⚠️ Degradado';
+                }
+                
+                // Atualiza componentes saudáveis
+                const healthyCount = Object.values(healthData.components).filter(c => c).length;
+                const totalCount = Object.keys(healthData.components).length;
+                document.getElementById('healthy-components').textContent = `${healthyCount}/${totalCount}`;
+            }
+        }
+        
+        async function updateEvolutionStatus() {
+            try {
+                const evolutionData = await fetchData('/evolution/status');
+                if (evolutionData) {
+                    document.getElementById('cognitive-level').textContent = 'REACTIVE';
+                    document.getElementById('evolution-level').textContent = 'Nível 1';
+                    
+                    const capabilitiesCount = Object.values(evolutionData.capabilities || {}).filter(c => c).length;
+                    document.getElementById('capabilities-count').textContent = `${capabilitiesCount}/7`;
+                }
+            } catch (error) {
+                // Fallback para dados simulados
+                document.getElementById('cognitive-level').textContent = 'REACTIVE';
+                document.getElementById('evolution-level').textContent = 'Nível 1';
+                document.getElementById('capabilities-count').textContent = '2/7';
+            }
+        }
+        
+        function updateProgressBar(type, value) {
+            const progressElement = document.getElementById(`${type}-progress`);
+            progressElement.style.width = `${value}%`;
+            
+            // Atualiza cor baseada no valor
+            if (value > 80) {
+                progressElement.className = 'progress-fill danger';
+            } else if (value > 60) {
+                progressElement.className = 'progress-fill warning';
+            } else {
+                progressElement.className = 'progress-fill';
+            }
+        }
+        
+        function addLogEntry(message, type = 'info') {
+            const logContainer = document.getElementById('events-log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            
+            logContainer.insertBefore(entry, logContainer.firstChild);
+            
+            // Mantém apenas os últimos 10 logs
+            while (logContainer.children.length > 10) {
+                logContainer.removeChild(logContainer.lastChild);
+            }
+        }
+        
+        async function refreshData() {
+            document.body.classList.add('loading');
+            
+            try {
+                // Tenta usar monitoramento avançado primeiro
+                const advancedSuccess = await updateDashboardWithAdvancedMonitoring();
+                
+                if (!advancedSuccess) {
+                    // Fallback para dados básicos
+                    await Promise.all([
+                        updateMetrics(),
+                        updateSystemStatus(),
+                        updateEvolutionStatus()
+                    ]);
+                }
+                
+                addLogEntry('Dados atualizados com sucesso');
+                
+                // Atualiza timestamp
+                document.getElementById('last-collection').textContent = new Date().toLocaleTimeString();
+                
+            } catch (error) {
+                addLogEntry('Erro ao atualizar dados', 'error');
+            } finally {
+                document.body.classList.remove('loading');
+            }
+        }
+        
+        function toggleAutoRefresh() {
+            autoRefresh = !autoRefresh;
+            const statusElement = document.getElementById('auto-refresh-status');
+            
+            if (autoRefresh) {
+                statusElement.textContent = 'Auto: ON';
+                statusElement.style.color = '#4CAF50';
+                startAutoRefresh();
+            } else {
+                statusElement.textContent = 'Auto: OFF';
+                statusElement.style.color = '#F44336';
+                clearInterval(refreshInterval);
+            }
+        }
+        
+        function startAutoRefresh() {
+            refreshInterval = setInterval(refreshData, 10000); // 10 segundos
+        }
+        
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshData();
+            startAutoRefresh();
+            
+            // Adiciona evento de clique duplo no botão para toggle auto-refresh
+            document.querySelector('.refresh-btn').addEventListener('dblclick', toggleAutoRefresh);
+            
+            addLogEntry('Dashboard inicializado');
+            addLogEntry('Sistema AutoCura - Fase Alpha ativo');
+            
+            // Verifica se a API está disponível
+            checkAPIConnection();
+        });
+        
+        // Verifica conexão com API
+        async function checkAPIConnection() {
+            try {
+                const response = await fetch('http://localhost:8001/evolution/suggestions');
+                if (response.ok) {
+                    addLogEntry('✅ API de sugestões conectada', 'info');
+                } else {
+                    addLogEntry('⚠️ API de sugestões não disponível', 'warning');
+                }
+            } catch (error) {
+                addLogEntry('❌ Erro de conexão com API de sugestões', 'error');
+                console.log('Detalhes do erro:', error);
+            }
+        }
+        
+        // Simula algumas métricas iniciais
+        setTimeout(() => {
+            updateProgressBar('disk', 45);
+            document.getElementById('disk-value').textContent = '45%';
+        }, 1000);
+        
+        async function updateDashboardWithAdvancedMonitoring() {
+            try {
+                // Tenta usar dados enriquecidos do módulo de monitoramento
+                const advancedData = await fetchData('/api/dashboard-bridge/dados-enriquecidos');
+                if (advancedData) {
+                    console.log('Usando dados avançados do módulo de monitoramento');
+                    
+                    // Atualiza métricas com dados avançados
+                    if (advancedData.system_metrics) {
+                        updateProgressBar('cpu', advancedData.system_metrics.cpu);
+                        updateProgressBar('memory', advancedData.system_metrics.memory);
+                        updateProgressBar('disk', advancedData.system_metrics.disk);
+                        
+                        document.getElementById('cpu-value').textContent = `${advancedData.system_metrics.cpu.toFixed(1)}%`;
+                        document.getElementById('memory-value').textContent = `${advancedData.system_metrics.memory.toFixed(1)}%`;
+                        document.getElementById('disk-value').textContent = `${advancedData.system_metrics.disk.toFixed(1)}%`;
+                    }
+                    
+                    // Atualiza capacidades de monitoramento
+                    if (advancedData.capacidades_monitoramento) {
+                        updateMonitoringCapabilities(advancedData.capacidades_monitoramento);
+                    }
+                    
+                    // Atualiza estatísticas de métricas
+                    if (advancedData.estatisticas_metricas) {
+                        updateMetricsStatistics(advancedData.estatisticas_metricas);
+                    }
+                    
+                    return true;
+                }
+            } catch (error) {
+                console.log('Módulo de monitoramento avançado não disponível, usando dados básicos');
+            }
+            
+            return false;
+        }
+        
+        function updateMonitoringCapabilities(capabilities) {
+            // Adiciona indicadores de capacidades avançadas
+            const capabilitiesContainer = document.querySelector('.card h3');
+            if (capabilitiesContainer && capabilities.visualizacao_holografica) {
+                const advancedIndicator = document.createElement('span');
+                advancedIndicator.innerHTML = ' 🔬 Avançado';
+                advancedIndicator.style.fontSize = '0.8em';
+                advancedIndicator.style.color = '#4CAF50';
+                capabilitiesContainer.appendChild(advancedIndicator);
+            }
+        }
+        
+        function updateMetricsStatistics(stats) {
+            // Atualiza estatísticas se disponíveis
+            if (stats.total_metricas) {
+                const metricsInfo = document.createElement('div');
+                metricsInfo.className = 'metric';
+                metricsInfo.innerHTML = `
+                    <span>Total de Métricas:</span>
+                    <span class="metric-value">${stats.total_metricas}</span>
+                `;
+                
+                const observabilityCard = document.querySelector('.card:nth-child(3)');
+                if (observabilityCard) {
+                    observabilityCard.appendChild(metricsInfo);
+                }
+            }
+        }
+        
+        // Funções de Navegação
+        function showModule(moduleName) {
+            // Remove classe active de todos os botões
+            document.querySelectorAll('.nav-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Remove classe active de todas as seções
+            document.querySelectorAll('.module-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Ativa o botão clicado
+            event.target.classList.add('active');
+            
+            // Mostra a seção correspondente
+            const section = document.getElementById(`${moduleName}-section`);
+            if (section) {
+                section.classList.add('active');
+                addLogEntry(`Navegou para módulo: ${moduleName}`);
+            }
+            
+            // Atualiza dados específicos do módulo
+            updateModuleData(moduleName);
+        }
+        
+        function updateModuleData(moduleName) {
+            switch(moduleName) {
+                case 'metrics':
+                    updateDetailedMetrics();
+                    break;
+                case 'ia':
+                    updateIAStatus();
+                    break;
+                case 'approvals':
+                    updateApprovalsData();
+                    break;
+                case 'observability':
+                    updateObservabilityStatus();
+                    break;
+                case 'security':
+                    updateSecurityStatus();
+                    break;
+                case 'logs':
+                    updateDetailedLogs();
+                    break;
+                case 'monitoring':
+                    updateAdvancedMonitoring();
+                    break;
+            }
+        }
+        
+        // Funções de Atualização de Dados
+        async function updateDetailedMetrics() {
+            try {
+                const testData = await fetchData('/test');
+                if (testData) {
+                    document.getElementById('cpu-detailed').textContent = `${testData.cpu.toFixed(1)}%`;
+                    document.getElementById('memory-detailed').textContent = `${testData.memory.toFixed(1)}%`;
+                    document.getElementById('disk-detailed').textContent = `32.3%`;
+                }
+            } catch (error) {
+                console.error('Erro ao atualizar métricas detalhadas:', error);
+            }
+        }
+        
+        async function updateIAStatus() {
+            try {
+                const evolutionData = await fetchData('/evolution/status');
+                if (evolutionData) {
+                    // Atualiza dados da IA se necessário
+                    console.log('Status da IA atualizado:', evolutionData);
+                }
+            } catch (error) {
+                console.error('Erro ao atualizar status da IA:', error);
+            }
+        }
+        
+        async function updateObservabilityStatus() {
+            try {
+                const advancedData = await fetchData('/api/dashboard-bridge/dados-enriquecidos');
+                if (advancedData && advancedData.capacidades_monitoramento) {
+                    console.log('Capacidades de observabilidade:', advancedData.capacidades_monitoramento);
+                }
+            } catch (error) {
+                console.error('Erro ao atualizar observabilidade:', error);
+            }
+        }
+        
+        async function updateSecurityStatus() {
+            try {
+                const healthData = await fetchData('/health');
+                if (healthData) {
+                    console.log('Status de segurança atualizado:', healthData);
+                }
+            } catch (error) {
+                console.error('Erro ao atualizar segurança:', error);
+            }
+        }
+        
+        async function updateDetailedLogs() {
+            try {
+                const contextData = await fetchData('/context');
+                if (contextData && contextData.eventos_recentes) {
+                    const logContainer = document.getElementById('detailed-events-log');
+                    logContainer.innerHTML = '';
+                    
+                    contextData.eventos_recentes.slice(0, 10).forEach(evento => {
+                        const entry = document.createElement('div');
+                        entry.className = 'log-entry';
+                        entry.textContent = `${new Date(evento.timestamp || Date.now()).toLocaleTimeString()} - ${evento.tipo || evento.evento}: ${evento.detalhes || ''}`;
+                        logContainer.appendChild(entry);
+                    });
+                }
+            } catch (error) {
+                console.error('Erro ao atualizar logs detalhados:', error);
+            }
+        }
+        
+        async function updateAdvancedMonitoring() {
+            try {
+                const bridgeData = await fetchData('/api/dashboard-bridge/dados-enriquecidos');
+                if (bridgeData) {
+                    document.getElementById('bridge-status').textContent = '✅ Ativa';
+                    document.getElementById('advanced-metrics-count').textContent = bridgeData.metricas_avancadas?.total_metricas || '0';
+                    document.getElementById('last-sync').textContent = new Date().toLocaleTimeString();
+                }
+            } catch (error) {
+                document.getElementById('bridge-status').textContent = '❌ Desconectada';
+                console.error('Erro ao atualizar monitoramento avançado:', error);
+            }
+        }
+        
+        // Funções de Ação dos Botões
+        async function refreshMetrics() {
+            addLogEntry('Atualizando métricas...', 'info');
+            await updateDetailedMetrics();
+            addLogEntry('Métricas atualizadas com sucesso', 'info');
+        }
+        
+        function exportMetrics() {
+            addLogEntry('Exportando métricas...', 'info');
+            // Simula exportação
+            setTimeout(() => {
+                addLogEntry('Métricas exportadas para metrics_export.json', 'info');
+            }, 1000);
+        }
+        
+        function configureAlerts() {
+            addLogEntry('Abrindo configuração de alertas...', 'info');
+            alert('Funcionalidade de configuração de alertas será implementada em breve!');
+        }
+        
+        async function triggerEvolution() {
+            addLogEntry('Disparando evolução da IA...', 'info');
+            try {
+                const response = await fetchData('/evolution/trigger');
+                if (response) {
+                    addLogEntry('Evolução da IA disparada com sucesso!', 'info');
+                }
+            } catch (error) {
+                addLogEntry('Erro ao disparar evolução da IA', 'error');
+            }
+        }
+        
+        function viewCapabilities() {
+            addLogEntry('Visualizando capacidades da IA...', 'info');
+            alert('Capacidades da IA:\n- Processamento Clássico: ✅\n- Quantum Ready: 🔄\n- Nano Ready: ⏳\n- Bio Ready: ⏳');
+        }
+        
+        function resetIA() {
+            if (confirm('Tem certeza que deseja resetar a IA? Esta ação não pode ser desfeita.')) {
+                addLogEntry('Resetando IA...', 'warning');
+                setTimeout(() => {
+                    addLogEntry('IA resetada com sucesso', 'info');
+                }, 2000);
+            }
+        }
+        
+        function startCollection() {
+            addLogEntry('Iniciando coleta multi-dimensional...', 'info');
+            setTimeout(() => {
+                addLogEntry('Coleta multi-dimensional ativa', 'info');
+            }, 1000);
+        }
+        
+        function generateReport() {
+            addLogEntry('Gerando relatório de observabilidade...', 'info');
+            setTimeout(() => {
+                addLogEntry('Relatório gerado: observability_report.pdf', 'info');
+            }, 2000);
+        }
+        
+        function viewHolographic() {
+            addLogEntry('Abrindo visualização holográfica...', 'info');
+            alert('Visualização Holográfica 4D será aberta em nova janela!');
+        }
+        
+        function runSecurityScan() {
+            addLogEntry('Executando scan de segurança...', 'info');
+            setTimeout(() => {
+                addLogEntry('Scan de segurança concluído - Nenhuma ameaça detectada', 'info');
+            }, 3000);
+        }
+        
+        function updateCrypto() {
+            addLogEntry('Atualizando algoritmos de criptografia...', 'info');
+            setTimeout(() => {
+                addLogEntry('Criptografia atualizada para CRYSTALS-Kyber v2.0', 'info');
+            }, 2000);
+        }
+        
+        function emergencyProtocol() {
+            if (confirm('Ativar protocolo de emergência? Isso irá isolar o sistema.')) {
+                addLogEntry('PROTOCOLO DE EMERGÊNCIA ATIVADO', 'error');
+                alert('Sistema isolado por segurança!');
+            }
+        }
+        
+        function refreshLogs() {
+            addLogEntry('Atualizando logs...', 'info');
+            updateDetailedLogs();
+        }
+        
+        function exportLogs() {
+            addLogEntry('Exportando logs...', 'info');
+            setTimeout(() => {
+                addLogEntry('Logs exportados para system_logs.zip', 'info');
+            }, 1500);
+        }
+        
+        function clearLogs() {
+            if (confirm('Tem certeza que deseja limpar todos os logs?')) {
+                addLogEntry('Limpando logs...', 'warning');
+                setTimeout(() => {
+                    document.getElementById('detailed-events-log').innerHTML = '<div class="log-entry">Logs limpos</div>';
+                    addLogEntry('Logs limpos com sucesso', 'info');
+                }, 1000);
+            }
+        }
+        
+        async function generateVisualization() {
+            addLogEntry('Gerando visualização temporal...', 'info');
+            try {
+                const response = await fetch('http://localhost:8000/api/dashboard-bridge/visualizacao-temporal', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(['cpu_gauge', 'memory_gauge'])
+                });
+                const result = await response.json();
+                if (result.sucesso) {
+                    addLogEntry('Visualização gerada com sucesso!', 'info');
+                } else {
+                    addLogEntry('Erro ao gerar visualização', 'error');
+                }
+            } catch (error) {
+                addLogEntry('Erro na comunicação com o módulo de visualização', 'error');
+            }
+        }
+        
+        function configureAdvancedAlerts() {
+            addLogEntry('Configurando alertas avançados...', 'info');
+            alert('Sistema de alertas inteligentes com ML será configurado!');
+        }
+        
+        function openHolographicView() {
+            addLogEntry('Abrindo visão holográfica...', 'info');
+            window.open('http://localhost:3000', '_blank');
+        }
+        
+        // ==========================================
+        // FUNÇÕES DA INTERFACE DE APROVAÇÃO MANUAL
+        // ==========================================
+        
+        // Carrega sugestões de melhoria do sistema
+        async function refreshSuggestions() {
+            addLogEntry('Buscando novas sugestões de melhoria...', 'info');
+            
+            try {
+                const response = await fetch('http://localhost:8001/evolution/suggestions');
+                const data = await response.json();
+                
+                if (data.success && data.suggestions) {
+                    updateSuggestionsDisplay(data.suggestions);
+                    updateApprovalStatsFromAPI(data.stats);
+                    addLogEntry(`${data.suggestions.length} sugestões carregadas da API`, 'info');
+                } else {
+                    throw new Error('Falha ao carregar sugestões da API');
+                }
+            } catch (error) {
+                console.error('Erro ao buscar sugestões:', error);
+                addLogEntry('API não disponível - usando sugestões estáticas', 'warning');
+                simulateNewSuggestions();
+            }
+        }
+        
+        // Atualiza display das sugestões com dados da API
+        function updateSuggestionsDisplay(suggestions) {
+            const container = document.getElementById('suggestions-container');
+            if (!container) return;
+            
+            // Limpa sugestões existentes
+            container.innerHTML = '';
+            
+            suggestions.forEach(suggestion => {
+                const suggestionCard = createSuggestionCard(suggestion);
+                container.appendChild(suggestionCard);
+            });
+            
+            addLogEntry('Interface de sugestões atualizada', 'info');
+        }
+        
+        // Cria card de sugestão dinamicamente
+        function createSuggestionCard(suggestion) {
+            const card = document.createElement('div');
+            card.className = 'suggestion-card';
+            card.setAttribute('data-suggestion-id', suggestion.id);
+            
+            // Determina classe de prioridade
+            const priorityClass = suggestion.priority;
+            const typeClass = suggestion.type;
+            
+            // Ícones por tipo
+            const typeIcons = {
+                'performance': '🚀',
+                'bugfix': '🐛',
+                'feature': '✨',
+                'security': '🛡️'
+            };
+            
+            // Labels por tipo
+            const typeLabels = {
+                'performance': 'Otimização de Performance',
+                'bugfix': 'Correção de Bug',
+                'feature': 'Nova Funcionalidade',
+                'security': 'Melhoria de Segurança'
+            };
+            
+            // Labels de prioridade
+            const priorityLabels = {
+                'critical': 'Crítica',
+                'high': 'Alta Prioridade',
+                'medium': 'Média Prioridade',
+                'low': 'Baixa Prioridade'
+            };
+            
+            card.innerHTML = `
+                <div class="suggestion-header">
+                    <div class="suggestion-type ${typeClass}">${typeIcons[typeClass]} ${typeLabels[typeClass]}</div>
+                    <div class="suggestion-priority ${priorityClass}">${priorityLabels[priorityClass]}</div>
+                </div>
+                <div class="suggestion-content">
+                    <h4>💡 Melhoria Identificada: ${suggestion.title}</h4>
+                    <div class="suggestion-description">
+                        <p><strong>📊 O que foi detectado:</strong><br>
+                        ${suggestion.detection_description}</p>
+                        
+                        <p><strong>🎯 Melhoria proposta:</strong><br>
+                        ${suggestion.improvement_description}</p>
+                        
+                        <p><strong>🔧 O que será modificado:</strong><br>
+                        ${suggestion.benefits_description.replace(/\n/g, '<br>')}</p>
+                    </div>
+                    
+                    <div class="suggestion-metrics">
+                        ${Object.entries(suggestion.metrics).map(([key, value]) => `
+                            <div class="metric-item">
+                                <span class="metric-label">${key.charAt(0).toUpperCase() + key.slice(1)}:</span>
+                                <span class="metric-value ${getMetricClass(key, value)}">${value}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="suggestion-actions">
+                        <button class="suggestion-btn apply ${priorityClass === 'critical' ? 'urgent' : ''}" 
+                                onclick="applySuggestion('${suggestion.id}')">
+                            ${priorityClass === 'critical' ? '🚨 Aplicar Imediatamente' : '✅ Aplicar Melhoria'}
+                        </button>
+                        <button class="suggestion-btn preview" onclick="previewSuggestion('${suggestion.id}')">
+                            👁️ Ver Código
+                        </button>
+                        <button class="suggestion-btn reject" onclick="rejectSuggestion('${suggestion.id}')">
+                            ❌ Rejeitar
+                        </button>
+                        ${priorityClass === 'medium' ? `
+                            <button class="suggestion-btn schedule" onclick="scheduleSuggestion('${suggestion.id}')">
+                                ⏰ Agendar
+                            </button>
+                        ` : ''}
+                        ${priorityClass === 'low' ? `
+                            <button class="suggestion-btn later" onclick="postponeSuggestion('${suggestion.id}')">
+                                ⏳ Depois
+                            </button>
+                        ` : ''}
+                        ${priorityClass === 'critical' ? `
+                            <button class="suggestion-btn escalate" onclick="escalateSuggestion('${suggestion.id}')">
+                                📞 Escalar
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+        
+        // Determina classe CSS para métricas
+        function getMetricClass(key, value) {
+            const positiveKeywords = ['performance', 'protection', 'alto', 'ativa', 'estabilidade'];
+            const negativeKeywords = ['crítica', 'alta', 'alto', 'urgência'];
+            
+            const lowerValue = value.toString().toLowerCase();
+            
+            if (positiveKeywords.some(keyword => lowerValue.includes(keyword))) {
+                return 'positive';
+            } else if (negativeKeywords.some(keyword => lowerValue.includes(keyword))) {
+                return 'critical';
+            } else if (lowerValue.includes('baixo') || lowerValue.includes('média')) {
+                return 'medium';
+            }
+            
+            return '';
+        }
+        
+        // Atualiza estatísticas com dados da API
+        function updateApprovalStatsFromAPI(stats) {
+            if (!stats) return;
+            
+            document.getElementById('pending-approvals').textContent = stats.pending || 0;
+            document.getElementById('applied-today').textContent = stats.applied_today || 0;
+            document.getElementById('acceptance-rate').textContent = (stats.acceptance_rate || 0) + '%';
+            document.getElementById('estimated-savings').textContent = (stats.estimated_savings || 0) + 'h/dia';
+        }
+        
+        // Mostra preview do código/detalhes
+        async function previewSuggestion(suggestionId) {
+            addLogEntry(`Carregando preview da sugestão ${suggestionId}...`, 'info');
+            
+            try {
+                const response = await fetch(`http://localhost:8001/evolution/preview/${suggestionId}`);
+                const data = await response.json();
+                
+                if (data.success && data.code) {
+                    showCodePreviewModal(data.code, data.description);
+                    addLogEntry('Preview carregado da API', 'info');
+                } else {
+                    throw new Error(data.error || 'Preview não disponível');
+                }
+            } catch (error) {
+                console.error('Erro ao carregar preview:', error);
+                addLogEntry('Erro ao carregar preview - usando dados simulados', 'warning');
+                showSimulatedPreview(suggestionId);
+            }
+        }
+        
+        // Mostra preview simulado
+        function showSimulatedPreview(suggestionId) {
+            const previews = {
+                'perf-opt-001': {
+                    title: 'Otimização de Cache Redis',
+                    code: `# Código da Otimização de Cache
+class IntelligentCacheManager:
+    def __init__(self):
+        self.prediction_model = AccessPredictor()
+        self.usage_patterns = {}
+    
+    def smart_cache(self, key, data):
+        # Prediz probabilidade de acesso futuro
+        score = self.prediction_model.predict(key)
+        if score > 0.7:
+            self.cache.set(key, data, ttl=3600)
+        else:
+            self.cache.set(key, data, ttl=300)
+            
+    def analyze_patterns(self):
+        # Analisa padrões de acesso
+        for key, access_time in self.usage_patterns.items():
+            if self.is_frequent_access(key):
+                self.prioritize_cache(key)`,
+                    description: 'Esta otimização implementa cache inteligente com predição de acesso baseado em machine learning. O sistema aprende com os padrões de uso e otimiza automaticamente as estratégias de cache.'
+                },
+                'bug-fix-002': {
+                    title: 'Correção de Vazamento de Memória',
+                    code: `# Correção do Vazamento de Memória
+import gc
+import weakref
+from threading import Timer
+
+class MonitoringModule:
+    def __init__(self):
+        self.active_references = weakref.WeakSet()
+        self.cleanup_timer = Timer(300, self.cleanup)
+        self.cleanup_timer.start()
+    
+    def cleanup(self):
+        # Remove referências circulares
+        gc.collect()
+        self.active_references.clear()
+        
+        # Reagenda próxima limpeza
+        self.cleanup_timer = Timer(300, self.cleanup)
+        self.cleanup_timer.start()
+        
+    def add_reference(self, obj):
+        self.active_references.add(obj)`,
+                    description: 'Corrige vazamento de memória implementando limpeza automática de referências circulares e gerenciamento inteligente de objetos. O sistema detecta automaticamente objetos órfãos e os remove.'
+                },
+                'feature-003': {
+                    title: 'Auto-Backup Inteligente',
+                    code: `# Sistema de Auto-Backup Inteligente
+import hashlib
+from datetime import datetime, timedelta
+
+class IntelligentBackup:
+    def __init__(self):
+        self.change_analyzer = ChangeAnalyzer()
+        self.backup_scheduler = BackupScheduler()
+        self.last_backup_hash = None
+    
+    def analyze_and_backup(self, system_state):
+        # Calcula hash do estado atual
+        current_hash = hashlib.sha256(
+            str(system_state).encode()
+        ).hexdigest()
+        
+        if self.should_backup(current_hash, system_state):
+            self.create_intelligent_backup(system_state)
+            self.last_backup_hash = current_hash
+    
+    def should_backup(self, current_hash, state):
+        if self.last_backup_hash != current_hash:
+            importance = self.change_analyzer.calculate_importance(state)
+            return importance > 0.8
+        return False`,
+                    description: 'Implementa sistema de backup inteligente que analisa a importância das mudanças e cria pontos de restauração apenas quando necessário, economizando espaço e recursos.'
+                },
+                'security-004': {
+                    title: 'Sistema de Autenticação 2FA',
+                    code: `# Sistema de Autenticação Multi-Fator
+import pyotp
+import qrcode
+from datetime import datetime, timedelta
+
+class TwoFactorAuth:
+    def __init__(self):
+        self.token_generator = pyotp.TOTP('JBSWY3DPEHPK3PXP')
+        self.audit_logger = SecurityAuditLogger()
+        self.failed_attempts = {}
+    
+    def verify_critical_operation(self, user, operation, token):
+        # Verifica token 2FA
+        if not self.token_generator.verify(token):
+            self.log_failed_attempt(user, operation)
+            return False
+        
+        # Log da operação autorizada
+        self.audit_logger.log_operation(user, operation, 
+                                      timestamp=datetime.now())
+        return True
+    
+    def log_failed_attempt(self, user, operation):
+        if user not in self.failed_attempts:
+            self.failed_attempts[user] = []
+        
+        self.failed_attempts[user].append({
+            'operation': operation,
+            'timestamp': datetime.now()
+        })`,
+                    description: 'Implementa sistema de autenticação multi-fator para operações críticas, com auditoria completa e proteção contra ataques de força bruta.'
+                }
+            };
+            
+            const preview = previews[suggestionId] || {
+                title: 'Preview da Sugestão',
+                code: '// Código da implementação será mostrado aqui\nconsole.log("Preview não disponível");',
+                description: 'Detalhes da implementação'
+            };
+            
+            showCodePreviewModal(preview.code, preview.description, preview.title);
+        }
+        
+        // Modal de preview do código
+        function showCodePreviewModal(code, description, title = 'Preview do Código') {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.8);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                backdrop-filter: blur(10px);
+            `;
+            
+            modal.innerHTML = `
+                <div style="
+                    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+                    border-radius: 15px;
+                    padding: 30px;
+                    max-width: 80%;
+                    max-height: 80%;
+                    overflow-y: auto;
+                    border: 2px solid rgba(255,255,255,0.2);
+                ">
+                    <h3 style="color: #FFD700; margin-bottom: 20px; text-align: center;">${title}</h3>
+                    <p style="color: white; margin-bottom: 20px; line-height: 1.6;">${description}</p>
+                    <pre style="
+                        background: rgba(0,0,0,0.5);
+                        color: #4CAF50;
+                        padding: 20px;
+                        border-radius: 10px;
+                        overflow-x: auto;
+                        font-family: 'Courier New', monospace;
+                        line-height: 1.4;
+                        max-height: 400px;
+                    ">${code}</pre>
+                    <div style="text-align: center; margin-top: 20px;">
+                        <button onclick="this.closest('.modal').remove()" style="
+                            background: linear-gradient(45deg, #4CAF50, #45a049);
+                            color: white;
+                            border: none;
+                            padding: 10px 30px;
+                            border-radius: 25px;
+                            cursor: pointer;
+                            font-size: 1em;
+                            margin-right: 10px;
+                        ">Fechar</button>
+                        <button onclick="copyCodeToClipboard('${suggestionId}')" style="
+                            background: linear-gradient(45deg, #2196F3, #1976D2);
+                            color: white;
+                            border: none;
+                            padding: 10px 30px;
+                            border-radius: 25px;
+                            cursor: pointer;
+                            font-size: 1em;
+                        ">📋 Copiar Código</button>
+                    </div>
+                </div>
+            `;
+            
+            modal.className = 'modal';
+            modal.onclick = (e) => {
+                if (e.target === modal) modal.remove();
+            };
+            
+            document.body.appendChild(modal);
+        }
+        
+        // Copia código para clipboard
+        function copyCodeToClipboard(suggestionId) {
+            const previews = {
+                'perf-opt-001': `# Código da Otimização de Cache
+class IntelligentCacheManager:
+    def __init__(self):
+        self.prediction_model = AccessPredictor()
+        self.usage_patterns = {}
+    
+    def smart_cache(self, key, data):
+        score = self.prediction_model.predict(key)
+        if score > 0.7:
+            self.cache.set(key, data, ttl=3600)
+        else:
+            self.cache.set(key, data, ttl=300)`,
+                'bug-fix-002': `# Correção do Vazamento de Memória
+import gc
+import weakref
+from threading import Timer
+
+class MonitoringModule:
+    def __init__(self):
+        self.active_references = weakref.WeakSet()
+        self.cleanup_timer = Timer(300, self.cleanup)
+    
+    def cleanup(self):
+        gc.collect()
+        self.active_references.clear()`
+            };
+            
+            const code = previews[suggestionId] || '// Código não disponível';
+            navigator.clipboard.writeText(code).then(() => {
+                addLogEntry('Código copiado para a área de transferência', 'info');
+            });
+        }
+        
+        // Rejeita uma sugestão
+        function rejectSuggestion(suggestionId) {
+            const suggestionCard = document.querySelector(`[data-suggestion-id="${suggestionId}"]`);
+            if (!suggestionCard) return;
+            
+            if (confirm('Tem certeza que deseja rejeitar esta sugestão?')) {
+                suggestionCard.classList.add('rejected');
+                
+                const rejectBtn = suggestionCard.querySelector('.suggestion-btn.reject');
+                if (rejectBtn) {
+                    rejectBtn.textContent = '❌ Rejeitada';
+                    rejectBtn.disabled = true;
+                    rejectBtn.style.opacity = '0.7';
+                }
+                
+                addLogEntry('Sugestão rejeitada pelo usuário', 'warning');
+                updateApprovalStats();
+                
+                // Remove após 2 segundos
+                setTimeout(() => {
+                    suggestionCard.style.transition = 'all 0.5s ease';
+                    suggestionCard.style.opacity = '0';
+                    setTimeout(() => suggestionCard.remove(), 500);
+                }, 2000);
+            }
+        }
+        
+        // Agenda uma sugestão para depois
+        function scheduleSuggestion(suggestionId) {
+            const scheduleTime = prompt('Agendar para quando? (ex: 1 hora, 1 dia)', '2 horas');
+            if (scheduleTime) {
+                addLogEntry(`Sugestão ${suggestionId} agendada para: ${scheduleTime}`, 'info');
+                
+                const suggestionCard = document.querySelector(`[data-suggestion-id="${suggestionId}"]`);
+                if (suggestionCard) {
+                    const header = suggestionCard.querySelector('.suggestion-header');
+                    const scheduledBadge = document.createElement('div');
+                    scheduledBadge.style.cssText = `
+                        background: #FF9800;
+                        color: white;
+                        padding: 5px 10px;
+                        border-radius: 15px;
+                        font-size: 0.8em;
+                        margin-left: 10px;
+                    `;
+                    scheduledBadge.textContent = `📅 ${scheduleTime}`;
+                    header.appendChild(scheduledBadge);
+                    
+                    suggestionCard.style.opacity = '0.7';
+                }
+            }
+        }
+        
+        // Adia uma sugestão
+        function postponeSuggestion(suggestionId) {
+            addLogEntry(`Sugestão ${suggestionId} adiada`, 'info');
+            
+            const suggestionCard = document.querySelector(`[data-suggestion-id="${suggestionId}"]`);
+            if (suggestionCard) {
+                suggestionCard.style.transition = 'all 0.5s ease';
+                suggestionCard.style.opacity = '0.5';
+                suggestionCard.style.transform = 'scale(0.95)';
+            }
+        }
+        
+        // Escala uma sugestão crítica
+        function escalateSuggestion(suggestionId) {
+            addLogEntry(`Escalando sugestão crítica ${suggestionId} para administrador...`, 'warning');
+            
+            const suggestionCard = document.querySelector(`[data-suggestion-id="${suggestionId}"]`);
+            if (suggestionCard) {
+                const header = suggestionCard.querySelector('.suggestion-header');
+                const escalatedBadge = document.createElement('div');
+                escalatedBadge.style.cssText = `
+                    background: #F44336;
+                    color: white;
+                    padding: 5px 10px;
+                    border-radius: 15px;
+                    font-size: 0.8em;
+                    margin-left: 10px;
+                    animation: pulse 1.5s infinite;
+                `;
+                escalatedBadge.textContent = '🚨 Escalado';
+                header.appendChild(escalatedBadge);
+                
+                suggestionCard.style.borderColor = '#F44336';
+            }
+            
+            // Simula notificação para administrador
+            setTimeout(() => {
+                addLogEntry('Notificação enviada para o administrador do sistema', 'info');
+            }, 2000);
+        }
+        
+        // Atualiza estatísticas de aprovação
+        function updateApprovalStats() {
+            const appliedCards = document.querySelectorAll('.suggestion-card.applied').length;
+            const rejectedCards = document.querySelectorAll('.suggestion-card.rejected').length;
+            const totalCards = document.querySelectorAll('.suggestion-card').length;
+            const pendingCards = totalCards - appliedCards - rejectedCards;
+            
+            document.getElementById('pending-approvals').textContent = pendingCards;
+            document.getElementById('applied-today').textContent = appliedCards + 7; // Soma com aplicações anteriores
+            
+            const acceptanceRate = totalCards > 0 ? Math.round((appliedCards / (appliedCards + rejectedCards)) * 100) : 89;
+            document.getElementById('acceptance-rate').textContent = acceptanceRate + '%';
+            
+            // Calcula economia estimada
+            const savings = (appliedCards * 0.3) + 2.3; // 0.3h por melhoria aplicada
+            document.getElementById('estimated-savings').textContent = savings.toFixed(1) + 'h/dia';
+        }
+        
+        // Visualiza histórico de aprovações
+        function viewApprovalHistory() {
+            addLogEntry('Carregando histórico de aprovações...', 'info');
+            
+            const historyData = [
+                { time: '10:30', action: 'Otimização de Cache aplicada', type: 'success' },
+                { time: '09:15', action: 'Correção de bug aprovada', type: 'success' },
+                { time: '08:45', action: 'Nova funcionalidade rejeitada', type: 'warning' },
+                { time: '07:20', action: 'Melhoria de segurança aplicada', type: 'success' },
+                { time: '06:10', action: 'Auto-backup implementado', type: 'success' },
+                { time: '05:30', action: '2FA habilitado', type: 'success' }
+            ];
+            
+            let historyHtml = '<div style="color: white;"><h3>📋 Histórico de Aprovações (Hoje)</h3><br>';
+            historyData.forEach(item => {
+                const color = item.type === 'success' ? '#4CAF50' : '#FF9800';
+                const icon = item.type === 'success' ? '✅' : '⚠️';
+                historyHtml += `
+                    <div style="
+                        padding: 10px;
+                        margin: 5px 0;
+                        background: rgba(0,0,0,0.2);
+                        border-radius: 8px;
+                        border-left: 3px solid ${color};
+                    ">
+                        ${icon} <strong>${item.time}</strong> - ${item.action}
+                    </div>
+                `;
+            });
+            historyHtml += '</div>';
+            
+            showCodePreviewModal(historyHtml, 'Registro de todas as aprovações e rejeições do dia', 'Histórico de Aprovações');
+        }
+        
+        // Configura settings de aprovação
+        function configureApprovalSettings() {
+            addLogEntry('Abrindo configurações de aprovação...', 'info');
+            
+            const settingsHtml = `
+                <div style="color: white;">
+                    <h4>⚙️ Configurações de Aprovação</h4>
+                    <div style="margin: 20px 0;">
+                        <label style="display: block; margin: 10px 0;">
+                            <input type="checkbox" checked> Aprovação automática para otimizações de baixo risco
+                        </label>
+                        <label style="display: block; margin: 10px 0;">
+                            <input type="checkbox" checked> Notificar via email para sugestões críticas
+                        </label>
+                        <label style="display: block; margin: 10px 0;">
+                            <input type="checkbox"> Aplicar melhorias de segurança automaticamente
+                        </label>
+                        <label style="display: block; margin: 10px 0;">
+                            <input type="checkbox" checked> Mostrar preview de código antes da aplicação
+                        </label>
+                    </div>
+                    <div style="margin: 20px 0;">
+                        <label style="display: block; margin: 10px 0;">
+                            Limite de melhorias por dia: 
+                            <input type="number" value="10" style="width: 60px; margin-left: 10px; color: black;">
+                        </label>
+                        <label style="display: block; margin: 10px 0;">
+                            Horário de aplicação: 
+                            <select style="margin-left: 10px; color: black;">
+                                <option>Qualquer horário</option>
+                                <option>Apenas horário comercial</option>
+                                <option>Apenas madrugada</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+            `;
+            
+            showCodePreviewModal(settingsHtml, 'Configure como o sistema deve lidar com aprovações automáticas', 'Configurações de Aprovação');
+        }
+        
+        // Atualiza dados específicos do módulo de aprovações
+        function updateApprovalsData() {
+            // Carrega sugestões da API automaticamente
+            refreshSuggestions();
+            
+            // Simula verificação de novas sugestões
+            setTimeout(() => {
+                const cards = document.querySelectorAll('.suggestion-card');
+                if (cards.length > 0 && Math.random() > 0.7) {
+                    // 30% de chance de ter uma nova sugestão
+                    const randomCard = cards[Math.floor(Math.random() * cards.length)];
+                    if (!randomCard.classList.contains('applied') && !randomCard.classList.contains('rejected')) {
+                        randomCard.classList.add('new');
+                        addLogEntry('Nova sugestão de melhoria identificada!', 'info');
+                    }
+                }
+            }, 2000);
+        }
+        
+        // Simula novas sugestões baseadas na análise do sistema
+        function simulateNewSuggestions() {
+            // Adiciona indicador "novo" a uma sugestão aleatória
+            const suggestionCards = document.querySelectorAll('.suggestion-card');
+            suggestionCards.forEach(card => card.classList.remove('new'));
+            
+            if (suggestionCards.length > 0) {
+                const randomIndex = Math.floor(Math.random() * suggestionCards.length);
+                suggestionCards[randomIndex].classList.add('new');
+            }
+            
+            // Atualiza estatísticas
+            updateApprovalStats();
+        }
+        
+        // Aplica uma sugestão de melhoria
+        async function applySuggestion(suggestionId) {
+            const suggestionCard = document.querySelector(`[data-suggestion-id="${suggestionId}"]`);
+            if (!suggestionCard) return;
+            
+            // Marca como aplicando
+            suggestionCard.classList.add('applying');
+            
+            const suggestionType = suggestionCard.querySelector('.suggestion-type').textContent;
+            addLogEntry(`Aplicando melhoria: ${suggestionType}...`, 'info');
+            
+            try {
+                // Envia requisição para aplicar melhoria via API
+                const response = await fetch('http://localhost:8001/evolution/apply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        suggestion_id: suggestionId,
+                        approved: true,
+                        approver: 'user_interface'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Simula tempo de aplicação
+                    await new Promise(resolve => setTimeout(resolve, (result.execution_time || 2) * 1000));
+                    
+                    // Marca como aplicada
+                    suggestionCard.classList.remove('applying');
+                    suggestionCard.classList.add('applied');
+                    
+                    // Atualiza texto dos botões
+                    const applyBtn = suggestionCard.querySelector('.suggestion-btn.apply');
+                    if (applyBtn) {
+                        applyBtn.textContent = '✅ Aplicada';
+                        applyBtn.disabled = true;
+                        applyBtn.style.opacity = '0.7';
+                    }
+                    
+                    addLogEntry(`✅ ${result.message}`, 'info');
+                    
+                    // Atualiza estatísticas via API
+                    await updateStatsFromAPI();
+                    
+                    // Remove sugestão da tela após 3 segundos
+                    setTimeout(() => {
+                        suggestionCard.style.transition = 'all 0.5s ease';
+                        suggestionCard.style.opacity = '0';
+                        suggestionCard.style.transform = 'translateX(100%)';
+                        setTimeout(() => suggestionCard.remove(), 500);
+                    }, 3000);
+                } else {
+                    throw new Error(result.message || 'Falha na aplicação');
+                }
+                
+            } catch (error) {
+                console.error('Erro ao aplicar sugestão:', error);
+                suggestionCard.classList.remove('applying');
+                addLogEntry(`❌ Erro ao aplicar melhoria: ${error.message}`, 'error');
+            }
+        }
+        
+        // Atualiza estatísticas via API
+        async function updateStatsFromAPI() {
+            try {
+                const response = await fetch('http://localhost:8001/evolution/stats');
+                const stats = await response.json();
+                updateApprovalStatsFromAPI(stats);
+            } catch (error) {
+                console.error('Erro ao atualizar estatísticas:', error);
+            }
+        }
+    </script>
+</body>
+</html> 

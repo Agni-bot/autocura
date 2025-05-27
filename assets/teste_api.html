@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste API Sugestões</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #2a5298;
+            color: white;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background: rgba(255,255,255,0.1);
+        }
+        .success { border-left: 5px solid #4CAF50; }
+        .error { border-left: 5px solid #F44336; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #4CAF50;
+            color: white;
+        }
+        #suggestions {
+            margin-top: 20px;
+        }
+        .suggestion {
+            background: rgba(255,255,255,0.1);
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste da API de Sugestões</h1>
+    
+    <button onclick="testAPI()">🔍 Testar Conexão API</button>
+    <button onclick="loadSuggestions()">📋 Carregar Sugestões</button>
+    <button onclick="testApply()">✅ Testar Aplicação</button>
+    <button onclick="testPreview()">👁️ Testar Preview</button>
+    
+    <div id="results"></div>
+    <div id="suggestions"></div>
+    
+    <script>
+        function addResult(message, success = true) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-result ${success ? 'success' : 'error'}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> - ${message}`;
+            results.appendChild(div);
+        }
+        
+        async function testAPI() {
+            addResult('🔄 Testando conexão com API...');
+            
+            try {
+                const response = await fetch('http://localhost:8001/evolution/suggestions');
+                if (response.ok) {
+                    addResult('✅ API está respondendo!', true);
+                    const data = await response.json();
+                    addResult(`📊 Encontradas ${data.suggestions?.length || 0} sugestões`, true);
+                } else {
+                    addResult(`❌ API retornou erro: ${response.status}`, false);
+                }
+            } catch (error) {
+                addResult(`❌ Erro de conexão: ${error.message}`, false);
+                addResult('💡 Certifique-se que python api_sugestoes.py está rodando', false);
+            }
+        }
+        
+        async function loadSuggestions() {
+            addResult('📋 Carregando sugestões...');
+            
+            try {
+                const response = await fetch('http://localhost:8001/evolution/suggestions');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const container = document.getElementById('suggestions');
+                    container.innerHTML = '<h2>📋 Sugestões Carregadas:</h2>';
+                    
+                    data.suggestions.forEach(suggestion => {
+                        const div = document.createElement('div');
+                        div.className = 'suggestion';
+                        div.innerHTML = `
+                            <h3>${suggestion.type.toUpperCase()}: ${suggestion.title}</h3>
+                            <p><strong>Prioridade:</strong> ${suggestion.priority}</p>
+                            <p><strong>Detecção:</strong> ${suggestion.detection_description.substring(0, 100)}...</p>
+                            <button onclick="applySuggestion('${suggestion.id}')">✅ Aplicar</button>
+                            <button onclick="previewSuggestion('${suggestion.id}')">👁️ Preview</button>
+                        `;
+                        container.appendChild(div);
+                    });
+                    
+                    addResult(`✅ ${data.suggestions.length} sugestões carregadas com sucesso!`, true);
+                } else {
+                    addResult('❌ Falha ao carregar sugestões', false);
+                }
+            } catch (error) {
+                addResult(`❌ Erro: ${error.message}`, false);
+            }
+        }
+        
+        async function testApply() {
+            addResult('🧪 Testando aplicação de sugestão...');
+            
+            try {
+                const response = await fetch('http://localhost:8001/evolution/apply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        suggestion_id: 'perf-opt-001',
+                        approved: true,
+                        approver: 'test_user'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    addResult(`✅ Teste de aplicação bem-sucedido: ${result.message}`, true);
+                } else {
+                    addResult(`❌ Falha no teste de aplicação: ${result.message}`, false);
+                }
+            } catch (error) {
+                addResult(`❌ Erro no teste: ${error.message}`, false);
+            }
+        }
+        
+        async function testPreview() {
+            addResult('👁️ Testando preview de código...');
+            
+            try {
+                const response = await fetch('http://localhost:8001/evolution/preview/perf-opt-001');
+                const data = await response.json();
+                
+                if (data.success) {
+                    addResult('✅ Preview carregado com sucesso!', true);
+                    addResult(`📝 Código tem ${data.code.length} caracteres`, true);
+                } else {
+                    addResult(`❌ Falha no preview: ${data.error}`, false);
+                }
+            } catch (error) {
+                addResult(`❌ Erro no preview: ${error.message}`, false);
+            }
+        }
+        
+        async function applySuggestion(id) {
+            addResult(`🔄 Aplicando sugestão ${id}...`);
+            
+            try {
+                const response = await fetch('http://localhost:8001/evolution/apply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        suggestion_id: id,
+                        approved: true,
+                        approver: 'test_interface'
+                    })
+                });
+                
+                const result = await response.json();
+                addResult(`✅ ${result.message}`, result.success);
+            } catch (error) {
+                addResult(`❌ Erro: ${error.message}`, false);
+            }
+        }
+        
+        async function previewSuggestion(id) {
+            addResult(`👁️ Carregando preview de ${id}...`);
+            
+            try {
+                const response = await fetch(`http://localhost:8001/evolution/preview/${id}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(`Preview de ${id}:\n\n${data.code.substring(0, 500)}...`);
+                    addResult('✅ Preview exibido!', true);
+                } else {
+                    addResult(`❌ Erro no preview: ${data.error}`, false);
+                }
+            } catch (error) {
+                addResult(`❌ Erro: ${error.message}`, false);
+            }
+        }
+        
+        // Teste automático ao carregar
+        window.onload = function() {
+            addResult('🚀 Página de teste carregada');
+            addResult('💡 Clique em "Testar Conexão API" para verificar se a API está funcionando');
+        };
+    </script>
+</body>
+</html> 

@@ -1,1 +1,0 @@
-"""Módulo do Sistema AutoCura"""

@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  # API Principal com Dashboard
+  autocura-api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: autocura-api
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - LOG_LEVEL=INFO
+      - HOST=0.0.0.0
+      - PORT=8000
+      - RELOAD=false
+    volumes:
+      - ./src:/app/src
+      - ./dashboard.html:/app/dashboard.html
+      - ./memoria_compartilhada.json:/app/memoria_compartilhada.json
+      - ./data:/app/data
+    networks:
+      - autocura-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Redis para cache e mensageria
+  autocura-redis:
+    image: redis:alpine
+    container_name: autocura-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - autocura-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL para persistencia
+  autocura-postgres:
+    image: postgres:14-alpine
+    container_name: autocura-postgres
+    environment:
+      - POSTGRES_USER=autocura
+      - POSTGRES_PASSWORD=autocura123
+      - POSTGRES_DB=autocura_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - autocura-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U autocura"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Prometheus para metricas
+  autocura-prometheus:
+    image: prom/prometheus:latest
+    container_name: autocura-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - autocura-network
+
+  # Grafana para visualizacao
+  autocura-grafana:
+    image: grafana/grafana:latest
+    container_name: autocura-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - autocura-network
+    depends_on:
+      - autocura-prometheus
+
+volumes:
+  postgres-data:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  autocura-network:
+    driver: bridge 

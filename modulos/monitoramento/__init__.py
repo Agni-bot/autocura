@@ -1,1 +1,1 @@
-"""Módulo do Sistema AutoCura"""
+"""MÃ³dulo do Sistema AutoCura"""

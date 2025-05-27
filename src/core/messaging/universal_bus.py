@@ -14,6 +14,7 @@ from datetime import datetime
 from enum import Enum
 import logging
 from abc import ABC, abstractmethod
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -81,8 +82,37 @@ class UniversalEventBus:
     Preparado para evolução tecnológica.
     """
     
-    def __init__(self, redis_host: str = "localhost", redis_port: int = 6379):
-        self.redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
+    def __init__(self, redis_host: Optional[str] = None, redis_port: int = 6379):
+        # Detecta automaticamente se está rodando em Docker
+        if redis_host is None:
+            # Verifica se está em container Docker
+            if os.path.exists('/.dockerenv') or os.environ.get('ENVIRONMENT') == 'alpha':
+                redis_host = "autocura-redis"  # Nome do serviço Docker
+                logger.info("Detectado ambiente Docker - usando autocura-redis")
+            else:
+                redis_host = "localhost"  # Desenvolvimento local
+                logger.info("Detectado ambiente local - usando localhost")
+        
+        self.redis_host = redis_host
+        self.redis_port = redis_port
+        
+        try:
+            self.redis_client = redis.Redis(
+                host=self.redis_host, 
+                port=self.redis_port, 
+                decode_responses=True,
+                socket_connect_timeout=5,
+                socket_timeout=5,
+                retry_on_timeout=True
+            )
+            # Testa conexão
+            self.redis_client.ping()
+            logger.info(f"Conectado ao Redis em {self.redis_host}:{self.redis_port}")
+        except Exception as e:
+            logger.error(f"Erro ao conectar Redis {self.redis_host}:{self.redis_port}: {e}")
+            # Fallback para modo sem Redis
+            self.redis_client = None
+        
         self.subscribers: Dict[str, List[Callable]] = {}
         self.running = False
         self.quantum_ready = False
@@ -96,7 +126,10 @@ class UniversalEventBus:
         """Inicia o event bus"""
         self.running = True
         logger.info("Universal Event Bus iniciado")
-        asyncio.create_task(self._message_processor())
+        if self.redis_client:
+            asyncio.create_task(self._message_processor())
+        else:
+            logger.warning("Event Bus iniciado em modo fallback (sem Redis)")
     
     async def stop(self):
         """Para o event bus"""
@@ -158,6 +191,12 @@ class UniversalEventBus:
     async def _handle_classical(self, message: Message) -> bool:
         """Processa mensagem clássica"""
         try:
+            if not self.redis_client:
+                # Modo fallback - processa diretamente
+                logger.debug(f"Processando mensagem em modo fallback: {message.id}")
+                await self._process_message_direct(message)
+                return True
+            
             # Serializa e envia via Redis
             serialized = json.dumps(message.to_dict())
             
@@ -169,7 +208,23 @@ class UniversalEventBus:
             return True
         except Exception as e:
             logger.error(f"Erro ao processar mensagem clássica: {e}")
-            return False
+            # Fallback direto em caso de erro
+            try:
+                await self._process_message_direct(message)
+                return True
+            except Exception as fallback_error:
+                logger.error(f"Erro no fallback: {fallback_error}")
+                return False
+    
+    async def _process_message_direct(self, message: Message):
+        """Processa mensagem diretamente (modo fallback)"""
+        topic = message.topic
+        if topic in self.subscribers:
+            for handler in self.subscribers[topic]:
+                try:
+                    await handler(message)
+                except Exception as e:
+                    logger.error(f"Erro no handler direto: {e}")
     
     async def _handle_quantum(self, message: Message) -> bool:
         """Prepara para processamento quântico futuro"""
@@ -191,6 +246,10 @@ class UniversalEventBus:
         """Processa mensagens recebidas"""
         while self.running:
             try:
+                if not self.redis_client:
+                    await asyncio.sleep(1)
+                    continue
+                
                 # Processa mensagens por prioridade
                 for priority in sorted([p.value for p in MessagePriority], reverse=True):
                     for topic in self.subscribers:
@@ -226,14 +285,21 @@ class UniversalEventBus:
             "total_topics": len(self.subscribers),
             "total_handlers": sum(len(handlers) for handlers in self.subscribers.values()),
             "quantum_ready": self.quantum_ready,
-            "supported_protocols": [p.value for p in MessageProtocol]
+            "supported_protocols": [p.value for p in MessageProtocol],
+            "redis_connected": self.redis_client is not None,
+            "redis_host": self.redis_host,
+            "redis_port": self.redis_port
         }
         
-        # Métricas de fila por tópico
-        for topic in self.subscribers:
-            for priority in MessagePriority:
-                queue_name = f"queue:{topic}:{priority.value}"
-                queue_size = self.redis_client.llen(queue_name)
-                metrics[f"queue_{topic}_{priority.name}"] = queue_size
+        # Métricas de fila por tópico (apenas se Redis estiver disponível)
+        if self.redis_client:
+            try:
+                for topic in self.subscribers:
+                    for priority in MessagePriority:
+                        queue_name = f"queue:{topic}:{priority.value}"
+                        queue_size = self.redis_client.llen(queue_name)
+                        metrics[f"queue_{topic}_{priority.name}"] = queue_size
+            except Exception as e:
+                logger.error(f"Erro ao obter métricas de fila: {e}")
         
         return metrics 
