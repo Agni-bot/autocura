@@ -878,75 +878,92 @@ async def get_system_report(report_type: str = "general"):
 async def get_evolution_suggestions():
     """Obtém sugestões de melhoria identificadas pelo sistema"""
     try:
-        # Sugestões simuladas para demonstração
-        all_suggestions = [
-            {
-                "id": "perf-opt-001",
-                "type": "performance",
-                "priority": "high",
-                "title": "Otimização de Cache Redis",
-                "detection_description": "Detectamos que o sistema está fazendo múltiplas chamadas repetidas ao banco de dados para os mesmos dados em um curto período.",
-                "improvement_description": "Implementar cache inteligente com predição de acesso baseado em machine learning para otimizar o uso de memória e reduzir latência.",
-                "benefits_description": "- Redução de 70% nas consultas ao banco\n- Melhoria de 40% no tempo de resposta\n- Economia de recursos computacionais",
-                "metrics": {
-                    "impacto": "Alto",
-                    "complexidade": "Média",
-                    "tempo_implementacao": "2 horas",
-                    "risco": "Baixo"
-                }
-            },
-            {
-                "id": "bug-fix-002",
-                "type": "bugfix",
-                "priority": "critical",
-                "title": "Correção de Vazamento de Memória",
-                "detection_description": "Identificamos um vazamento de memória no módulo de monitoramento que está causando aumento gradual no consumo de RAM.",
-                "improvement_description": "Implementar limpeza automática de referências circulares e gerenciamento inteligente de objetos com garbage collection otimizado.",
-                "benefits_description": "- Estabilização do consumo de memória\n- Prevenção de crashes por falta de memória\n- Melhoria na performance geral",
-                "metrics": {
-                    "impacto": "Crítico",
-                    "complexidade": "Baixa",
-                    "tempo_implementacao": "30 minutos",
-                    "risco": "Baixo"
-                }
-            },
-            {
-                "id": "feature-003",
-                "type": "feature",
-                "priority": "medium",
-                "title": "Sistema de Auto-Backup Inteligente",
-                "detection_description": "O sistema não possui backup automático, criando risco de perda de dados em caso de falha.",
-                "improvement_description": "Implementar sistema de backup inteligente que analisa a importância das mudanças e cria pontos de restauração automaticamente.",
-                "benefits_description": "- Proteção contra perda de dados\n- Recuperação rápida em caso de falhas\n- Economia de espaço com backups inteligentes",
-                "metrics": {
-                    "impacto": "Alto",
-                    "complexidade": "Média",
-                    "tempo_implementacao": "3 horas",
-                    "risco": "Baixo"
-                }
-            },
-            {
-                "id": "security-004",
-                "type": "security",
-                "priority": "high",
-                "title": "Implementação de 2FA para Operações Críticas",
-                "detection_description": "Operações críticas do sistema estão protegidas apenas por autenticação simples.",
-                "improvement_description": "Adicionar autenticação de dois fatores (2FA) para todas as operações críticas com auditoria completa.",
-                "benefits_description": "- Aumento significativo na segurança\n- Rastreabilidade completa de ações\n- Conformidade com padrões de segurança",
-                "metrics": {
-                    "impacto": "Crítico",
-                    "complexidade": "Alta",
-                    "tempo_implementacao": "4 horas",
-                    "risco": "Médio"
-                }
-            }
-        ]
+        # Importa o detector de sugestões reais
+        from src.services.diagnostico.real_suggestions import real_detector
         
-        # Filtra sugestões já aplicadas
-        pending_suggestions = [
-            s for s in all_suggestions 
-            if s["id"] not in system.applied_suggestions
-        ]
+        # Analisa o sistema para encontrar problemas reais
+        real_suggestions = await real_detector.analyze_system()
+        
+        # Se temos sugestões reais, usa elas
+        if real_suggestions:
+            # Filtra sugestões já aplicadas
+            pending_suggestions = [
+                s for s in real_suggestions 
+                if s["id"] not in system.applied_suggestions
+            ]
+            
+            logger.info(f"Detectadas {len(real_suggestions)} sugestões reais, {len(pending_suggestions)} pendentes")
+        else:
+            # Fallback para sugestões simuladas se não houver reais
+            logger.info("Nenhuma sugestão real detectada, usando simuladas")
+            all_suggestions = [
+                {
+                    "id": "perf-opt-001",
+                    "type": "performance",
+                    "priority": "high",
+                    "title": "Otimização de Cache Redis",
+                    "detection_description": "Detectamos que o sistema está fazendo múltiplas chamadas repetidas ao banco de dados para os mesmos dados em um curto período.",
+                    "improvement_description": "Implementar cache inteligente com predição de acesso baseado em machine learning para otimizar o uso de memória e reduzir latência.",
+                    "benefits_description": "- Redução de 70% nas consultas ao banco\n- Melhoria de 40% no tempo de resposta\n- Economia de recursos computacionais",
+                    "metrics": {
+                        "impacto": "Alto",
+                        "complexidade": "Média",
+                        "tempo_implementacao": "2 horas",
+                        "risco": "Baixo"
+                    }
+                },
+                {
+                    "id": "bug-fix-002",
+                    "type": "bugfix",
+                    "priority": "critical",
+                    "title": "Correção de Vazamento de Memória",
+                    "detection_description": "Identificamos um vazamento de memória no módulo de monitoramento que está causando aumento gradual no consumo de RAM.",
+                    "improvement_description": "Implementar limpeza automática de referências circulares e gerenciamento inteligente de objetos com garbage collection otimizado.",
+                    "benefits_description": "- Estabilização do consumo de memória\n- Prevenção de crashes por falta de memória\n- Melhoria na performance geral",
+                    "metrics": {
+                        "impacto": "Crítico",
+                        "complexidade": "Baixa",
+                        "tempo_implementacao": "30 minutos",
+                        "risco": "Baixo"
+                    }
+                },
+                {
+                    "id": "feature-003",
+                    "type": "feature",
+                    "priority": "medium",
+                    "title": "Sistema de Auto-Backup Inteligente",
+                    "detection_description": "O sistema não possui backup automático, criando risco de perda de dados em caso de falha.",
+                    "improvement_description": "Implementar sistema de backup inteligente que analisa a importância das mudanças e cria pontos de restauração automaticamente.",
+                    "benefits_description": "- Proteção contra perda de dados\n- Recuperação rápida em caso de falhas\n- Economia de espaço com backups inteligentes",
+                    "metrics": {
+                        "impacto": "Alto",
+                        "complexidade": "Média",
+                        "tempo_implementacao": "3 horas",
+                        "risco": "Baixo"
+                    }
+                },
+                {
+                    "id": "security-004",
+                    "type": "security",
+                    "priority": "high",
+                    "title": "Implementação de 2FA para Operações Críticas",
+                    "detection_description": "Operações críticas do sistema estão protegidas apenas por autenticação simples.",
+                    "improvement_description": "Adicionar autenticação de dois fatores (2FA) para todas as operações críticas com auditoria completa.",
+                    "benefits_description": "- Aumento significativo na segurança\n- Rastreabilidade completa de ações\n- Conformidade com padrões de segurança",
+                    "metrics": {
+                        "impacto": "Crítico",
+                        "complexidade": "Alta",
+                        "tempo_implementacao": "4 horas",
+                        "risco": "Médio"
+                    }
+                }
+            ]
+            
+            # Filtra sugestões já aplicadas
+            pending_suggestions = [
+                s for s in all_suggestions 
+                if s["id"] not in system.applied_suggestions
+            ]
         
         # Estatísticas
         stats = {
@@ -961,7 +978,8 @@ async def get_evolution_suggestions():
             "success": True,
             "suggestions": pending_suggestions,
             "stats": stats,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "real_analysis": len(real_suggestions) > 0 if 'real_suggestions' in locals() else False
         }
         
     except Exception as e:
@@ -1115,11 +1133,28 @@ async def apply_evolution_suggestion(request: Dict[str, Any]):
             })
         )
         
-        # Simula aplicação da melhoria
-        execution_time = 2  # segundos
+        # Tenta aplicar a sugestão real
+        real_application_success = False
+        real_application_message = ""
         
-        # Se temos o sistema de evolução, usa ele
-        if system.evolution_controller and EVOLUTION_AVAILABLE:
+        try:
+            from src.services.diagnostico.real_suggestions import real_detector
+            
+            # Aplica a sugestão real
+            success, message = await real_detector.apply_suggestion(suggestion_id)
+            
+            if success:
+                real_application_success = True
+                real_application_message = message
+                logger.info(f"Sugestão {suggestion_id} aplicada com sucesso: {message}")
+            else:
+                logger.warning(f"Falha ao aplicar sugestão {suggestion_id}: {message}")
+                
+        except Exception as e:
+            logger.error(f"Erro ao aplicar sugestão real: {e}")
+        
+        # Se temos o sistema de evolução E a aplicação real falhou, tenta via evolução
+        if system.evolution_controller and EVOLUTION_AVAILABLE and not real_application_success:
             evolution_request = EvolutionRequest(
                 type=EvolutionType.FEATURE,
                 description=f"Aplicando sugestão aprovada: {suggestion_id}",
@@ -1130,17 +1165,27 @@ async def apply_evolution_suggestion(request: Dict[str, Any]):
             return {
                 "success": True,
                 "message": f"Melhoria {suggestion_id} aplicada com sucesso via sistema de evolução",
-                "execution_time": execution_time,
-                "evolution_id": result.get("request_id")
+                "execution_time": 2,
+                "evolution_id": result.get("request_id"),
+                "real_application": False
+            }
+        elif real_application_success:
+            return {
+                "success": True,
+                "message": f"Melhoria {suggestion_id} aplicada com sucesso! {real_application_message}",
+                "execution_time": 2,
+                "real_application": True,
+                "details": real_application_message
             }
         else:
-            # Simula aplicação
-            await asyncio.sleep(execution_time)
+            # Simula aplicação se nenhum sistema real está disponível
+            await asyncio.sleep(2)
             
             return {
                 "success": True,
                 "message": f"Melhoria {suggestion_id} aplicada com sucesso (modo simulado)",
-                "execution_time": execution_time
+                "execution_time": 2,
+                "real_application": False
             }
             
     except Exception as e:
