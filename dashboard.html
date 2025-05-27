@@ -1634,7 +1634,7 @@
             addLogEntry('Buscando novas sugestões de melhoria...', 'info');
             
             try {
-                const response = await fetch('http://localhost:8001/evolution/suggestions');
+                const response = await fetch('http://localhost:8000/api/evolution/suggestions');
                 const data = await response.json();
                 
                 if (data.success && data.suggestions) {
@@ -1792,10 +1792,13 @@
         // Mostra preview do código/detalhes
         async function previewSuggestion(suggestionId) {
             addLogEntry(`Carregando preview da sugestão ${suggestionId}...`, 'info');
+            console.log('Preview solicitado para:', suggestionId);
             
             try {
-                const response = await fetch(`http://localhost:8001/evolution/preview/${suggestionId}`);
+                const response = await fetch(`http://localhost:8000/api/evolution/preview/${suggestionId}`);
+                console.log('Response status:', response.status);
                 const data = await response.json();
+                console.log('Data recebida:', data);
                 
                 if (data.success && data.code) {
                     showCodePreviewModal(data.code, data.description);
@@ -1938,7 +1941,12 @@ class TwoFactorAuth:
         
         // Modal de preview do código
         function showCodePreviewModal(code, description, title = 'Preview do Código') {
+            // Remove modal existente se houver
+            const existingModal = document.querySelector('.code-preview-modal');
+            if (existingModal) existingModal.remove();
+            
             const modal = document.createElement('div');
+            modal.className = 'code-preview-modal';
             modal.style.cssText = `
                 position: fixed;
                 top: 0;
@@ -1953,6 +1961,9 @@ class TwoFactorAuth:
                 backdrop-filter: blur(10px);
             `;
             
+            // Escapa o código para HTML
+            const escapedCode = code.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            
             modal.innerHTML = `
                 <div style="
                     background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
@@ -1962,6 +1973,7 @@ class TwoFactorAuth:
                     max-height: 80%;
                     overflow-y: auto;
                     border: 2px solid rgba(255,255,255,0.2);
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
                 ">
                     <h3 style="color: #FFD700; margin-bottom: 20px; text-align: center;">${title}</h3>
                     <p style="color: white; margin-bottom: 20px; line-height: 1.6;">${description}</p>
@@ -1974,9 +1986,11 @@ class TwoFactorAuth:
                         font-family: 'Courier New', monospace;
                         line-height: 1.4;
                         max-height: 400px;
-                    ">${code}</pre>
+                        white-space: pre-wrap;
+                        word-wrap: break-word;
+                    ">${escapedCode}</pre>
                     <div style="text-align: center; margin-top: 20px;">
-                        <button onclick="this.closest('.modal').remove()" style="
+                        <button class="modal-close-btn" style="
                             background: linear-gradient(45deg, #4CAF50, #45a049);
                             color: white;
                             border: none;
@@ -1986,7 +2000,7 @@ class TwoFactorAuth:
                             font-size: 1em;
                             margin-right: 10px;
                         ">Fechar</button>
-                        <button onclick="copyCodeToClipboard('${suggestionId}')" style="
+                        <button class="modal-copy-btn" data-suggestion-id="${title}" style="
                             background: linear-gradient(45deg, #2196F3, #1976D2);
                             color: white;
                             border: none;
@@ -1999,12 +2013,36 @@ class TwoFactorAuth:
                 </div>
             `;
             
-            modal.className = 'modal';
+            // Adiciona event listeners após criar o modal
+            document.body.appendChild(modal);
+            
+            // Fechar ao clicar fora
             modal.onclick = (e) => {
                 if (e.target === modal) modal.remove();
             };
             
-            document.body.appendChild(modal);
+            // Botão fechar
+            const closeBtn = modal.querySelector('.modal-close-btn');
+            if (closeBtn) {
+                closeBtn.onclick = () => modal.remove();
+            }
+            
+            // Botão copiar
+            const copyBtn = modal.querySelector('.modal-copy-btn');
+            if (copyBtn) {
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(code).then(() => {
+                        addLogEntry('Código copiado para a área de transferência', 'info');
+                        copyBtn.textContent = '✅ Copiado!';
+                        setTimeout(() => {
+                            copyBtn.textContent = '📋 Copiar Código';
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Erro ao copiar:', err);
+                        addLogEntry('Erro ao copiar código', 'error');
+                    });
+                };
+            }
         }
         
         // Copia código para clipboard
@@ -2277,7 +2315,7 @@ class MonitoringModule:
             
             try {
                 // Envia requisição para aplicar melhoria via API
-                const response = await fetch('http://localhost:8001/evolution/apply', {
+                const response = await fetch('http://localhost:8000/api/evolution/apply', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
@@ -2331,7 +2369,7 @@ class MonitoringModule:
         // Atualiza estatísticas via API
         async function updateStatsFromAPI() {
             try {
-                const response = await fetch('http://localhost:8001/evolution/stats');
+                const response = await fetch('http://localhost:8000/api/evolution/stats');
                 const stats = await response.json();
                 updateApprovalStatsFromAPI(stats);
             } catch (error) {

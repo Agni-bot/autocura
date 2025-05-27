@@ -1,5 +1,5 @@
 {
-  "ultima_atualizacao": "2025-05-27T06:07:49.465533",
+  "ultima_atualizacao": "2025-05-27T09:30:20.480212",
   "estado_atual": {
     "configuracoes": {
       "sistema_autocura": {
@@ -289,7 +289,7 @@
         "evolution_controller": "100% funcional"
       }
     },
-    "sistema_iniciado": "2025-05-27T06:07:49.465526",
+    "sistema_iniciado": "2025-05-27T09:30:20.480207",
     "modulos_status": {
       "core": {
         "memory": true,
@@ -302,7 +302,7 @@
         "ia": false,
         "diagnostic": false,
         "ethics": false,
-        "guardian": true
+        "guardian": false
       },
       "evolution": {
         "code_generator": false,
@@ -416,6 +416,42 @@
       "postgres": "configuring",
       "prometheus": "configuring",
       "grafana": "configuring"
+    }
+  },
+  "docker_deployment_status": {
+    "timestamp": "2025-05-27T09:20:00.000000",
+    "status": "OPERACIONAL ✅",
+    "containers_rodando": {
+      "autocura-api": {
+        "status": "running",
+        "porta": 8000,
+        "imagem": "docker-autocura-api",
+        "endpoints_funcionais": [
+          "/",
+          "/api",
+          "/api/health",
+          "/docs",
+          "/redoc"
+        ]
+      },
+      "autocura-redis": {
+        "status": "running (healthy)",
+        "porta": 6379,
+        "imagem": "redis:alpine"
+      }
+    },
+    "docker_compose_usado": "deployment/docker/docker-compose-simple.yml",
+    "dockerfile_usado": "deployment/docker/Dockerfile.api",
+    "problemas_resolvidos": [
+      "Servidor nginx na porta 8080 parado",
+      "Métricas Prometheus duplicadas corrigidas",
+      "GerenciadorMemoriaService substituído por memory_manager",
+      "Contexto de build Docker corrigido"
+    ],
+    "acesso": {
+      "dashboard": "http://localhost:8000/",
+      "api": "http://localhost:8000/api",
+      "docs": "http://localhost:8000/docs"
     }
   }
 }

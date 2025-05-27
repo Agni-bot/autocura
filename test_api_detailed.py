@@ -16,7 +16,7 @@ endpoints = [
 
 for endpoint, description in endpoints:
     try:
-        url = f'http://localhost:8080{endpoint}'
+        url = f'http://localhost:8000{endpoint}'
         print(f"Testando {description} ({endpoint})...")
         
         request = urllib.request.Request(url)
@@ -45,7 +45,7 @@ for endpoint, description in endpoints:
 # Verifica headers do servidor
 print("\n=== Verificando Headers do Servidor ===")
 try:
-    response = urllib.request.urlopen('http://localhost:8080/')
+    response = urllib.request.urlopen('http://localhost:8000/')
     print("Headers recebidos:")
     for header, value in response.headers.items():
         print(f"  {header}: {value}")
