@@ -2,47 +2,49 @@ FROM python:3.11-slim
 
 # Metadados
 LABEL maintainer="Sistema AutoCura"
-LABEL version="1.0.0-alpha"
-LABEL description="Sistema de Autocura Cognitiva com Arquitetura Modular"
+LABEL version="1.0.0-modular"
+LABEL description="Sistema de Autocura Cognitiva com Arquitetura Modular Reorganizada"
 
-# Instala dependências do sistema
+# Instala dependÃªncias do sistema
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     curl \
     git \
+    docker.io \
     && rm -rf /var/lib/apt/lists/*
 
-# Define diretório de trabalho
+# Define diretÃ³rio de trabalho
 WORKDIR /app
 
 # Copia requirements primeiro (melhor cache)
 COPY requirements.txt .
 
-# Instala dependências Python
+# Instala dependÃªncias Python
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Cria estrutura de diretórios
+# Cria estrutura de diretÃ³rios
 RUN mkdir -p /app/data /app/logs /app/config
 
-# Copia código fonte com nova estrutura
+# Copia cÃ³digo fonte com nova estrutura modular
 COPY autocura/ ./autocura/
-COPY main.py ./
+COPY main_modular.py ./
 COPY dashboard.html ./
 COPY memoria_compartilhada.json ./
 
-# Define variáveis de ambiente
+# Define variÃ¡veis de ambiente
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 ENV ENVIRONMENT=production
+ENV STRUCTURE_TYPE=modular
 
-# Expõe porta
-EXPOSE 8000
+# ExpÃµe porta
+EXPOSE 8001
 
-# Health check
+# Health check usando nova estrutura
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/api/health || exit 1
+    CMD curl -f http://localhost:8001/api/health || exit 1
 
-# Comando para iniciar
-CMD ["python", "main.py"]
+# Comando para iniciar nova estrutura
+CMD ["python", "main_modular.py"]
