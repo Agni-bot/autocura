@@ -884,6 +884,9 @@ async def get_evolution_suggestions():
         # Analisa o sistema para encontrar problemas reais
         real_suggestions = await real_detector.analyze_system()
         
+        # Verifica se OpenAI está configurado
+        openai_configured = real_detector.openai_client is not None
+        
         # Se temos sugestões reais, usa elas
         if real_suggestions:
             # Filtra sugestões já aplicadas
@@ -891,6 +894,12 @@ async def get_evolution_suggestions():
                 s for s in real_suggestions 
                 if s["id"] not in system.applied_suggestions
             ]
+            
+            # Adiciona informação sobre otimização por IA
+            for suggestion in pending_suggestions:
+                suggestion["ai_optimization_available"] = openai_configured
+                if openai_configured:
+                    suggestion["ai_optimization_note"] = "Este código será analisado e otimizado por IA antes da aplicação"
             
             logger.info(f"Detectadas {len(real_suggestions)} sugestões reais, {len(pending_suggestions)} pendentes")
         else:
@@ -910,7 +919,8 @@ async def get_evolution_suggestions():
                         "complexidade": "Média",
                         "tempo_implementacao": "2 horas",
                         "risco": "Baixo"
-                    }
+                    },
+                    "ai_optimization_available": openai_configured
                 },
                 {
                     "id": "bug-fix-002",
@@ -925,7 +935,8 @@ async def get_evolution_suggestions():
                         "complexidade": "Baixa",
                         "tempo_implementacao": "30 minutos",
                         "risco": "Baixo"
-                    }
+                    },
+                    "ai_optimization_available": openai_configured
                 },
                 {
                     "id": "feature-003",
@@ -940,7 +951,8 @@ async def get_evolution_suggestions():
                         "complexidade": "Média",
                         "tempo_implementacao": "3 horas",
                         "risco": "Baixo"
-                    }
+                    },
+                    "ai_optimization_available": openai_configured
                 },
                 {
                     "id": "security-004",
@@ -955,7 +967,8 @@ async def get_evolution_suggestions():
                         "complexidade": "Alta",
                         "tempo_implementacao": "4 horas",
                         "risco": "Médio"
-                    }
+                    },
+                    "ai_optimization_available": openai_configured
                 }
             ]
             
@@ -971,7 +984,8 @@ async def get_evolution_suggestions():
             "applied_today": 7 + len([s for s in system.applied_suggestions if "2025-05-27" in s]),
             "applied_total": len(system.applied_suggestions),
             "acceptance_rate": 89,
-            "estimated_savings": 2.3 + (len(system.applied_suggestions) * 0.5)
+            "estimated_savings": 2.3 + (len(system.applied_suggestions) * 0.5),
+            "ai_optimization_enabled": openai_configured
         }
         
         return {
@@ -979,7 +993,11 @@ async def get_evolution_suggestions():
             "suggestions": pending_suggestions,
             "stats": stats,
             "timestamp": datetime.now().isoformat(),
-            "real_analysis": len(real_suggestions) > 0 if 'real_suggestions' in locals() else False
+            "real_analysis": len(real_suggestions) > 0 if 'real_suggestions' in locals() else False,
+            "ai_optimization": {
+                "enabled": openai_configured,
+                "description": "Código será analisado e otimizado por GPT-4 antes da aplicação" if openai_configured else "Configure OPENAI_API_KEY para habilitar otimização por IA"
+            }
         }
         
     except Exception as e:
