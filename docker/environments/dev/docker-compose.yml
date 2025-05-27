@@ -15,11 +15,11 @@ services:
       - HOST=0.0.0.0
       - PORT=8000
     depends_on:
-      - redis
+      - autocura-redis
     restart: unless-stopped
 
   # Cache Redis
-  redis:
+  autocura-redis:
     image: redis:latest
     ports:
       - "6379:6379"
