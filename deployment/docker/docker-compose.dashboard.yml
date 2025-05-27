@@ -4,8 +4,8 @@ services:
   # API Principal com Dashboard
   autocura-api:
     build:
-      context: .
-      dockerfile: docker/Dockerfile.api
+      context: ../..
+      dockerfile: deployment/docker/Dockerfile.api
     container_name: autocura-api
     ports:
       - "8000:8000"

@@ -27,6 +27,38 @@ logging.basicConfig(
 )
 logger = logging.getLogger("GuardiãoCognitivo")
 
+# Métricas Prometheus globais para evitar duplicação
+_METRICS_INITIALIZED = False
+_METRICS = {}
+
+def _initialize_metrics():
+    """Inicializa métricas Prometheus uma única vez"""
+    global _METRICS_INITIALIZED, _METRICS
+    
+    if _METRICS_INITIALIZED:
+        return _METRICS
+    
+    _METRICS = {
+        "eventos_cognitivos": Counter(
+            "eventos_cognitivos_total",
+            "Total de eventos cognitivos",
+            ["tipo", "severidade"]
+        ),
+        "saude_cognitiva": Gauge(
+            "saude_cognitiva",
+            "Saúde cognitiva do sistema",
+            ["dimensao"]
+        ),
+        "tempo_resposta": Histogram(
+            "tempo_resposta_guardiao",
+            "Tempo de resposta do guardião",
+            ["acao"]
+        )
+    }
+    
+    _METRICS_INITIALIZED = True
+    return _METRICS
+
 # --- Definições de Estruturas de Dados ---
 @dataclass
 class DiagnosticoInfo:
@@ -101,7 +133,7 @@ class GuardiaoCognitivo:
     """Guardião Cognitivo - Responsável pelo monitoramento de saúde e salvaguardas do sistema"""
     
     def __init__(self, gerenciador_memoria: GerenciadorMemoria):
-        self.logger = logging.getLogger("GuardiãoCognitivo")
+        self.logger = logger
         self.gerenciador_memoria = gerenciador_memoria
         self.alertas_ativos = []
         self.incidentes = []
@@ -114,24 +146,8 @@ class GuardiaoCognitivo:
         self._inicializar_kube_client()
         logger.info("Guardião Cognitivo inicializado com config: %s", CONFIG_GUARDIAN)
 
-        # Métricas Prometheus
-        self.metricas = {
-            "eventos_cognitivos": Counter(
-                "eventos_cognitivos_total",
-                "Total de eventos cognitivos",
-                ["tipo", "severidade"]
-            ),
-            "saude_cognitiva": Gauge(
-                "saude_cognitiva",
-                "Saúde cognitiva do sistema",
-                ["dimensao"]
-            ),
-            "tempo_resposta": Histogram(
-                "tempo_resposta_guardiao",
-                "Tempo de resposta do guardião",
-                ["acao"]
-            )
-        }
+        # Métricas Prometheus - usa métricas globais
+        self.metricas = _initialize_metrics()
         
         # Histórico de eventos
         self.historico_eventos: List[EventoCognitivo] = []

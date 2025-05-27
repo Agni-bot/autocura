@@ -1,5 +1,5 @@
 {
-  "ultima_atualizacao": "2025-05-27T08:51:43.079095",
+  "ultima_atualizacao": "2025-05-27T06:07:49.465533",
   "estado_atual": {
     "configuracoes": {
       "sistema_autocura": {
@@ -289,7 +289,7 @@
         "evolution_controller": "100% funcional"
       }
     },
-    "sistema_iniciado": "2025-05-27T08:51:43.079091",
+    "sistema_iniciado": "2025-05-27T06:07:49.465526",
     "modulos_status": {
       "core": {
         "memory": true,
@@ -302,7 +302,7 @@
         "ia": false,
         "diagnostic": false,
         "ethics": false,
-        "guardian": false
+        "guardian": true
       },
       "evolution": {
         "code_generator": false,

@@ -203,7 +203,9 @@ class SystemState:
         self.ia_service = ClienteIA() if IA_AVAILABLE else None
         self.diagnostic_service = DiagnosticoSistema() if DIAGNOSTIC_AVAILABLE else None
         self.ethics_service = ValidadorEtico() if ETHICS_AVAILABLE else None
-        self.guardian_service = GuardiaoCognitivo() if GUARDIAN_AVAILABLE else None
+        
+        # Guardian service needs memory manager
+        self.guardian_service = GuardiaoCognitivo(self.memory_manager) if GUARDIAN_AVAILABLE else None
         
         # Evolution Components
         if EVOLUTION_AVAILABLE:
