@@ -19,6 +19,13 @@ import redis
 import gc
 import weakref
 
+# Importação do OpenAI
+try:
+    import openai
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 class RealSuggestionDetector:
@@ -28,6 +35,7 @@ class RealSuggestionDetector:
         self.suggestions = []
         self.applied_fixes = set()
         self.redis_client = None
+        self.openai_client = None
         
         # Tenta conectar ao Redis
         try:
@@ -35,6 +43,19 @@ class RealSuggestionDetector:
             self.redis_client.ping()
         except:
             logger.warning("Redis não disponível para análise de cache")
+            
+        # Configura OpenAI se disponível
+        if OPENAI_AVAILABLE:
+            api_key = os.getenv('OPENAI_API_KEY') or os.getenv('AI_API_KEY')
+            if api_key and api_key != 'sua-chave-openai-aqui':
+                try:
+                    self.openai_client = openai.OpenAI(api_key=api_key)
+                    logger.info("OpenAI configurado para análise e otimização de código")
+                except Exception as e:
+                    logger.warning(f"Erro ao configurar OpenAI: {e}")
+                    self.openai_client = None
+            else:
+                logger.info("OpenAI não configurado - análise e otimização limitadas")
     
     async def analyze_system(self) -> List[Dict[str, Any]]:
         """Analisa o sistema e retorna sugestões reais"""
@@ -701,6 +722,19 @@ predictive_cache = PredictiveCacheManager(redis_client)
             if not fix_code:
                 return False, "Código de correção não disponível"
             
+            # NOVO: Analisa e otimiza o código com OpenAI antes de aplicar
+            if self.openai_client:
+                logger.info(f"Analisando e otimizando código com OpenAI para {suggestion_id}")
+                optimized_code = await self._analyze_and_optimize_code(
+                    fix_code, 
+                    suggestion['title'],
+                    suggestion['improvement_description']
+                )
+                
+                if optimized_code and optimized_code != fix_code:
+                    logger.info("Código otimizado pela IA")
+                    fix_code = optimized_code
+            
             # Determina onde aplicar baseado no tipo
             if suggestion['type'] == 'performance':
                 target_file = 'src/core/performance_optimizations.py'
@@ -722,24 +756,125 @@ predictive_cache = PredictiveCacheManager(redis_client)
                 with open(target_path, 'a') as f:
                     f.write(f"\n\n# Aplicado em {datetime.now().isoformat()}\n")
                     f.write(f"# Sugestão: {suggestion_id} - {suggestion['title']}\n")
+                    if self.openai_client:
+                        f.write("# Código otimizado por IA\n")
                     f.write(fix_code)
             else:
                 with open(target_path, 'w') as f:
                     f.write(f"# Arquivo criado em {datetime.now().isoformat()}\n")
-                    f.write(f"# Primeira sugestão: {suggestion_id} - {suggestion['title']}\n\n")
+                    f.write(f"# Primeira sugestão: {suggestion_id} - {suggestion['title']}\n")
+                    if self.openai_client:
+                        f.write("# Código otimizado por IA\n\n")
                     f.write(fix_code)
             
             # Marca como aplicada
             self.applied_fixes.add(suggestion_id)
             
             # Log de sucesso
-            logger.info(f"Sugestão {suggestion_id} aplicada com sucesso em {target_file}")
+            status = "otimizado e aplicado" if self.openai_client else "aplicado"
+            logger.info(f"Sugestão {suggestion_id} {status} com sucesso em {target_file}")
             
-            return True, f"Sugestão aplicada com sucesso em {target_file}"
+            return True, f"Sugestão {status} com sucesso em {target_file}"
             
         except Exception as e:
             logger.error(f"Erro ao aplicar sugestão {suggestion_id}: {e}")
             return False, f"Erro ao aplicar: {str(e)}"
+    
+    async def _analyze_and_optimize_code(self, code: str, title: str, description: str) -> Optional[str]:
+        """Analisa e otimiza o código usando OpenAI"""
+        
+        if not self.openai_client:
+            return None
+            
+        try:
+            prompt = f"""Você é um especialista em Python e otimização de código.
+
+Analise o seguinte código que foi gerado para resolver: {title}
+Descrição: {description}
+
+Código atual:
+```python
+{code}
+```
+
+Por favor:
+1. Verifique se o código está correto e seguro
+2. Otimize para melhor performance e legibilidade
+3. Adicione tratamento de erros robusto
+4. Garanta que segue as melhores práticas do Python
+5. Adicione docstrings e comentários úteis
+6. Mantenha a funcionalidade original
+
+Retorne APENAS o código Python otimizado, sem explicações adicionais."""
+
+            response = self.openai_client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "Você é um expert em Python focado em código limpo, seguro e eficiente."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,
+                max_tokens=2000
+            )
+            
+            optimized_code = response.choices[0].message.content.strip()
+            
+            # Remove marcadores de código se presentes
+            if optimized_code.startswith("```python"):
+                optimized_code = optimized_code[9:]
+            if optimized_code.startswith("```"):
+                optimized_code = optimized_code[3:]
+            if optimized_code.endswith("```"):
+                optimized_code = optimized_code[:-3]
+                
+            return optimized_code.strip()
+            
+        except Exception as e:
+            logger.error(f"Erro ao otimizar código com OpenAI: {e}")
+            return None
+    
+    async def analyze_code_quality(self, code_path: str) -> Dict[str, Any]:
+        """Analisa a qualidade do código usando OpenAI"""
+        
+        if not self.openai_client or not Path(code_path).exists():
+            return {}
+            
+        try:
+            with open(code_path, 'r', encoding='utf-8') as f:
+                code = f.read()
+                
+            prompt = f"""Analise a qualidade do seguinte código Python e forneça uma avaliação JSON:
+
+```python
+{code}
+```
+
+Retorne um JSON com:
+{{
+    "quality_score": 0-100,
+    "issues": ["lista de problemas encontrados"],
+    "improvements": ["lista de melhorias sugeridas"],
+    "security_risks": ["riscos de segurança identificados"],
+    "performance_issues": ["problemas de performance"],
+    "best_practices": ["boas práticas não seguidas"]
+}}"""
+
+            response = self.openai_client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "Você é um analisador de código Python. Responda apenas em JSON válido."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.2,
+                max_tokens=1000
+            )
+            
+            result = response.choices[0].message.content.strip()
+            return json.loads(result)
+            
+        except Exception as e:
+            logger.error(f"Erro ao analisar qualidade do código: {e}")
+            return {}
 
 # Instância global
 real_detector = RealSuggestionDetector() 
