@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: observabilidade
+  labels:
+    app: observabilidade
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: observabilidade
+  template:
+    metadata:
+      labels:
+        app: observabilidade
+    spec:
+      containers:
+      - name: observabilidade
+        image: observabilidade:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        env:
+        - name: MONITORAMENTO_URL
+          value: http://monitoramento:8081
+        - name: DIAGNOSTICO_URL
+          value: http://diagnostico:5002
+        - name: GERADOR_URL
+          value: http://gerador:5003
+        - name: LOG_LEVEL
+          value: INFO
+        - name: LOG_FILE
+          value: /app/logs/observabilidade.log
+        volumeMounts:
+        - name: logs-volume
+          mountPath: /app/logs
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: logs-volume
+        emptyDir: {} 

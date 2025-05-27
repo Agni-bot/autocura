@@ -1,0 +1,71 @@
+{{- if .Values.grafana.enabled }}
+{{- if .Values.grafana.podSecurityPolicy.enabled }}
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: {{ include "diagnostico.fullname" . }}-grafana
+  labels:
+    {{- include "diagnostico.labels" . | nindent 4 }}
+    app.kubernetes.io/component: grafana
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+    - ALL
+  volumes:
+    - 'configMap'
+    - 'emptyDir'
+    - 'projected'
+    - 'secret'
+    - 'downwardAPI'
+    - 'persistentVolumeClaim'
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: 'MustRunAsNonRoot'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 1
+        max: 65535
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 1
+        max: 65535
+  readOnlyRootFilesystem: true
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "diagnostico.fullname" . }}-grafana-psp
+  labels:
+    {{- include "diagnostico.labels" . | nindent 4 }}
+    app.kubernetes.io/component: grafana
+rules:
+  - apiGroups: ['policy']
+    resources: ['podsecuritypolicies']
+    verbs: ['use']
+    resourceNames:
+      - {{ include "diagnostico.fullname" . }}-grafana
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "diagnostico.fullname" . }}-grafana-psp
+  labels:
+    {{- include "diagnostico.labels" . | nindent 4 }}
+    app.kubernetes.io/component: grafana
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "diagnostico.fullname" . }}-grafana-psp
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "diagnostico.fullname" . }}-grafana
+    namespace: {{ .Release.Namespace }}
+{{- end }}
+{{- end }} 

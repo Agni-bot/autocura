@@ -1,0 +1,113 @@
+version: '3.8'
+
+services:
+  # API Principal com nova estrutura modular
+  autocura-api:
+    build:
+      context: .
+      dockerfile: deployment/docker/Dockerfile.modular
+    container_name: autocura-api-modular
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+      - HOST=0.0.0.0
+      - PORT=8000
+      - PYTHONPATH=/app
+      - REDIS_URL=redis://autocura-redis:6379
+      - POSTGRES_URL=postgresql://autocura:autocura@autocura-postgres:5432/autocura
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./config:/app/config
+    networks:
+      - autocura-network
+    depends_on:
+      - autocura-redis
+      - autocura-postgres
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis para cache e mensageria
+  autocura-redis:
+    image: redis:7-alpine
+    container_name: autocura-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - autocura-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL para persistência
+  autocura-postgres:
+    image: postgres:15-alpine
+    container_name: autocura-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=autocura
+      - POSTGRES_USER=autocura
+      - POSTGRES_PASSWORD=autocura_password
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deployment/docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - autocura-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U autocura"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Prometheus para métricas
+  autocura-prometheus:
+    image: prom/prometheus:latest
+    container_name: autocura-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deployment/docker/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - autocura-network
+    restart: unless-stopped
+
+  # Grafana para dashboards
+  autocura-grafana:
+    image: grafana/grafana:latest
+    container_name: autocura-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=autocura
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deployment/docker/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+    networks:
+      - autocura-network
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  postgres_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  autocura-network:
+    driver: bridge

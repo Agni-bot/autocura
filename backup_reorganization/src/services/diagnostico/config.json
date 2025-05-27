@@ -1,0 +1,65 @@
+{
+    "servico": {
+        "nome": "diagnostico",
+        "versao": "1.0.0",
+        "porta": 5001,
+        "host": "0.0.0.0"
+    },
+    "monitoramento": {
+        "intervalo_coleta": 60,
+        "limites": {
+            "cpu_uso": 80.0,
+            "memoria_uso": 85.0,
+            "disco_uso": 90.0,
+            "latencia_api": 500.0,
+            "taxa_erro": 5.0
+        }
+    },
+    "regras_diagnostico": {
+        "cpu_uso": [
+            {
+                "tipo": "sobrecarga_cpu",
+                "descricao": "Alto uso de CPU detectado",
+                "limite": 80.0,
+                "acao": "escalar"
+            },
+            {
+                "tipo": "pico_cpu",
+                "descricao": "Pico de uso de CPU detectado",
+                "limite": 95.0,
+                "acao": "alertar"
+            }
+        ],
+        "memoria_uso": [
+            {
+                "tipo": "vazamento_memoria",
+                "descricao": "Possível vazamento de memória",
+                "limite": 85.0,
+                "acao": "investigar"
+            }
+        ],
+        "disco_uso": [
+            {
+                "tipo": "espaco_disco",
+                "descricao": "Espaço em disco crítico",
+                "limite": 90.0,
+                "acao": "limpar"
+            }
+        ]
+    },
+    "logging": {
+        "nivel": "INFO",
+        "arquivo": "logs/diagnostico.log",
+        "formato": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    },
+    "integracao": {
+        "monitoramento": {
+            "url": "http://monitoramento:5000",
+            "timeout": 5
+        },
+        "autocorrection": {
+            "url": "http://autocorrection:5000",
+            "timeout": 5
+        }
+    }
+} 

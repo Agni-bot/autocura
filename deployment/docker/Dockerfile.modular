@@ -1,0 +1,48 @@
+FROM python:3.11-slim
+
+# Metadados
+LABEL maintainer="Sistema AutoCura"
+LABEL version="1.0.0-alpha"
+LABEL description="Sistema de Autocura Cognitiva com Arquitetura Modular"
+
+# Instala dependências do sistema
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Define diretório de trabalho
+WORKDIR /app
+
+# Copia requirements primeiro (melhor cache)
+COPY requirements.txt .
+
+# Instala dependências Python
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Cria estrutura de diretórios
+RUN mkdir -p /app/data /app/logs /app/config
+
+# Copia código fonte com nova estrutura
+COPY autocura/ ./autocura/
+COPY main.py ./
+COPY dashboard.html ./
+COPY memoria_compartilhada.json ./
+
+# Define variáveis de ambiente
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+ENV ENVIRONMENT=production
+
+# Expõe porta
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/api/health || exit 1
+
+# Comando para iniciar
+CMD ["python", "main.py"]

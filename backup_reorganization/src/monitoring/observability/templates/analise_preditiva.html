@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Análise Preditiva{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <h1>Análise Preditiva</h1>
+    {% if predicao %}
+        <pre>{{ predicao | tojson(indent=2) }}</pre>
+    {% else %}
+        <div class="alert alert-warning">Previsão não disponível.</div>
+    {% endif %}
+    <!-- Aqui serão exibidos gráficos de previsão e tendências -->
+</div>
+{% endblock %} 

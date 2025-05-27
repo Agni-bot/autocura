@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: consciencia-situacional-config
+data:
+  config.yaml: |
+    servicos:
+      monitoramento:
+        url: http://monitoramento:8080
+        timeout: 5
+      observabilidade:
+        url: http://observabilidade:8080
+        timeout: 5
+      diagnostico:
+        url: http://diagnostico:8080
+        timeout: 5
+      autocorrecao:
+        url: http://autocorrecao:8080
+        timeout: 5
+      orquestracao:
+        url: http://orquestracao:8080
+        timeout: 5
+    monitoramento:
+      intervalo_coleta: 5
+      retencao_historico: 3600
+    observabilidade:
+      nivel_log: INFO
+      retencao_logs: 86400
+    diagnostico:
+      limiar_alerta: 0.8
+      intervalo_analise: 10
+    autocorrecao:
+      max_tentativas: 3
+      intervalo_retry: 5
+    orquestracao:
+      max_replicas: 10
+      min_replicas: 1
+    prometheus:
+      url: http://prometheus:9090
+      timeout: 5
+    grafana:
+      url: http://grafana:3000
+      timeout: 5 
