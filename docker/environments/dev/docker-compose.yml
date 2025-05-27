@@ -3,7 +3,7 @@ services:
   api:
     build:
       context: ../../..
-      dockerfile: docker/Dockerfile.api.fixed
+      dockerfile: docker/environments/dev/Dockerfile.api
     ports:
       - "8000:8000"
     environment:

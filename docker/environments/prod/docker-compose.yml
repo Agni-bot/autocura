@@ -1,0 +1,45 @@
+services:
+  # API Principal - Produção
+  api:
+    build:
+      context: ../../..
+      dockerfile: docker/environments/prod/Dockerfile.api
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+      - AI_API_KEY=${AI_API_KEY}
+      - OPENAI_API_KEY=${AI_API_KEY}
+      - HOST=0.0.0.0
+      - PORT=8000
+    depends_on:
+      - redis
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Cache Redis - Produção
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  redis-data:
+
+networks:
+  default:
+    name: autocura-prod 
