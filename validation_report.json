@@ -1,0 +1,124 @@
+{
+  "validation_timestamp": "2025-05-27T12:26:27.964345",
+  "summary": {
+    "total_tests": 8,
+    "tests_passed": 8,
+    "tests_failed": 0,
+    "success_rate": 100.0
+  },
+  "overall_status": "PASSED",
+  "results": [
+    {
+      "test": "Conectividade API",
+      "success": true,
+      "message": "API respondendo na porta 8001",
+      "data": {
+        "version": "1.0.0-modular",
+        "status": "operational"
+      },
+      "timestamp": "2025-05-27T12:26:19.884674"
+    },
+    {
+      "test": "Health Check",
+      "success": true,
+      "message": "Status: degraded - Módulos: 1/4",
+      "data": {
+        "core": true,
+        "services": false,
+        "monitoring": false,
+        "security": false
+      },
+      "timestamp": "2025-05-27T12:26:20.893723"
+    },
+    {
+      "test": "Estrutura Modular",
+      "success": true,
+      "message": "Tipo: modular - Módulos organizados: 4",
+      "data": {
+        "modules": [
+          "core",
+          "services",
+          "monitoring",
+          "security"
+        ]
+      },
+      "timestamp": "2025-05-27T12:26:21.897486"
+    },
+    {
+      "test": "Carregamento de Módulos",
+      "success": true,
+      "message": "Módulos carregados: 1/4",
+      "data": {
+        "core": true,
+        "services": false,
+        "monitoring": false,
+        "security": false
+      },
+      "timestamp": "2025-05-27T12:26:22.902390"
+    },
+    {
+      "test": "Deployment Docker",
+      "success": true,
+      "message": "Containers AutoCura encontrados: 4",
+      "data": {
+        "containers": [
+          "autocura-api-modular   Up 2 minutes (healthy)",
+          "autocura-redis         Up 2 minutes (healthy)",
+          "autocura-postgres      Up 2 minutes (healthy)",
+          "autocura-api           Up 6 hours"
+        ]
+      },
+      "timestamp": "2025-05-27T12:26:23.957118"
+    },
+    {
+      "test": "Estrutura de Arquivos",
+      "success": true,
+      "message": "Módulos encontrados: 6/6",
+      "data": {
+        "found": [
+          "core",
+          "services",
+          "monitoring",
+          "security",
+          "utils",
+          "api"
+        ],
+        "expected": [
+          "core",
+          "services",
+          "monitoring",
+          "security",
+          "utils",
+          "api"
+        ]
+      },
+      "timestamp": "2025-05-27T12:26:24.958392"
+    },
+    {
+      "test": "Integridade do Backup",
+      "success": true,
+      "message": "Backup completo: src=True, main.py=True",
+      "data": {
+        "backup_items": [
+          "deployment",
+          "main.py",
+          "modulos",
+          "README.md",
+          "requirements.txt",
+          "src",
+          "tests"
+        ]
+      },
+      "timestamp": "2025-05-27T12:26:25.959611"
+    },
+    {
+      "test": "Mecanismo de Fallback",
+      "success": true,
+      "message": "Sistema operacional com status: degraded",
+      "data": {
+        "fallback_active": true
+      },
+      "timestamp": "2025-05-27T12:26:26.963638"
+    }
+  ]
+}

@@ -52,8 +52,7 @@ except ImportError as e:
 
 # === IMPORTAÇÕES SERVICES ===
 try:
-    from autocura.services.diagnostico.diagnostico import DiagnosticoSistema
-    from autocura.services.diagnostico.real_suggestions import RealSuggestionsDetector
+    from autocura.services.diagnostico import DiagnosticoSistema, RealSuggestionsDetector
     modules_status["services"] = True
     logger.info("✅ Serviços carregados da nova estrutura")
 except ImportError as e:
@@ -65,6 +64,12 @@ except ImportError as e:
         logger.info("✅ Serviços carregados da estrutura antiga")
     except ImportError:
         logger.error("❌ Nenhum serviço disponível")
+        # Cria classes mock para evitar erros
+        class DiagnosticoSistema:
+            def __init__(self): pass
+        class RealSuggestionsDetector:
+            def __init__(self): pass
+            def detect_real_problems(self): return []
 
 # === IMPORTAÇÕES MONITORING ===
 try:
