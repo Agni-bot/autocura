@@ -230,6 +230,39 @@ class SystemState:
         
         self.initialized = False
         self.modules_status = {}
+        
+        # Rastreamento de sugestões aplicadas
+        self.applied_suggestions = set()
+        self.load_applied_suggestions()
+
+    def load_applied_suggestions(self):
+        """Carrega sugestões aplicadas do arquivo de persistência"""
+        try:
+            applied_file = Path("data/applied_suggestions.json")
+            if applied_file.exists():
+                with open(applied_file, 'r') as f:
+                    data = json.load(f)
+                    self.applied_suggestions = set(data.get("applied", []))
+                    logger.info(f"Carregadas {len(self.applied_suggestions)} sugestões aplicadas")
+        except Exception as e:
+            logger.error(f"Erro ao carregar sugestões aplicadas: {e}")
+            self.applied_suggestions = set()
+    
+    def save_applied_suggestions(self):
+        """Salva sugestões aplicadas no arquivo de persistência"""
+        try:
+            applied_file = Path("data/applied_suggestions.json")
+            applied_file.parent.mkdir(parents=True, exist_ok=True)
+            
+            with open(applied_file, 'w') as f:
+                json.dump({
+                    "applied": list(self.applied_suggestions),
+                    "last_updated": datetime.now().isoformat()
+                }, f, indent=2)
+                
+            logger.info(f"Salvas {len(self.applied_suggestions)} sugestões aplicadas")
+        except Exception as e:
+            logger.error(f"Erro ao salvar sugestões aplicadas: {e}")
 
     def get_modules_status(self) -> Dict[str, bool]:
         """Retorna o status de todos os módulos"""
@@ -846,7 +879,7 @@ async def get_evolution_suggestions():
     """Obtém sugestões de melhoria identificadas pelo sistema"""
     try:
         # Sugestões simuladas para demonstração
-        suggestions = [
+        all_suggestions = [
             {
                 "id": "perf-opt-001",
                 "type": "performance",
@@ -909,17 +942,24 @@ async def get_evolution_suggestions():
             }
         ]
         
+        # Filtra sugestões já aplicadas
+        pending_suggestions = [
+            s for s in all_suggestions 
+            if s["id"] not in system.applied_suggestions
+        ]
+        
         # Estatísticas
         stats = {
-            "pending": len(suggestions),
-            "applied_today": 7,
+            "pending": len(pending_suggestions),
+            "applied_today": 7 + len([s for s in system.applied_suggestions if "2025-05-27" in s]),
+            "applied_total": len(system.applied_suggestions),
             "acceptance_rate": 89,
-            "estimated_savings": 2.3
+            "estimated_savings": 2.3 + (len(system.applied_suggestions) * 0.5)
         }
         
         return {
             "success": True,
-            "suggestions": suggestions,
+            "suggestions": pending_suggestions,
             "stats": stats,
             "timestamp": datetime.now().isoformat()
         }
@@ -1051,6 +1091,10 @@ async def apply_evolution_suggestion(request: Dict[str, Any]):
                 "message": "Sugestão não aprovada"
             }
         
+        # Marca sugestão como aplicada
+        system.applied_suggestions.add(suggestion_id)
+        system.save_applied_suggestions()
+        
         # Registra aprovação
         system.context_recorder.registrar_evento(
             "sugestao_aprovada",
@@ -1058,6 +1102,16 @@ async def apply_evolution_suggestion(request: Dict[str, Any]):
                 "suggestion_id": suggestion_id,
                 "approver": approver,
                 "timestamp": datetime.now().isoformat()
+            })
+        )
+        
+        # Atualiza memória compartilhada
+        system.memory_manager.registrar_acao(
+            "sugestao_aplicada",
+            json.dumps({
+                "id": suggestion_id,
+                "timestamp": datetime.now().isoformat(),
+                "total_aplicadas": len(system.applied_suggestions)
             })
         )
         
@@ -1100,21 +1154,24 @@ async def apply_evolution_suggestion(request: Dict[str, Any]):
 async def get_evolution_statistics():
     """Obtém estatísticas de evolução e melhorias"""
     try:
-        # Calcula estatísticas
+        # Calcula estatísticas baseadas nas sugestões aplicadas
+        applied_count = len(system.applied_suggestions)
+        
         stats = {
-            "pending": 4,
-            "applied_today": 7,
-            "applied_week": 23,
-            "applied_month": 89,
-            "acceptance_rate": 89,
+            "pending": 4 - applied_count,  # Total de 4 sugestões iniciais
+            "applied_today": 7 + len([s for s in system.applied_suggestions if "2025-05-27" in s]),
+            "applied_week": 23 + applied_count,
+            "applied_month": 89 + applied_count,
+            "applied_total": applied_count,
+            "acceptance_rate": 89 if applied_count > 0 else 0,
             "rejection_rate": 11,
-            "estimated_savings": 2.3,
-            "total_improvements": 112,
+            "estimated_savings": 2.3 + (applied_count * 0.5),
+            "total_improvements": 112 + applied_count,
             "categories": {
-                "performance": 34,
-                "bugfix": 28,
-                "feature": 31,
-                "security": 19
+                "performance": 34 + len([s for s in system.applied_suggestions if "perf" in s]),
+                "bugfix": 28 + len([s for s in system.applied_suggestions if "bug" in s]),
+                "feature": 31 + len([s for s in system.applied_suggestions if "feature" in s]),
+                "security": 19 + len([s for s in system.applied_suggestions if "security" in s])
             }
         }
         
@@ -1123,6 +1180,24 @@ async def get_evolution_statistics():
     except Exception as e:
         logger.error(f"Erro ao obter estatísticas: {e}")
         return {}
+
+@app.post("/api/evolution/reset")
+async def reset_applied_suggestions():
+    """Reseta as sugestões aplicadas (para testes)"""
+    try:
+        system.applied_suggestions.clear()
+        system.save_applied_suggestions()
+        
+        return {
+            "success": True,
+            "message": "Sugestões aplicadas resetadas com sucesso"
+        }
+    except Exception as e:
+        logger.error(f"Erro ao resetar sugestões: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
 
 # ===== FUNÇÃO PRINCIPAL =====
 def main():

@@ -1074,6 +1074,7 @@
             <button class="action-btn" onclick="refreshSuggestions()">🔄 Buscar Novas Sugestões</button>
             <button class="action-btn secondary" onclick="viewApprovalHistory()">📋 Histórico de Aprovações</button>
             <button class="action-btn warning" onclick="configureApprovalSettings()">⚙️ Configurar Aprovações</button>
+            <button class="action-btn warning" onclick="resetAppliedSuggestions()" style="background: linear-gradient(45deg, #F44336, #D32F2F);">🔄 Resetar Aplicadas</button>
         </div>
         
         <!-- Container de Sugestões -->
@@ -2374,6 +2375,38 @@ class MonitoringModule:
                 updateApprovalStatsFromAPI(stats);
             } catch (error) {
                 console.error('Erro ao atualizar estatísticas:', error);
+            }
+        }
+        
+        // Reseta sugestões aplicadas (para demonstrações)
+        async function resetAppliedSuggestions() {
+            if (!confirm('Tem certeza que deseja resetar todas as sugestões aplicadas? Isso fará com que todas as sugestões voltem a aparecer.')) {
+                return;
+            }
+            
+            addLogEntry('Resetando sugestões aplicadas...', 'warning');
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/evolution/reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    addLogEntry('✅ Sugestões resetadas com sucesso!', 'info');
+                    // Recarrega as sugestões
+                    setTimeout(() => {
+                        refreshSuggestions();
+                    }, 1000);
+                } else {
+                    addLogEntry('❌ Erro ao resetar sugestões', 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao resetar:', error);
+                addLogEntry('❌ Erro ao resetar sugestões: ' + error.message, 'error');
             }
         }
     </script>
