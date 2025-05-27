@@ -8,190 +8,100 @@ import time
 import psutil
 import os
 import sys
-import prometheus_client as prom
 import queue
 from dataclasses import dataclass
 
-from src.core.logger import Logger
-from src.core.cache import Cache
+# Importações corrigidas para nova estrutura
+from ...core.models.metricas import Metrica, MetricasSistema
+from ...utils.logging.logger import get_logger
+from ...utils.cache.redis_cache import CacheDistribuido
+from ...monitoring.metrics.prometheus_singleton import get_counter, get_gauge, get_histogram
 
 # Configuração de logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("coletor_metricas")
 
-@dataclass
-class Metrica:
-    nome: str
-    valor: float
-    tipo: str
-    labels: Dict[str, str]
-    timestamp: datetime
-
 class ColetorMetricas:
-    """Sistema de coleta de métricas"""
-    
-    def __init__(self,
-                 intervalo_coleta: int = 15,
-                 buffer_size: int = 1000,
-                 prometheus_port: int = 8000):
-        """
-        Inicializa o coletor de métricas.
-        
-        Args:
-            intervalo_coleta: Intervalo em segundos entre coletas
-            buffer_size: Tamanho do buffer para armazenamento de métricas
-            prometheus_port: Porta para exposição de métricas Prometheus
-        """
-        self.intervalo_coleta = intervalo_coleta
-        self.buffer_size = buffer_size
-        self.prometheus_port = prometheus_port
-        
-        # Inicializa métricas Prometheus
-        self.metricas_prometheus = {
-            'cpu_usage': prom.Gauge('cpu_usage_percent', 'CPU Usage in percent'),
-            'memory_usage': prom.Gauge('memory_usage_bytes', 'Memory usage in bytes'),
-            'disk_usage': prom.Gauge('disk_usage_percent', 'Disk usage in percent'),
-            'network_io': prom.Gauge('network_io_bytes', 'Network I/O in bytes'),
-            'request_latency': prom.Histogram('request_latency_seconds', 'Request latency in seconds'),
-            'error_rate': prom.Gauge('error_rate', 'Error rate in percent'),
-            'active_connections': prom.Gauge('active_connections', 'Number of active connections')
-        }
-        
-        # Inicializa buffer de métricas
-        self.buffer_metricas = queue.Queue(maxsize=buffer_size)
-        
-        # Inicializa thread de coleta
+    """Sistema de coleta de métricas com nova estrutura"""
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or self._config_default()
+        self.logger = get_logger("coletor_metricas")
+        self.cache = CacheDistribuido() if self.config.get("cache_enabled", True) else None
+        self.metricas_queue = queue.Queue()
+        self.executando = False
         self.thread_coleta = None
-        self.running = False
         
-        # Inicia servidor Prometheus
-        prom.start_http_server(prometheus_port)
-        
-        logger.info("Coletor de métricas inicializado com sucesso")
-    
-    def iniciar_coleta(self) -> None:
-        """
-        Inicia o processo de coleta de métricas em background.
-        """
-        if self.thread_coleta is not None:
-            logger.warning("Coleta já está em execução")
-            return
-            
-        self.running = True
-        self.thread_coleta = threading.Thread(target=self._loop_coleta)
-        self.thread_coleta.daemon = True
-        self.thread_coleta.start()
-        logger.info("Coleta de métricas iniciada")
-    
-    def parar_coleta(self) -> None:
-        """
-        Para o processo de coleta de métricas.
-        """
-        if self.thread_coleta is None:
-            logger.warning("Coleta não está em execução")
-            return
-            
-        self.running = False
-        self.thread_coleta.join()
-        self.thread_coleta = None
-    def _carregar_config(self, config_path: str) -> Dict[str, Any]:
-        """Carrega a configuração do coletor"""
-        try:
-            caminho_config = Path(config_path)
-            if caminho_config.exists():
-                with open(caminho_config, 'r', encoding='utf-8') as f:
-                    return json.load(f)
-            else:
-                self.logger.registrar_evento("metricas", "WARNING", "Arquivo de configuração não encontrado. Usando configuração padrão.")
-                return self._criar_config_padrao()
-        except Exception as e:
-            self.logger.registrar_erro("metricas", "Erro ao carregar configuração", e)
-            return self._criar_config_padrao()
-    
-    def _criar_config_padrao(self) -> Dict[str, Any]:
-        """Cria configuração padrão do coletor"""
+        # Prometheus metrics usando singleton
+        self.cpu_gauge = get_gauge("sistema_cpu_percent", "Percentual de uso de CPU")
+        self.memoria_gauge = get_gauge("sistema_memoria_percent", "Percentual de uso de memória")
+        self.disco_gauge = get_gauge("sistema_disco_percent", "Percentual de uso de disco")
+        self.metricas_counter = get_counter("metricas_coletadas_total", "Total de métricas coletadas")
+
+    def _config_default(self) -> Dict[str, Any]:
+        """Configuração padrão do coletor"""
         return {
-            "configuracoes": {
-                "intervalo_coleta": 60,
-                "max_historico": 1000,
-                "limites": {
-                    "cpu_percent": 80,
-                    "memoria_percent": 80,
-                    "disco_percent": 80,
-                    "tempo_resposta": 1.0
-                }
-            },
+            "intervalo_coleta": 30,
+            "base_dir": "data/metricas",
+            "cache_enabled": True,
+            "prometheus_enabled": True,
             "metricas": {
-                "sistema": {
-                    "cpu": ["percent", "count", "freq"],
-                    "memoria": ["total", "available", "percent", "used", "free"],
-                    "disco": ["total", "used", "free", "percent"],
-                    "rede": ["bytes_sent", "bytes_recv", "packets_sent", "packets_recv"]
-                },
-                "aplicacao": {
-                    "threads": ["count", "active"],
-                    "memoria": ["rss", "vms", "shared", "text", "lib", "data", "dirty"],
-                    "tempo_resposta": ["min", "max", "avg", "p95", "p99"]
-                }
+                "sistema": ["cpu", "memoria", "disco", "rede"],
+                "aplicacao": ["threads", "memoria", "tempo_resposta"]
             }
         }
-    
-    def iniciar(self) -> None:
-        """Inicia o coletor de métricas"""
-        try:
-            if self.running:
-                self.logger.registrar_evento("metricas", "WARNING", "Coletor já está em execução")
-                return
-            
-            self.running = True
-            self.thread_coleta = threading.Thread(target=self._executar_coleta)
+
+    def iniciar_coleta(self):
+        """Inicia a coleta de métricas em background"""
+        if not self.executando:
+            self.executando = True
+            self.thread_coleta = threading.Thread(target=self._loop_coleta, daemon=True)
             self.thread_coleta.start()
-            
-            self.logger.registrar_evento("metricas", "INFO", "Coletor iniciado com sucesso")
-            
-        except Exception as e:
-            self.logger.registrar_erro("metricas", "Erro ao iniciar coletor", e)
-            self.running = False
-    
-    def parar(self) -> None:
-        """Para o coletor de métricas"""
-        try:
-            if not self.running:
-                self.logger.registrar_evento("metricas", "WARNING", "Coletor não está em execução")
-                return
-            
-            self.running = False
-            if self.thread_coleta:
-                self.thread_coleta.join()
-            
-            self.logger.registrar_evento("metricas", "INFO", "Coletor parado com sucesso")
-            
-        except Exception as e:
-            self.logger.registrar_erro("metricas", "Erro ao parar coletor", e)
-    
-    def _executar_coleta(self) -> None:
-        """Executa o processo de coleta de métricas"""
-        try:
-            while self.running:
-                # Coleta métricas do sistema
+            self.logger.info("Coleta de métricas iniciada")
+
+    def parar_coleta(self):
+        """Para a coleta de métricas"""
+        self.executando = False
+        if self.thread_coleta and self.thread_coleta.is_alive():
+            self.thread_coleta.join(timeout=5)
+        self.logger.info("Coleta de métricas parada")
+
+    def _loop_coleta(self):
+        """Loop principal de coleta"""
+        while self.executando:
+            try:
                 metricas_sistema = self.coletar_metricas_sistema()
+                metricas_app = self.coletar_metricas_aplicacao()
                 
-                # Coleta métricas da aplicação
-                metricas_aplicacao = self.coletar_metricas_aplicacao()
+                # Atualiza Prometheus
+                self._atualizar_prometheus(metricas_sistema)
                 
-                # Verifica limites
-                alertas = self.verificar_limites(metricas_sistema)
+                # Atualiza cache
+                if self.cache:
+                    self.cache.set("metricas_sistema", metricas_sistema, ttl=300)
+                    self.cache.set("metricas_aplicacao", metricas_app, ttl=300)
                 
-                # Registra métricas
-                self.registrar_metricas(metricas_sistema, metricas_aplicacao, alertas)
+                # Incrementa contador
+                self.metricas_counter.inc()
                 
-                # Aguarda próximo ciclo
-                time.sleep(self.config["configuracoes"]["intervalo_coleta"])
-            
+                time.sleep(self.config["intervalo_coleta"])
+                
+            except Exception as e:
+                self.logger.error(f"Erro na coleta de métricas: {e}")
+                time.sleep(10)  # Espera antes de tentar novamente
+
+    def _atualizar_prometheus(self, metricas: Dict[str, Any]):
+        """Atualiza métricas Prometheus"""
+        try:
+            if "cpu" in metricas:
+                self.cpu_gauge.set(metricas["cpu"]["percent"])
+            if "memoria" in metricas:
+                self.memoria_gauge.set(metricas["memoria"]["percent"])
+            if "disco" in metricas:
+                self.disco_gauge.set(metricas["disco"]["percent"])
         except Exception as e:
-            self.logger.registrar_erro("metricas", "Erro no processo de coleta", e)
-            self.running = False
-    
+            self.logger.error(f"Erro ao atualizar Prometheus: {e}")
+
     def coletar_metricas_sistema(self) -> Dict[str, Any]:
         """Coleta métricas do sistema"""
         try:
@@ -239,7 +149,7 @@ class ColetorMetricas:
             return metricas
             
         except Exception as e:
-            self.logger.registrar_erro("metricas", "Erro ao coletar métricas do sistema", e)
+            self.logger.error(f"Erro ao coletar métricas do sistema: {e}")
             return {}
     
     def coletar_metricas_aplicacao(self) -> Dict[str, Any]:
@@ -261,11 +171,7 @@ class ColetorMetricas:
                 metricas["memoria"] = {
                     "rss": memoria.rss,
                     "vms": memoria.vms,
-                    "shared": memoria.shared,
-                    "text": memoria.text,
-                    "lib": memoria.lib,
-                    "data": memoria.data,
-                    "dirty": memoria.dirty
+                    "percent": processo.memory_percent()
                 }
             
             # Tempo de resposta
@@ -275,133 +181,33 @@ class ColetorMetricas:
             return metricas
             
         except Exception as e:
-            self.logger.registrar_erro("metricas", "Erro ao coletar métricas da aplicação", e)
+            self.logger.error(f"Erro ao coletar métricas da aplicação: {e}")
             return {}
-    
-    def _calcular_tempo_resposta(self) -> Dict[str, float]:
-        """Calcula métricas de tempo de resposta"""
+
+    def _calcular_tempo_resposta(self) -> float:
+        """Calcula tempo de resposta médio (simulado)"""
+        # Implementação simplificada
+        return 50.0  # ms
+
+    def obter_metricas_sistema_formato_padrao(self) -> MetricasSistema:
+        """Retorna métricas no formato padrão MetricasSistema"""
         try:
-            # Obtém tempos de resposta do cache
-            tempos = self.cache.obter("tempo_resposta", "historico") or []
+            metricas = self.coletar_metricas_sistema()
             
-            if not tempos:
-                return {
-                    "min": 0.0,
-                    "max": 0.0,
-                    "avg": 0.0,
-                    "p95": 0.0,
-                    "p99": 0.0
+            return MetricasSistema(
+                throughput=0.0,  # Seria calculado baseado em requests/sec
+                taxa_erro=0.0,   # Seria calculado baseado em logs de erro
+                latencia=self._calcular_tempo_resposta(),
+                uso_recursos={
+                    "cpu": metricas.get("cpu", {}).get("percent", 0.0),
+                    "memoria": metricas.get("memoria", {}).get("percent", 0.0),
+                    "disco": metricas.get("disco", {}).get("percent", 0.0)
                 }
-            
-            # Calcula métricas
-            tempos.sort()
-            n = len(tempos)
-            
-            return {
-                "min": tempos[0],
-                "max": tempos[-1],
-                "avg": sum(tempos) / n,
-                "p95": tempos[int(n * 0.95)],
-                "p99": tempos[int(n * 0.99)]
-            }
-            
+            )
         except Exception as e:
-            self.logger.registrar_erro("metricas", "Erro ao calcular tempo de resposta", e)
-            return {}
-    
-    def verificar_limites(self, metricas: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Verifica limites das métricas"""
-        try:
-            alertas = []
-            limites = self.config["configuracoes"]["limites"]
-            
-            # CPU
-            if "cpu" in metricas and "percent" in metricas["cpu"]:
-                if metricas["cpu"]["percent"] > limites["cpu_percent"]:
-                    alertas.append({
-                        "tipo": "cpu",
-                        "metrica": "percent",
-                        "valor": metricas["cpu"]["percent"],
-                        "limite": limites["cpu_percent"],
-                        "mensagem": f"Uso de CPU acima do limite: {metricas['cpu']['percent']}%"
-                    })
-            
-            # Memória
-            if "memoria" in metricas and "percent" in metricas["memoria"]:
-                if metricas["memoria"]["percent"] > limites["memoria_percent"]:
-                    alertas.append({
-                        "tipo": "memoria",
-                        "metrica": "percent",
-                        "valor": metricas["memoria"]["percent"],
-                        "limite": limites["memoria_percent"],
-                        "mensagem": f"Uso de memória acima do limite: {metricas['memoria']['percent']}%"
-                    })
-            
-            # Disco
-            if "disco" in metricas and "percent" in metricas["disco"]:
-                if metricas["disco"]["percent"] > limites["disco_percent"]:
-                    alertas.append({
-                        "tipo": "disco",
-                        "metrica": "percent",
-                        "valor": metricas["disco"]["percent"],
-                        "limite": limites["disco_percent"],
-                        "mensagem": f"Uso de disco acima do limite: {metricas['disco']['percent']}%"
-                    })
-            
-            # Tempo de resposta
-            if "tempo_resposta" in metricas and "p95" in metricas["tempo_resposta"]:
-                if metricas["tempo_resposta"]["p95"] > limites["tempo_resposta"]:
-                    alertas.append({
-                        "tipo": "tempo_resposta",
-                        "metrica": "p95",
-                        "valor": metricas["tempo_resposta"]["p95"],
-                        "limite": limites["tempo_resposta"],
-                        "mensagem": f"Tempo de resposta acima do limite: {metricas['tempo_resposta']['p95']}s"
-                    })
-            
-            return alertas
-            
-        except Exception as e:
-            self.logger.registrar_erro("metricas", "Erro ao verificar limites", e)
-            return []
-    
-    def registrar_metricas(self, metricas_sistema: Dict[str, Any],
-                          metricas_aplicacao: Dict[str, Any],
-                          alertas: List[Dict[str, Any]]) -> None:
-        """Registra métricas coletadas"""
-        try:
-            # Prepara dados
-            dados = {
-                "timestamp": datetime.now().isoformat(),
-                "sistema": metricas_sistema,
-                "aplicacao": metricas_aplicacao,
-                "alertas": alertas
-            }
-            
-            # Registra no cache
-            self.cache.definir("metricas", "ultimas", dados)
-            
-            # Registra no log
-            self.logger.registrar_metricas("coleta", dados)
-            
-        except Exception as e:
-            self.logger.registrar_erro("metricas", "Erro ao registrar métricas", e)
-    
-    def obter_metricas(self, tipo: str = "ultimas") -> Dict[str, Any]:
-        """Obtém métricas registradas"""
-        try:
-            return self.cache.obter("metricas", tipo) or {}
-            
-        except Exception as e:
-            self.logger.registrar_erro("metricas", "Erro ao obter métricas", e)
-            return {}
-    
-    def obter_alertas(self) -> List[Dict[str, Any]]:
-        """Obtém alertas ativos"""
-        try:
-            metricas = self.obter_metricas()
-            return metricas.get("alertas", [])
-            
-        except Exception as e:
-            self.logger.registrar_erro("metricas", "Erro ao obter alertas", e)
-            return [] 
+            self.logger.error(f"Erro ao obter métricas formato padrão: {e}")
+            return MetricasSistema()  # Retorna métricas vazias
+
+    def __del__(self):
+        """Cleanup ao destruir objeto"""
+        self.parar_coleta() 

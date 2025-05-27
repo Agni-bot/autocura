@@ -7,7 +7,9 @@ import json
 import os
 from pathlib import Path
 import yaml
-from prometheus_client import Counter, Gauge, Histogram, Summary
+
+# Usar singleton do Prometheus
+from .prometheus_singleton import get_counter, get_gauge, get_histogram, get_registry
 
 @dataclass
 class Metrica:
@@ -22,412 +24,297 @@ class Metrica:
     unidade: str
 
 class GerenciadorMetricas:
-    """Módulo Gerenciador de Métricas para gerenciar métricas do sistema."""
+    """
+    Gerenciador avançado de métricas do sistema AutoCura.
+    Utiliza Prometheus singleton para evitar conflitos.
+    """
     
-    def __init__(self, config: Dict[str, Any]):
-        """Inicializa o gerenciador de métricas.
-        
-        Args:
-            config: Configuração do gerenciador
-        """
-        self.config = config
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or self._get_default_config()
         self.logger = logging.getLogger(__name__)
         
-        # Diretório base para arquivos de métricas
-        self.base_dir = Path(config.get("base_dir", "metricas"))
-        self.base_dir.mkdir(parents=True, exist_ok=True)
+        # Inicializa storage
+        self.storage_path = Path(self.config.get("base_dir", "data/metricas"))
+        self.storage_path.mkdir(parents=True, exist_ok=True)
         
-        # Cache de métricas
-        self.metricas: Dict[str, Metrica] = {}
+        # Métricas Prometheus usando singleton (evita duplicatas)
+        self.metrics_created = get_counter("metricas_criadas", "Total de métricas criadas")
+        self.metrics_processed = get_counter("metricas_processadas", "Total de métricas processadas")
+        self.system_health = get_gauge("system_health_score", "Score de saúde do sistema")
+        self.processing_duration = get_histogram("metrics_processing_duration", "Duração do processamento de métricas")
         
-        # Histórico de valores
-        self.historico: Dict[str, List[Metrica]] = {}
-        
-        # Configuração de tipos
-        self.tipos = {
-            "counter": Counter,
-            "gauge": Gauge,
-            "histogram": Histogram,
-            "summary": Summary
-        }
-        
-        # Métricas Prometheus
-        self.metricas_prometheus = {
-            "metricas_criadas": Counter(
-                "metricas_criadas_total",
-                "Total de métricas criadas",
-                ["tipo"]
-            ),
-            "metricas_atualizadas": Counter(
-                "metricas_atualizadas_total",
-                "Total de métricas atualizadas",
-                ["tipo"]
-            ),
-            "tempo_operacao": Histogram(
-                "tempo_operacao_metricas_seconds",
-                "Tempo de operações nas métricas",
-                ["operacao"]
-            )
-        }
-        
-        # Configuração de alertas
-        self.alertas = {
-            "limite_superior": {},
-            "limite_inferior": {},
-            "tendencia": {},
-            "anomalia": {}
-        }
-        
-        # Handlers de alerta
-        self.handlers_alerta = {
-            "log": self._handler_alerta_log,
-            "email": self._handler_alerta_email,
-            "slack": self._handler_alerta_slack,
-            "webhook": self._handler_alerta_webhook
-        }
+        # Cache interno
+        self._metrics_cache: Dict[str, Metrica] = {}
+        self._alerts: List[Dict[str, Any]] = []
         
         self.logger.info("Gerenciador de Métricas inicializado")
     
-    async def criar_metrica(self, nome: str, tipo: str, valor: Any,
-                          labels: Dict[str, str] = None, descricao: str = "",
-                          unidade: str = "") -> Optional[Metrica]:
-        """Cria uma nova métrica.
-        
-        Args:
-            nome: Nome da métrica
-            tipo: Tipo da métrica
-            valor: Valor inicial
-            labels: Labels da métrica
-            descricao: Descrição da métrica
-            unidade: Unidade da métrica
-            
-        Returns:
-            Métrica criada ou None em caso de erro
-        """
-        if tipo not in self.tipos:
-            self.logger.error(f"Tipo de métrica desconhecido: {tipo}")
-            return None
-        
-        try:
-            with self.metricas_prometheus["tempo_operacao"].labels(operacao="criar").time():
-                # Gera ID único
-                metrica_id = f"{tipo}_{nome}"
-                
-                # Cria métrica
-                metrica = Metrica(
-                    id=metrica_id,
-                    nome=nome,
-                    tipo=tipo,
-                    valor=valor,
-                    timestamp=datetime.now(),
-                    labels=labels or {},
-                    descricao=descricao,
-                    unidade=unidade
-                )
-                
-                # Cria métrica Prometheus
-                prom_metrica = self.tipos[tipo](
-                    metrica_id,
-                    descricao,
-                    list(labels.keys()) if labels else []
-                )
-                
-                # Inicializa com valor
-                if labels:
-                    prom_metrica.labels(**labels).set(float(valor))
-                else:
-                    prom_metrica.set(float(valor))
-                
-                # Adiciona ao cache
-                self.metricas[metrica_id] = metrica
-                
-                # Inicializa histórico
-                self.historico[metrica_id] = [metrica]
-                
-                # Atualiza métricas
-                self.metricas_prometheus["metricas_criadas"].labels(tipo=tipo).inc()
-                
-                self.logger.info(f"Métrica criada: {metrica_id}")
-                return metrica
-                
-        except Exception as e:
-            self.logger.error(f"Erro ao criar métrica: {e}")
-            return None
-    
-    async def atualizar_metrica(self, metrica_id: str, valor: Any) -> bool:
-        """Atualiza uma métrica existente.
-        
-        Args:
-            metrica_id: ID da métrica
-            valor: Novo valor
-            
-        Returns:
-            True se atualizado com sucesso
-        """
-        try:
-            with self.metricas_prometheus["tempo_operacao"].labels(operacao="atualizar").time():
-                # Obtém métrica
-                metrica = self.metricas.get(metrica_id)
-                if not metrica:
-                    return False
-                
-                # Cria nova versão
-                nova_metrica = Metrica(
-                    id=metrica.id,
-                    nome=metrica.nome,
-                    tipo=metrica.tipo,
-                    valor=valor,
-                    timestamp=datetime.now(),
-                    labels=metrica.labels,
-                    descricao=metrica.descricao,
-                    unidade=metrica.unidade
-                )
-                
-                # Atualiza métrica Prometheus
-                prom_metrica = self.tipos[metrica.tipo](
-                    metrica_id,
-                    metrica.descricao,
-                    list(metrica.labels.keys()) if metrica.labels else []
-                )
-                
-                if metrica.labels:
-                    prom_metrica.labels(**metrica.labels).set(float(valor))
-                else:
-                    prom_metrica.set(float(valor))
-                
-                # Atualiza cache
-                self.metricas[metrica_id] = nova_metrica
-                
-                # Adiciona ao histórico
-                self.historico[metrica_id].append(nova_metrica)
-                
-                # Verifica alertas
-                await self._verificar_alertas(nova_metrica)
-                
-                # Atualiza métricas
-                self.metricas_prometheus["metricas_atualizadas"].labels(tipo=metrica.tipo).inc()
-                
-                self.logger.info(f"Métrica atualizada: {metrica_id}")
-                return True
-                
-        except Exception as e:
-            self.logger.error(f"Erro ao atualizar métrica: {e}")
-            return False
-    
-    async def _verificar_alertas(self, metrica: Metrica) -> None:
-        """Verifica alertas para uma métrica.
-        
-        Args:
-            metrica: Métrica a ser verificada
-        """
-        try:
-            # Verifica limite superior
-            limite = self.alertas["limite_superior"].get(metrica.id)
-            if limite and float(metrica.valor) > limite:
-                await self._disparar_alerta(metrica, "limite_superior", limite)
-            
-            # Verifica limite inferior
-            limite = self.alertas["limite_inferior"].get(metrica.id)
-            if limite and float(metrica.valor) < limite:
-                await self._disparar_alerta(metrica, "limite_inferior", limite)
-            
-            # Verifica tendência
-            if metrica.id in self.alertas["tendencia"]:
-                historico = self.historico[metrica.id][-10:]  # Últimas 10 medições
-                if len(historico) >= 3:
-                    valores = [float(m.valor) for m in historico]
-                    tendencia = (valores[-1] - valores[0]) / len(valores)
-                    limite = self.alertas["tendencia"][metrica.id]
-                    if abs(tendencia) > limite:
-                        await self._disparar_alerta(metrica, "tendencia", tendencia)
-            
-            # Verifica anomalia
-            if metrica.id in self.alertas["anomalia"]:
-                historico = self.historico[metrica.id][-100:]  # Últimas 100 medições
-                if len(historico) >= 10:
-                    valores = [float(m.valor) for m in historico]
-                    media = sum(valores) / len(valores)
-                    desvio = (sum((v - media) ** 2 for v in valores) / len(valores)) ** 0.5
-                    limite = self.alertas["anomalia"][metrica.id]
-                    if abs(float(metrica.valor) - media) > limite * desvio:
-                        await self._disparar_alerta(metrica, "anomalia", float(metrica.valor))
-                
-        except Exception as e:
-            self.logger.error(f"Erro ao verificar alertas: {e}")
-    
-    async def _disparar_alerta(self, metrica: Metrica, tipo: str, valor: Any) -> None:
-        """Dispara alertas para uma métrica.
-        
-        Args:
-            metrica: Métrica que gerou o alerta
-            tipo: Tipo do alerta
-            valor: Valor que disparou o alerta
-        """
-        try:
-            # Formata mensagem
-            mensagem = {
-                "metrica": metrica.id,
-                "tipo": tipo,
-                "valor": valor,
-                "timestamp": datetime.now().isoformat(),
-                "labels": metrica.labels
+    def _get_default_config(self) -> Dict[str, Any]:
+        """Configuração padrão do gerenciador"""
+        return {
+            "base_dir": "data/metricas",
+            "retention_days": 30,
+            "batch_size": 100,
+            "alert_thresholds": {
+                "cpu": 80.0,
+                "memoria": 85.0,
+                "disco": 90.0
             }
+        }
+    
+    def criar_metrica(self, 
+                     nome: str, 
+                     valor: Any, 
+                     tipo: str = "gauge",
+                     labels: Optional[Dict[str, str]] = None,
+                     descricao: str = "",
+                     unidade: str = "") -> str:
+        """
+        Cria uma nova métrica no sistema.
+        
+        Returns:
+            str: ID da métrica criada
+        """
+        try:
+            metric_id = f"{nome}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             
-            # Processa handlers
-            for handler in self.handlers_alerta.values():
-                await handler(mensagem)
-                
+            metrica = Metrica(
+                id=metric_id,
+                nome=nome,
+                tipo=tipo,
+                valor=valor,
+                timestamp=datetime.now(),
+                labels=labels or {},
+                descricao=descricao,
+                unidade=unidade
+            )
+            
+            # Armazena no cache
+            self._metrics_cache[metric_id] = metrica
+            
+            # Atualiza Prometheus
+            self._update_prometheus_metric(metrica)
+            
+            # Incrementa contador
+            self.metrics_created.inc()
+            
+            self.logger.debug(f"Métrica criada: {nome} = {valor}")
+            return metric_id
+            
         except Exception as e:
-            self.logger.error(f"Erro ao disparar alerta: {e}")
+            self.logger.error(f"Erro ao criar métrica {nome}: {e}")
+            raise
     
-    async def _handler_alerta_log(self, mensagem: Dict[str, Any]) -> None:
-        """Handler de alerta para log.
-        
-        Args:
-            mensagem: Mensagem do alerta
-        """
-        self.logger.warning(f"Alerta: {mensagem}")
+    def _update_prometheus_metric(self, metrica: Metrica):
+        """Atualiza métrica no Prometheus"""
+        try:
+            if metrica.tipo == "gauge":
+                gauge = get_gauge(f"autocura_{metrica.nome}", metrica.descricao, list(metrica.labels.keys()))
+                if metrica.labels:
+                    gauge.labels(**metrica.labels).set(float(metrica.valor))
+                else:
+                    gauge.set(float(metrica.valor))
+                    
+            elif metrica.tipo == "counter":
+                counter = get_counter(f"autocura_{metrica.nome}", metrica.descricao, list(metrica.labels.keys()))
+                if metrica.labels:
+                    counter.labels(**metrica.labels).inc(float(metrica.valor))
+                else:
+                    counter.inc(float(metrica.valor))
+                    
+        except Exception as e:
+            self.logger.warning(f"Erro ao atualizar Prometheus para {metrica.nome}: {e}")
     
-    async def _handler_alerta_email(self, mensagem: Dict[str, Any]) -> None:
-        """Handler de alerta para email.
-        
-        Args:
-            mensagem: Mensagem do alerta
-        """
-        # TODO: Implementar envio de email
-        pass
+    def obter_metrica(self, metric_id: str) -> Optional[Metrica]:
+        """Obtém métrica por ID"""
+        return self._metrics_cache.get(metric_id)
     
-    async def _handler_alerta_slack(self, mensagem: Dict[str, Any]) -> None:
-        """Handler de alerta para Slack.
+    def listar_metricas(self, filtros: Optional[Dict[str, Any]] = None) -> List[Metrica]:
+        """Lista métricas com filtros opcionais"""
+        metricas = list(self._metrics_cache.values())
         
-        Args:
-            mensagem: Mensagem do alerta
-        """
-        # TODO: Implementar integração com Slack
-        pass
-    
-    async def _handler_alerta_webhook(self, mensagem: Dict[str, Any]) -> None:
-        """Handler de alerta para webhook.
-        
-        Args:
-            mensagem: Mensagem do alerta
-        """
-        # TODO: Implementar chamada de webhook
-        pass
-    
-    async def obter_metrica(self, metrica_id: str) -> Optional[Metrica]:
-        """Obtém uma métrica pelo ID.
-        
-        Args:
-            metrica_id: ID da métrica
-            
-        Returns:
-            Métrica ou None se não encontrada
-        """
-        return self.metricas.get(metrica_id)
-    
-    async def buscar_metricas(self, tipo: Optional[str] = None,
-                            labels: Optional[Dict[str, str]] = None) -> List[Metrica]:
-        """Busca métricas por critérios.
-        
-        Args:
-            tipo: Tipo da métrica (opcional)
-            labels: Labels da métrica (opcional)
-            
-        Returns:
-            Lista de métricas encontradas
-        """
-        metricas = []
-        
-        for metrica in self.metricas.values():
-            # Filtra por tipo
-            if tipo and metrica.tipo != tipo:
-                continue
-            
-            # Filtra por labels
-            if labels and not all(metrica.labels.get(k) == v for k, v in labels.items()):
-                continue
-            
-            metricas.append(metrica)
+        if filtros:
+            # Aplica filtros
+            if "tipo" in filtros:
+                metricas = [m for m in metricas if m.tipo == filtros["tipo"]]
+            if "nome" in filtros:
+                metricas = [m for m in metricas if filtros["nome"] in m.nome]
         
         return metricas
     
-    async def obter_historico(self, metrica_id: str,
-                            inicio: Optional[datetime] = None,
-                            fim: Optional[datetime] = None) -> List[Metrica]:
-        """Obtém o histórico de valores de uma métrica.
-        
-        Args:
-            metrica_id: ID da métrica
-            inicio: Data/hora inicial (opcional)
-            fim: Data/hora final (opcional)
+    def calcular_estatisticas(self) -> Dict[str, Any]:
+        """Calcula estatísticas das métricas"""
+        try:
+            metricas = list(self._metrics_cache.values())
             
-        Returns:
-            Lista de valores históricos
-        """
-        historico = self.historico.get(metrica_id, [])
-        
-        if inicio:
-            historico = [m for m in historico if m.timestamp >= inicio]
-        if fim:
-            historico = [m for m in historico if m.timestamp <= fim]
-        
-        return historico
+            if not metricas:
+                return {"total": 0, "tipos": {}, "ultima_atualizacao": None}
+            
+            tipos_count = {}
+            for metrica in metricas:
+                tipos_count[metrica.tipo] = tipos_count.get(metrica.tipo, 0) + 1
+            
+            ultima_atualizacao = max(m.timestamp for m in metricas)
+            
+            return {
+                "total": len(metricas),
+                "tipos": tipos_count,
+                "ultima_atualizacao": ultima_atualizacao.isoformat(),
+                "periodo": {
+                    "inicio": min(m.timestamp for m in metricas).isoformat(),
+                    "fim": ultima_atualizacao.isoformat()
+                }
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Erro ao calcular estatísticas: {e}")
+            return {}
     
-    async def configurar_alerta(self, metrica_id: str, tipo: str,
-                              valor: Any) -> bool:
-        """Configura um alerta para uma métrica.
-        
-        Args:
-            metrica_id: ID da métrica
-            tipo: Tipo do alerta
-            valor: Valor do alerta
-            
-        Returns:
-            True se configurado com sucesso
-        """
-        if tipo not in self.alertas:
-            self.logger.error(f"Tipo de alerta desconhecido: {tipo}")
-            return False
+    def verificar_alertas(self) -> List[Dict[str, Any]]:
+        """Verifica e retorna alertas baseados em thresholds"""
+        alertas = []
+        thresholds = self.config["alert_thresholds"]
         
         try:
-            self.alertas[tipo][metrica_id] = valor
-            self.logger.info(f"Alerta configurado: {metrica_id} - {tipo}")
+            for metrica in self._metrics_cache.values():
+                if metrica.nome == "cpu_usage" and float(metrica.valor) > thresholds["cpu"]:
+                    alertas.append({
+                        "tipo": "cpu_high",
+                        "metrica": metrica.nome,
+                        "valor": metrica.valor,
+                        "threshold": thresholds["cpu"],
+                        "timestamp": metrica.timestamp.isoformat(),
+                        "severidade": "warning" if float(metrica.valor) < thresholds["cpu"] * 1.2 else "critical"
+                    })
+                    
+                elif metrica.nome == "memory_usage" and float(metrica.valor) > thresholds["memoria"]:
+                    alertas.append({
+                        "tipo": "memory_high", 
+                        "metrica": metrica.nome,
+                        "valor": metrica.valor,
+                        "threshold": thresholds["memoria"],
+                        "timestamp": metrica.timestamp.isoformat(),
+                        "severidade": "warning" if float(metrica.valor) < thresholds["memoria"] * 1.2 else "critical"
+                    })
+            
+            self._alerts = alertas
+            return alertas
+            
+        except Exception as e:
+            self.logger.error(f"Erro ao verificar alertas: {e}")
+            return []
+    
+    def salvar_metricas(self, formato: str = "json") -> bool:
+        """Salva métricas em arquivo"""
+        try:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            
+            if formato == "json":
+                arquivo = self.storage_path / f"metricas_{timestamp}.json"
+                data = {
+                    "timestamp": datetime.now().isoformat(),
+                    "total_metricas": len(self._metrics_cache),
+                    "metricas": [
+                        {
+                            "id": m.id,
+                            "nome": m.nome,
+                            "tipo": m.tipo,
+                            "valor": m.valor,
+                            "timestamp": m.timestamp.isoformat(),
+                            "labels": m.labels,
+                            "descricao": m.descricao,
+                            "unidade": m.unidade
+                        }
+                        for m in self._metrics_cache.values()
+                    ]
+                }
+                
+                with open(arquivo, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+                    
+                self.logger.info(f"Métricas salvas em: {arquivo}")
+                return True
+                
+        except Exception as e:
+            self.logger.error(f"Erro ao salvar métricas: {e}")
+            return False
+    
+    def carregar_metricas(self, arquivo: str) -> bool:
+        """Carrega métricas de arquivo"""
+        try:
+            arquivo_path = Path(arquivo)
+            if not arquivo_path.exists():
+                self.logger.warning(f"Arquivo não encontrado: {arquivo}")
+                return False
+                
+            with open(arquivo_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            for metric_data in data.get("metricas", []):
+                metrica = Metrica(
+                    id=metric_data["id"],
+                    nome=metric_data["nome"],
+                    tipo=metric_data["tipo"],
+                    valor=metric_data["valor"],
+                    timestamp=datetime.fromisoformat(metric_data["timestamp"]),
+                    labels=metric_data.get("labels", {}),
+                    descricao=metric_data.get("descricao", ""),
+                    unidade=metric_data.get("unidade", "")
+                )
+                self._metrics_cache[metrica.id] = metrica
+                
+            self.logger.info(f"Métricas carregadas de: {arquivo}")
             return True
             
         except Exception as e:
-            self.logger.error(f"Erro ao configurar alerta: {e}")
+            self.logger.error(f"Erro ao carregar métricas: {e}")
             return False
     
-    async def obter_estatisticas(self) -> Dict[str, Any]:
-        """Obtém estatísticas das métricas.
-        
-        Returns:
-            Dicionário com estatísticas
-        """
-        stats = {
-            "timestamp": datetime.now(),
-            "total_metricas": len(self.metricas),
-            "por_tipo": {},
-            "por_label": {},
-            "total_alertas": 0
-        }
-        
-        # Conta métricas por tipo e label
-        for metrica in self.metricas.values():
-            if metrica.tipo not in stats["por_tipo"]:
-                stats["por_tipo"][metrica.tipo] = 0
-            stats["por_tipo"][metrica.tipo] += 1
+    def limpar_metricas_antigas(self, dias: int = None) -> int:
+        """Remove métricas mais antigas que X dias"""
+        try:
+            dias = dias or self.config["retention_days"]
+            cutoff_date = datetime.now() - timedelta(days=dias)
             
-            for label, valor in metrica.labels.items():
-                if label not in stats["por_label"]:
-                    stats["por_label"][label] = {}
-                if valor not in stats["por_label"][label]:
-                    stats["por_label"][label][valor] = 0
-                stats["por_label"][label][valor] += 1
-        
-        # Conta total de alertas
-        for alertas in self.alertas.values():
-            stats["total_alertas"] += len(alertas)
-        
-        return stats 
+            metricas_removidas = 0
+            for metric_id, metrica in list(self._metrics_cache.items()):
+                if metrica.timestamp < cutoff_date:
+                    del self._metrics_cache[metric_id]
+                    metricas_removidas += 1
+            
+            self.logger.info(f"Removidas {metricas_removidas} métricas antigas (>{dias} dias)")
+            return metricas_removidas
+            
+        except Exception as e:
+            self.logger.error(f"Erro ao limpar métricas antigas: {e}")
+            return 0
+    
+    def get_health_status(self) -> Dict[str, Any]:
+        """Retorna status de saúde do gerenciador"""
+        try:
+            stats = self.calcular_estatisticas()
+            alertas = self.verificar_alertas()
+            
+            # Calcula score de saúde
+            health_score = 1.0
+            if alertas:
+                critical_alerts = [a for a in alertas if a.get("severidade") == "critical"]
+                warning_alerts = [a for a in alertas if a.get("severidade") == "warning"]
+                health_score -= (len(critical_alerts) * 0.3 + len(warning_alerts) * 0.1)
+                health_score = max(0.0, health_score)
+            
+            # Atualiza gauge Prometheus
+            self.system_health.set(health_score)
+            
+            return {
+                "status": "healthy" if health_score > 0.8 else "degraded" if health_score > 0.5 else "unhealthy",
+                "health_score": health_score,
+                "total_metricas": stats.get("total", 0),
+                "alertas_ativas": len(alertas),
+                "ultima_atualizacao": stats.get("ultima_atualizacao"),
+                "prometheus_metrics": len(self._metrics_cache)
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Erro ao obter status de saúde: {e}")
+            return {"status": "error", "error": str(e)} 

@@ -1,5 +1,5 @@
 {
-  "validation_timestamp": "2025-05-27T12:26:27.964345",
+  "validation_timestamp": "2025-05-27T12:59:28.013284",
   "summary": {
     "total_tests": 8,
     "tests_passed": 8,
@@ -16,7 +16,7 @@
         "version": "1.0.0-modular",
         "status": "operational"
       },
-      "timestamp": "2025-05-27T12:26:19.884674"
+      "timestamp": "2025-05-27T12:59:19.925062"
     },
     {
       "test": "Health Check",
@@ -28,7 +28,7 @@
         "monitoring": false,
         "security": false
       },
-      "timestamp": "2025-05-27T12:26:20.893723"
+      "timestamp": "2025-05-27T12:59:20.930895"
     },
     {
       "test": "Estrutura Modular",
@@ -42,7 +42,7 @@
           "security"
         ]
       },
-      "timestamp": "2025-05-27T12:26:21.897486"
+      "timestamp": "2025-05-27T12:59:21.935388"
     },
     {
       "test": "Carregamento de Módulos",
@@ -54,7 +54,7 @@
         "monitoring": false,
         "security": false
       },
-      "timestamp": "2025-05-27T12:26:22.902390"
+      "timestamp": "2025-05-27T12:59:22.940582"
     },
     {
       "test": "Deployment Docker",
@@ -62,13 +62,13 @@
       "message": "Containers AutoCura encontrados: 4",
       "data": {
         "containers": [
-          "autocura-api-modular   Up 2 minutes (healthy)",
-          "autocura-redis         Up 2 minutes (healthy)",
-          "autocura-postgres      Up 2 minutes (healthy)",
+          "autocura-api-modular   Up 35 minutes (healthy)",
+          "autocura-redis         Up 35 minutes (healthy)",
+          "autocura-postgres      Up 35 minutes (healthy)",
           "autocura-api           Up 6 hours"
         ]
       },
-      "timestamp": "2025-05-27T12:26:23.957118"
+      "timestamp": "2025-05-27T12:59:24.001951"
     },
     {
       "test": "Estrutura de Arquivos",
@@ -92,7 +92,7 @@
           "api"
         ]
       },
-      "timestamp": "2025-05-27T12:26:24.958392"
+      "timestamp": "2025-05-27T12:59:25.006881"
     },
     {
       "test": "Integridade do Backup",
@@ -109,7 +109,7 @@
           "tests"
         ]
       },
-      "timestamp": "2025-05-27T12:26:25.959611"
+      "timestamp": "2025-05-27T12:59:26.008203"
     },
     {
       "test": "Mecanismo de Fallback",
@@ -118,7 +118,7 @@
       "data": {
         "fallback_active": true
       },
-      "timestamp": "2025-05-27T12:26:26.963638"
+      "timestamp": "2025-05-27T12:59:27.012416"
     }
   ]
 }

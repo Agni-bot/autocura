@@ -6,7 +6,9 @@ import numpy as np
 from typing import Dict, List, Tuple
 from dataclasses import dataclass
 from enum import Enum
-from ..monitoramento import MetricasSistema, Metrica, ColetorMetricas
+
+# Importação corrigida para nova estrutura
+from ...core.models.metricas import MetricasSistema, Metrica
 
 class TipoDiagnostico(Enum):
     NORMAL = "normal"
@@ -29,6 +31,16 @@ class Diagnostico:
     nivel_gravidade: float
     recomendacoes: List[str]
 
+class DiagnosticoSistema:
+    """Sistema principal de diagnóstico"""
+    
+    def __init__(self):
+        self.rede_neural = RedeNeuralDiagnostico()
+        
+    def diagnosticar(self, metricas: MetricasSistema) -> Diagnostico:
+        """Executa diagnóstico completo do sistema"""
+        return self.rede_neural.gerar_diagnostico(metricas)
+
 class RedeNeuralDiagnostico:
     """Classe que implementa a rede neural para diagnóstico."""
     def __init__(self):
@@ -46,7 +58,7 @@ class RedeNeuralDiagnostico:
             'throughput': metricas.throughput / 1000,  # Normaliza para 0-1
             'taxa_erro': metricas.taxa_erro / 100,    # Normaliza para 0-1
             'latencia': metricas.latencia / 100,       # Normaliza para 0-1
-            'recursos': sum(metricas.uso_recursos.values()) / (3 * 100)  # Média normalizada
+            'recursos': sum(metricas.uso_recursos.values()) / (len(metricas.uso_recursos) * 100)  # Média normalizada
         }
     
     def processar_metricas(self, metricas: MetricasSistema) -> float:
@@ -126,6 +138,19 @@ class RedeNeuralDiagnostico:
             ])
         
         return recomendacoes
+
+# Função de conveniência para diagnóstico rápido
+def diagnosticar_sistema(throughput=0.0, taxa_erro=0.0, latencia=0.0, uso_recursos=None) -> Diagnostico:
+    """Função utilitária para diagnóstico rápido"""
+    metricas = MetricasSistema(
+        throughput=throughput,
+        taxa_erro=taxa_erro,
+        latencia=latencia,
+        uso_recursos=uso_recursos or {"cpu": 0, "memoria": 0, "disco": 0}
+    )
+    
+    sistema = DiagnosticoSistema()
+    return sistema.diagnosticar(metricas)
 
 # Exemplo de uso
 if __name__ == "__main__":
