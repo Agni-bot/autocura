@@ -1,7 +1,10 @@
-# Dockerfile para Sistema AutoCura - Fase Omega
+# Dockerfile para os serviços Omega
 FROM python:3.11-slim
 
-# Definir diretório de trabalho
+# Definir variáveis de build
+ARG SERVICE=omega-core
+
+# Configurar diretório de trabalho
 WORKDIR /app
 
 # Instalar dependências do sistema
@@ -11,9 +14,10 @@ RUN apt-get update && apt-get install -y \
     git \
     netcat-openbsd \
     postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
-# Copiar arquivos de requisitos
+# Copiar arquivos de requirements
 COPY requirements.txt requirements-missing.txt ./
 
 # Instalar dependências Python
@@ -23,24 +27,23 @@ RUN pip install --no-cache-dir -r requirements.txt && \
 # Copiar código da aplicação
 COPY . .
 
+# Copiar e configurar script de entrada
+COPY docker/scripts/entrypoint_omega.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # Criar diretórios necessários
 RUN mkdir -p /app/data /app/logs /app/cache
 
-# Copiar e configurar script de entrada
-COPY docker/environments/prod/entrypoint_omega.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-# Variáveis de ambiente
-ENV PYTHONUNBUFFERED=1
+# Definir variáveis de ambiente
 ENV PYTHONPATH=/app
+ENV SERVICE=${SERVICE}
+ENV PYTHONUNBUFFERED=1
 
-# Expor portas
-EXPOSE 8000 8080 9090
+# Expor portas baseado no serviço
+EXPOSE 9001 9002 9003 9004
 
-# Healthcheck
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+# Usar o entrypoint script
+ENTRYPOINT ["/entrypoint.sh"]
 
 # Comando padrão
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["python", "-u", "main.py"] 
+CMD ["python", "-m", "modulos.omega.src.main"] 
