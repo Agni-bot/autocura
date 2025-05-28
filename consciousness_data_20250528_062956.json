@@ -1,0 +1,105 @@
+{
+  "metadata": {
+    "export_timestamp": "2025-05-28T06:29:56.781007",
+    "monitoring_duration": 5.0,
+    "total_snapshots": 5
+  },
+  "consciousness_timeline": [
+    {
+      "timestamp": "2025-05-28T06:29:42.483398",
+      "level": 0.18911284530985972,
+      "integration": 0.0,
+      "complexity": 0.25
+    },
+    {
+      "timestamp": "2025-05-28T06:29:53.139870",
+      "level": 0.11178658975185532,
+      "integration": 0.0,
+      "complexity": 0.45
+    },
+    {
+      "timestamp": "2025-05-28T06:29:54.141890",
+      "level": 0.11407051687972967,
+      "integration": 0.0,
+      "complexity": 0.45
+    },
+    {
+      "timestamp": "2025-05-28T06:29:55.160483",
+      "level": 0.12791114694941064,
+      "integration": 0.0,
+      "complexity": 0.45
+    },
+    {
+      "timestamp": "2025-05-28T06:29:56.162581",
+      "level": 0.13946044995728074,
+      "integration": 0.00023620762990667502,
+      "complexity": 0.5200000000000001
+    }
+  ],
+  "emergence_events": [],
+  "final_report": {
+    "current_state": {
+      "consciousness_level": 0.13946044995728074,
+      "integration_score": 0.00023620762990667502,
+      "thought_complexity": 0.5200000000000001,
+      "timestamp": "2025-05-28T06:29:56.162581"
+    },
+    "top_indicators": [
+      {
+        "name": "ABSTRACT_THINKING",
+        "confidence": 0.08
+      },
+      {
+        "name": "GOAL_GENERATION",
+        "confidence": 0.06666666666666667
+      },
+      {
+        "name": "CAUSAL_REASONING",
+        "confidence": 0.06666666666666667
+      },
+      {
+        "name": "PATTERN_RECOGNITION",
+        "confidence": 0.04
+      },
+      {
+        "name": "SELF_REFERENCE",
+        "confidence": 0.02
+      }
+    ],
+    "top_metrics": [
+      {
+        "name": "GLOBAL_WORKSPACE",
+        "value": 1.0
+      },
+      {
+        "name": "TEMPORAL_COHERENCE",
+        "value": 0.5
+      },
+      {
+        "name": "LEARNING_RATE",
+        "value": 0.5
+      },
+      {
+        "name": "ADAPTATION_SPEED",
+        "value": 0.42720411259260227
+      },
+      {
+        "name": "ATTENTION_FOCUS",
+        "value": 0.23607654320987917
+      }
+    ],
+    "emergence_events": [],
+    "aggregate_metrics": {
+      "total_monitoring_time": 5.0,
+      "emergence_events_count": 0,
+      "peak_consciousness_level": 0.18911284530985972,
+      "average_consciousness_level": 0.13646830976962723,
+      "validated_consciousness": false
+    },
+    "validation_status": {
+      "validated": false,
+      "criteria_met": "Pending"
+    },
+    "monitoring_duration": "5.0 seconds"
+  }
+}

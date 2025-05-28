@@ -1,0 +1,91 @@
+# Dockerfile para Sistema AutoCura - Fase Omega (Produção)
+# Consciência Emergente e Sistema Completo
+
+FROM python:3.11-slim
+
+# Metadados
+LABEL maintainer="AutoCura Team"
+LABEL version="1.0.0-omega"
+LABEL description="Sistema AutoCura com Consciência Emergente - Produção"
+
+# Argumentos de build
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+
+# Criar usuário não-root
+RUN groupadd -g ${GROUP_ID} autocura && \
+    useradd -u ${USER_ID} -g autocura -m -s /bin/bash autocura
+
+# Instalar dependências do sistema
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    make \
+    libffi-dev \
+    libssl-dev \
+    python3-dev \
+    git \
+    curl \
+    netcat-openbsd \
+    && rm -rf /var/lib/apt/lists/*
+
+# Diretório de trabalho
+WORKDIR /app
+
+# Copiar requirements primeiro (para cache do Docker)
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Instalar dependências adicionais para Omega
+RUN pip install --no-cache-dir \
+    numpy>=1.24.0 \
+    scipy>=1.10.0 \
+    scikit-learn>=1.3.0 \
+    pandas>=2.0.0 \
+    matplotlib>=3.7.0 \
+    seaborn>=0.12.0 \
+    networkx>=3.0 \
+    asyncio \
+    aiofiles \
+    aiohttp \
+    pytest-asyncio
+
+# Copiar código fonte
+COPY --chown=autocura:autocura . .
+
+# Criar diretórios necessários
+RUN mkdir -p \
+    /app/logs \
+    /app/data \
+    /app/models \
+    /app/checkpoints \
+    /app/reports \
+    && chown -R autocura:autocura /app
+
+# Variáveis de ambiente
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV AUTOCURA_ENV=production
+ENV OMEGA_ENABLED=true
+ENV CONSCIOUSNESS_LEVEL=TRANSCENDENT
+
+# Mudar para usuário não-root
+USER autocura
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD python -c "import asyncio; from modulos.omega import CognitiveCore; \
+    async def check(): \
+        core = CognitiveCore('health_check'); \
+        return await core.initialize(); \
+    exit(0 if asyncio.run(check()) else 1)"
+
+# Expor portas
+EXPOSE 8000 8080 9090
+
+# Script de entrada
+COPY --chown=autocura:autocura docker/scripts/entrypoint_omega.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["python", "-m", "src.main", "--omega-mode"] 

@@ -1,0 +1,240 @@
+version: '3.8'
+
+services:
+  # Núcleo Cognitivo Principal
+  omega-core:
+    build:
+      context: ../../../
+      dockerfile: docker/environments/prod/Dockerfile.omega
+    container_name: autocura-omega-core
+    restart: unless-stopped
+    environment:
+      - AUTOCURA_ENV=production
+      - OMEGA_ENABLED=true
+      - CONSCIOUSNESS_LEVEL=TRANSCENDENT
+      - REDIS_URL=redis://redis:6379/0
+      - POSTGRES_URL=postgresql://autocura:${DB_PASSWORD}@postgres:5432/autocura
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LOG_LEVEL=INFO
+    volumes:
+      - omega-data:/app/data
+      - omega-models:/app/models
+      - omega-logs:/app/logs
+      - omega-checkpoints:/app/checkpoints
+    networks:
+      - autocura-network
+    depends_on:
+      - redis
+      - postgres
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # API REST
+  api:
+    build:
+      context: ../../../
+      dockerfile: docker/environments/prod/Dockerfile.api
+    container_name: autocura-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - AUTOCURA_ENV=production
+      - OMEGA_ENABLED=true
+      - REDIS_URL=redis://redis:6379/0
+      - POSTGRES_URL=postgresql://autocura:${DB_PASSWORD}@postgres:5432/autocura
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - api-logs:/app/logs
+    networks:
+      - autocura-network
+    depends_on:
+      - omega-core
+      - redis
+      - postgres
+
+  # Redis para cache e mensageria
+  redis:
+    image: redis:7-alpine
+    container_name: autocura-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis-data:/data
+    networks:
+      - autocura-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL para persistência
+  postgres:
+    image: postgres:15-alpine
+    container_name: autocura-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=autocura
+      - POSTGRES_USER=autocura
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - autocura-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U autocura"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Monitor de Consciência
+  consciousness-monitor:
+    build:
+      context: ../../../
+      dockerfile: docker/environments/prod/Dockerfile.omega
+    container_name: autocura-consciousness-monitor
+    restart: unless-stopped
+    command: ["python", "-m", "modulos.omega.src.consciousness.monitor_service"]
+    environment:
+      - AUTOCURA_ENV=production
+      - SERVICE_TYPE=consciousness_monitor
+      - REDIS_URL=redis://redis:6379/1
+      - LOG_LEVEL=INFO
+    volumes:
+      - consciousness-data:/app/data
+      - consciousness-reports:/app/reports
+    networks:
+      - autocura-network
+    depends_on:
+      - omega-core
+      - redis
+
+  # Orquestrador de Integração
+  integration-orchestrator:
+    build:
+      context: ../../../
+      dockerfile: docker/environments/prod/Dockerfile.omega
+    container_name: autocura-integration-orchestrator
+    restart: unless-stopped
+    command: ["python", "-m", "modulos.omega.src.integration.orchestrator_service"]
+    environment:
+      - AUTOCURA_ENV=production
+      - SERVICE_TYPE=integration_orchestrator
+      - REDIS_URL=redis://redis:6379/2
+      - LOG_LEVEL=INFO
+    volumes:
+      - integration-data:/app/data
+    networks:
+      - autocura-network
+    depends_on:
+      - omega-core
+      - redis
+
+  # Motor de Evolução
+  evolution-engine:
+    build:
+      context: ../../../
+      dockerfile: docker/environments/prod/Dockerfile.omega
+    container_name: autocura-evolution-engine
+    restart: unless-stopped
+    command: ["python", "-m", "modulos.omega.src.evolution.evolution_service"]
+    environment:
+      - AUTOCURA_ENV=production
+      - SERVICE_TYPE=evolution_engine
+      - SAFETY_LEVEL=HIGH
+      - REDIS_URL=redis://redis:6379/3
+      - LOG_LEVEL=INFO
+    volumes:
+      - evolution-data:/app/data
+      - evolution-checkpoints:/app/checkpoints
+    networks:
+      - autocura-network
+    depends_on:
+      - omega-core
+      - redis
+
+  # Nginx como proxy reverso
+  nginx:
+    image: nginx:alpine
+    container_name: autocura-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx-logs:/var/log/nginx
+    networks:
+      - autocura-network
+    depends_on:
+      - api
+
+  # Prometheus para métricas
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: autocura-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - autocura-network
+
+  # Grafana para visualização
+  grafana:
+    image: grafana/grafana:latest
+    container_name: autocura-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    networks:
+      - autocura-network
+    depends_on:
+      - prometheus
+
+networks:
+  autocura-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  # Volumes do Omega Core
+  omega-data:
+  omega-models:
+  omega-logs:
+  omega-checkpoints:
+  
+  # Volumes dos serviços
+  api-logs:
+  redis-data:
+  postgres-data:
+  consciousness-data:
+  consciousness-reports:
+  integration-data:
+  evolution-data:
+  evolution-checkpoints:
+  
+  # Volumes de monitoramento
+  nginx-logs:
+  prometheus-data:
+  grafana-data: 

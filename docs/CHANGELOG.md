@@ -1,5 +1,6 @@
 # 📋 Changelog do Sistema AutoCura
 
+
 ## [1.0.4] - 2025-05-25
 
 ### 🐛 Corrigido

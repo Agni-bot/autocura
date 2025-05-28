@@ -1136,7 +1136,14 @@ class CognitiveCore:
         """Conta tipos de pensamentos"""
         counts = {}
         for thought in thoughts:
-            type_name = thought.thought_type.name
+            if hasattr(thought, 'thought_type'):
+                # Verifica se é enum ou string
+                if hasattr(thought.thought_type, 'name'):
+                    type_name = thought.thought_type.name
+                else:
+                    type_name = str(thought.thought_type)
+            else:
+                type_name = "UNKNOWN"
             counts[type_name] = counts.get(type_name, 0) + 1
         return counts
     
