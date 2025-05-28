@@ -1,0 +1,371 @@
+# Deployments dos Serviços Omega
+---
+# Omega Core - Núcleo Cognitivo
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: omega-core
+  namespace: autocura-staging
+  labels:
+    app: omega-core
+    component: cognitive
+    module: omega
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: omega-core
+      component: cognitive
+  template:
+    metadata:
+      labels:
+        app: omega-core
+        component: cognitive
+        module: omega
+    spec:
+      containers:
+      - name: omega-core
+        image: autocura/omega-core:latest
+        imagePullPolicy: Always
+        env:
+        - name: PYTHONPATH
+          value: "/app"
+        - name: CONSCIOUSNESS_THRESHOLD
+          valueFrom:
+            configMapKeyRef:
+              name: autocura-config
+              key: CONSCIOUSNESS_THRESHOLD
+        - name: COGNITIVE_LOOP_INTERVAL
+          valueFrom:
+            configMapKeyRef:
+              name: autocura-config
+              key: COGNITIVE_LOOP_INTERVAL
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "1000m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        volumeMounts:
+        - name: autocura-data
+          mountPath: /app/data
+      volumes:
+      - name: autocura-data
+        persistentVolumeClaim:
+          claimName: autocura-data-pvc
+---
+# Consciousness Monitor - Monitor de Consciência
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consciousness-monitor
+  namespace: autocura-staging
+  labels:
+    app: consciousness-monitor
+    component: monitoring
+    module: omega
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: consciousness-monitor
+      component: monitoring
+  template:
+    metadata:
+      labels:
+        app: consciousness-monitor
+        component: monitoring
+        module: omega
+    spec:
+      containers:
+      - name: consciousness-monitor
+        image: autocura/consciousness-monitor:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 9002
+          name: http
+        env:
+        - name: PYTHONPATH
+          value: "/app"
+        - name: CONSCIOUSNESS_MONITOR_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: autocura-config
+              key: CONSCIOUSNESS_MONITOR_PORT
+        - name: CONSCIOUSNESS_THRESHOLD
+          valueFrom:
+            configMapKeyRef:
+              name: autocura-config
+              key: CONSCIOUSNESS_THRESHOLD
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 9002
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /consciousness/level
+            port: 9002
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        volumeMounts:
+        - name: autocura-data
+          mountPath: /app/data
+      volumes:
+      - name: autocura-data
+        persistentVolumeClaim:
+          claimName: autocura-data-pvc
+---
+# Evolution Engine - Motor de Evolução
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: evolution-engine
+  namespace: autocura-staging
+  labels:
+    app: evolution-engine
+    component: evolution
+    module: omega
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: evolution-engine
+      component: evolution
+  template:
+    metadata:
+      labels:
+        app: evolution-engine
+        component: evolution
+        module: omega
+    spec:
+      containers:
+      - name: evolution-engine
+        image: autocura/evolution-engine:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 9003
+          name: http
+        env:
+        - name: PYTHONPATH
+          value: "/app"
+        - name: EVOLUTION_ENGINE_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: autocura-config
+              key: EVOLUTION_ENGINE_PORT
+        - name: EVOLUTION_RATE
+          valueFrom:
+            configMapKeyRef:
+              name: autocura-config
+              key: EVOLUTION_RATE
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "1000m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 9003
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /population/status
+            port: 9003
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        volumeMounts:
+        - name: autocura-data
+          mountPath: /app/data
+      volumes:
+      - name: autocura-data
+        persistentVolumeClaim:
+          claimName: autocura-data-pvc
+---
+# Integration Orchestrator - Orquestrador de Integração
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: integration-orchestrator
+  namespace: autocura-staging
+  labels:
+    app: integration-orchestrator
+    component: orchestration
+    module: omega
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: integration-orchestrator
+      component: orchestration
+  template:
+    metadata:
+      labels:
+        app: integration-orchestrator
+        component: orchestration
+        module: omega
+    spec:
+      containers:
+      - name: integration-orchestrator
+        image: autocura/integration-orchestrator:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 9004
+          name: http
+        env:
+        - name: PYTHONPATH
+          value: "/app"
+        - name: INTEGRATION_ORCHESTRATOR_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: autocura-config
+              key: INTEGRATION_ORCHESTRATOR_PORT
+        - name: SYNERGY_MULTIPLIER
+          valueFrom:
+            configMapKeyRef:
+              name: autocura-config
+              key: SYNERGY_MULTIPLIER
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 9004
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /modules/status
+            port: 9004
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        volumeMounts:
+        - name: autocura-data
+          mountPath: /app/data
+      volumes:
+      - name: autocura-data
+        persistentVolumeClaim:
+          claimName: autocura-data-pvc
+---
+# Services para os módulos Omega
+apiVersion: v1
+kind: Service
+metadata:
+  name: consciousness-monitor-service
+  namespace: autocura-staging
+  labels:
+    app: consciousness-monitor
+    component: monitoring
+spec:
+  type: ClusterIP
+  ports:
+  - port: 9002
+    targetPort: 9002
+    protocol: TCP
+    name: http
+  selector:
+    app: consciousness-monitor
+    component: monitoring
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: evolution-engine-service
+  namespace: autocura-staging
+  labels:
+    app: evolution-engine
+    component: evolution
+spec:
+  type: ClusterIP
+  ports:
+  - port: 9003
+    targetPort: 9003
+    protocol: TCP
+    name: http
+  selector:
+    app: evolution-engine
+    component: evolution
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: integration-orchestrator-service
+  namespace: autocura-staging
+  labels:
+    app: integration-orchestrator
+    component: orchestration
+spec:
+  type: ClusterIP
+  ports:
+  - port: 9004
+    targetPort: 9004
+    protocol: TCP
+    name: http
+  selector:
+    app: integration-orchestrator
+    component: orchestration
+---
+# HPA para serviços Omega críticos
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: consciousness-monitor-hpa
+  namespace: autocura-staging
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: consciousness-monitor
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: evolution-engine-hpa
+  namespace: autocura-staging
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: evolution-engine
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80 

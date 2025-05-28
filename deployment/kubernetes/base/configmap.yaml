@@ -1,0 +1,43 @@
+# ConfigMap com configurações do AutoCura
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: autocura-config
+  namespace: autocura-staging
+data:
+  # Configurações gerais do sistema
+  SYSTEM_VERSION: "1.0.0"
+  ENVIRONMENT: "staging"
+  DEBUG: "true"
+  
+  # Configurações de IA e Consciência
+  CONSCIOUSNESS_THRESHOLD: "0.7"
+  EVOLUTION_RATE: "0.1"
+  SYNERGY_MULTIPLIER: "1.5"
+  COGNITIVE_LOOP_INTERVAL: "5"
+  
+  # Configurações de API
+  API_HOST: "0.0.0.0"
+  API_PORT: "8000"
+  API_WORKERS: "4"
+  
+  # Configurações de Redis
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  
+  # Configurações de PostgreSQL
+  POSTGRES_HOST: "postgres-service"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "autocura"
+  
+  # Configurações dos módulos Omega
+  OMEGA_CORE_ENABLED: "true"
+  CONSCIOUSNESS_MONITOR_PORT: "9002"
+  EVOLUTION_ENGINE_PORT: "9003"
+  INTEGRATION_ORCHESTRATOR_PORT: "9004"
+  
+  # Configurações de monitoramento
+  PROMETHEUS_ENABLED: "true"
+  GRAFANA_ENABLED: "true"
+  METRICS_INTERVAL: "30" 

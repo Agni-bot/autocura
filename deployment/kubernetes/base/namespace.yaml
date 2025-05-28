@@ -1,0 +1,28 @@
+# Namespaces para diferentes ambientes do AutoCura
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: autocura-staging
+  labels:
+    name: autocura-staging
+    environment: staging
+    app: autocura
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: autocura-production
+  labels:
+    name: autocura-production
+    environment: production
+    app: autocura
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: autocura-dev
+  labels:
+    name: autocura-dev
+    environment: development
+    app: autocura 

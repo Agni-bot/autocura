@@ -1,0 +1,128 @@
+# Ingress Controller para AutoCura
+---
+# Ingress para ambiente de Staging
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: autocura-ingress
+  namespace: autocura-staging
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"  # Em produção, mudar para true
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: autocura-staging.local  # Mudar para domínio real
+    http:
+      paths:
+      # API Principal
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: autocura-api-service
+            port:
+              number: 8000
+      
+      # Consciousness Monitor
+      - path: /consciousness
+        pathType: Prefix
+        backend:
+          service:
+            name: consciousness-monitor-service
+            port:
+              number: 9002
+      
+      # Evolution Engine
+      - path: /evolution
+        pathType: Prefix
+        backend:
+          service:
+            name: evolution-engine-service
+            port:
+              number: 9003
+      
+      # Integration Orchestrator
+      - path: /integration
+        pathType: Prefix
+        backend:
+          service:
+            name: integration-orchestrator-service
+            port:
+              number: 9004
+      
+      # Prometheus
+      - path: /prometheus
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus-service
+            port:
+              number: 9090
+      
+      # Grafana
+      - path: /grafana
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana-service
+            port:
+              number: 3000
+---
+# Ingress para Produção (com TLS)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: autocura-ingress-prod
+  namespace: autocura-production
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"  # Para certificados SSL automáticos
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - autocura.example.com  # Substituir com domínio real
+    secretName: autocura-tls
+  rules:
+  - host: autocura.example.com  # Substituir com domínio real
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: autocura-api-service
+            port:
+              number: 8000
+      
+      - path: /consciousness
+        pathType: Prefix
+        backend:
+          service:
+            name: consciousness-monitor-service
+            port:
+              number: 9002
+      
+      - path: /evolution
+        pathType: Prefix
+        backend:
+          service:
+            name: evolution-engine-service
+            port:
+              number: 9003
+      
+      - path: /integration
+        pathType: Prefix
+        backend:
+          service:
+            name: integration-orchestrator-service
+            port:
+              number: 9004 
