@@ -27,6 +27,26 @@ class GerenciadorMemoria:
         """
         self.arquivo_memoria = arquivo_memoria
         self.memoria = self._carregar_memoria()
+        self._registrar_inicio_fase_beta()
+    
+    def _registrar_inicio_fase_beta(self):
+        """Registra o início da implementação da Fase Beta"""
+        try:
+            if not self.memoria.get("fase_beta_iniciada"):
+                self.memoria["fase_beta_iniciada"] = {
+                    "timestamp": datetime.now().isoformat(),
+                    "status": "INICIANDO FASE BETA - COGNIÇÃO EMERGENTE",
+                    "modulos_planejados": [
+                        "swarm_intelligence",
+                        "behavior_emergence", 
+                        "safe_code_generator",
+                        "evolution_sandbox",
+                        "multi_agent_coordinator"
+                    ]
+                }
+                self.salvar_memoria()
+        except Exception as e:
+            print(f"Erro ao registrar início da Fase Beta: {e}")
     
     def _carregar_memoria(self) -> Dict:
         """
