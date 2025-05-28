@@ -2,6 +2,18 @@
 apiVersion: 1
 
 providers:
+  - name: 'default'
+    orgId: 1
+    folder: ''
+    folderUid: ''
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: true
+
   - name: 'AutoCura Dashboards'
     orgId: 1
     folder: ''

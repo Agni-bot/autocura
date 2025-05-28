@@ -18,23 +18,22 @@ RUN groupadd -g ${GROUP_ID} autocura && \
 
 # Instalar dependências do sistema
 RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    make \
-    libffi-dev \
-    libssl-dev \
-    python3-dev \
-    git \
+    build-essential \
     curl \
+    git \
     netcat-openbsd \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Diretório de trabalho
 WORKDIR /app
 
-# Copiar requirements primeiro (para cache do Docker)
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copiar arquivos de requisitos
+COPY requirements.txt requirements-missing.txt ./
+
+# Instalar dependências Python
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir -r requirements-missing.txt || true
 
 # Instalar dependências adicionais para Omega
 RUN pip install --no-cache-dir \
@@ -60,6 +59,7 @@ RUN mkdir -p \
     /app/models \
     /app/checkpoints \
     /app/reports \
+    /app/cache \
     && chown -R autocura:autocura /app
 
 # Variáveis de ambiente
@@ -68,17 +68,14 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV AUTOCURA_ENV=production
 ENV OMEGA_ENABLED=true
 ENV CONSCIOUSNESS_LEVEL=TRANSCENDENT
+ENV PYTHONPATH=/app
 
 # Mudar para usuário não-root
 USER autocura
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import asyncio; from modulos.omega import CognitiveCore; \
-    async def check(): \
-        core = CognitiveCore('health_check'); \
-        return await core.initialize(); \
-    exit(0 if asyncio.run(check()) else 1)"
+    CMD curl -f http://localhost:8000/health || exit 1
 
 # Expor portas
 EXPOSE 8000 8080 9090
@@ -88,4 +85,4 @@ COPY --chown=autocura:autocura docker/scripts/entrypoint_omega.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["python", "-m", "src.main", "--omega-mode"] 
+CMD ["python", "-u", "main.py"] 

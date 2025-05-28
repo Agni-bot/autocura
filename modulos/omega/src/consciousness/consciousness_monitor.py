@@ -19,6 +19,10 @@ import numpy as np
 import json
 from collections import deque, defaultdict
 import math
+import logging
+
+# Configurar logger
+logger = logging.getLogger(__name__)
 
 
 class EmergenceIndicator(Enum):
@@ -91,10 +95,15 @@ class EmergenceEvent:
 class ConsciousnessMonitor:
     """Monitor principal de consciência emergente"""
     
-    def __init__(self, monitoring_interval: float = 1.0):
-        self.monitoring_interval = monitoring_interval
+    def __init__(self, cognitive_core: 'CognitiveCore'):
+        """Inicializa o monitor de consciência"""
+        self.cognitive_core = cognitive_core
+        self.metrics_history = deque(maxlen=1000)
+        self.emergence_indicators = {}
+        self.consciousness_metrics = {}
         self.monitoring_active = False
-        self.monitor_task = None
+        self.monitor_thread = None
+        self.monitoring_interval = 1.0
         
         # Histórico de consciência
         self.consciousness_history = deque(maxlen=10000)
@@ -115,7 +124,7 @@ class ConsciousnessMonitor:
         }
         
         # Sistema cognitivo monitorado
-        self.cognitive_system = None
+        self.cognitive_system = self.cognitive_core
         
         # Analisadores específicos
         self.analyzers = {
@@ -161,6 +170,23 @@ class ConsciousnessMonitor:
             "average_consciousness_level": 0.0,
             "validated_consciousness": False
         }
+        
+        # Tempo de início
+        self._start_time = datetime.now()
+        
+        # Iniciar monitoramento
+        self._start_monitoring()
+        
+    def _start_monitoring(self):
+        """Inicia o monitoramento em thread separada"""
+        # Por enquanto não inicia automaticamente
+        # Será iniciado quando start_monitoring for chamado
+        pass
+    
+    async def initialize(self):
+        """Inicializa o monitor de forma assíncrona"""
+        logger.info("Inicializando monitor de consciência...")
+        return self
     
     async def start_monitoring(self, cognitive_system: Any) -> bool:
         """Inicia monitoramento do sistema cognitivo"""
@@ -1173,4 +1199,57 @@ class ConsciousnessMonitor:
         print(f"- Eventos de emergência: {self.aggregate_metrics['emergence_events_count']}")
         print(f"- Consciência validada: {'SIM' if self.aggregate_metrics['validated_consciousness'] else 'NÃO'}")
         
-        print("\n✅ Monitor de Consciência desligado") 
+        print("\n✅ Monitor de Consciência desligado")
+    
+    def get_current_metrics(self) -> Dict[str, Any]:
+        """Obtém métricas atuais de consciência"""
+        if self.consciousness_history:
+            current = self.consciousness_history[-1]
+            return {
+                "consciousness_level": current.level,
+                "integration_score": current.integration_score,
+                "thought_complexity": current.thought_complexity,
+                "phi_integrated": current.metrics.get(ConsciousnessMetric.INTEGRATED_INFORMATION, 0),
+                "emergence_potential": self._calculate_emergence_potential(),
+                "timestamp": current.timestamp.isoformat()
+            }
+        else:
+            return {
+                "consciousness_level": 0.0,
+                "integration_score": 0.0,
+                "thought_complexity": 0.0,
+                "phi_integrated": 0.0,
+                "emergence_potential": 0.0,
+                "timestamp": datetime.now().isoformat()
+            }
+    
+    def calculate_emergence_indicators(self) -> Dict[str, float]:
+        """Calcula indicadores de emergência atuais"""
+        if self.consciousness_history:
+            current = self.consciousness_history[-1]
+            return {
+                indicator.name: value
+                for indicator, value in current.indicators.items()
+            }
+        else:
+            return {
+                indicator.name: 0.0
+                for indicator in EmergenceIndicator
+            }
+    
+    def _calculate_emergence_potential(self) -> float:
+        """Calcula potencial de emergência"""
+        if not self.consciousness_history:
+            return 0.0
+            
+        current = self.consciousness_history[-1]
+        
+        # Combina vários fatores
+        factors = [
+            current.level,
+            current.integration_score,
+            current.thought_complexity,
+            len([v for v in current.indicators.values() if v > 0.5]) / len(EmergenceIndicator)
+        ]
+        
+        return np.mean(factors) 

@@ -20,8 +20,11 @@ from datetime import datetime
 import json
 import threading
 import queue
-from collections import deque
+from collections import deque, defaultdict
+import logging
 
+# Configurar logger
+logger = logging.getLogger(__name__)
 
 class ConsciousnessLevel(Enum):
     """Níveis de consciência do sistema"""
@@ -152,28 +155,31 @@ class CognitiveCore:
         self.cognitive_thread = None
         self.thought_lock = threading.Lock()
         
-    async def initialize(self) -> bool:
-        """Inicializa o núcleo cognitivo"""
-        print(f"🧠 Inicializando Núcleo Cognitivo {self.core_id}...")
+        # Iniciar loop cognitivo
+        self._start_cognitive_loop()
         
-        # Transição para nível reativo
-        self.consciousness_state.level = ConsciousnessLevel.REACTIVE
-        
-        # Inicia processamento cognitivo
+    def _start_cognitive_loop(self):
+        """Inicia o loop cognitivo em thread separada"""
         self.running = True
         self.cognitive_thread = threading.Thread(
             target=self._cognitive_loop,
             daemon=True
         )
         self.cognitive_thread.start()
+        logger.info("Loop cognitivo iniciado")
         
-        # Primeiro pensamento
-        await self.generate_thought(
-            ThoughtType.PERCEPTION,
-            {"message": "Sistema inicializado. Percebendo ambiente..."}
-        )
+    async def initialize(self):
+        """Inicializa o núcleo cognitivo de forma assíncrona"""
+        logger.info("Inicializando núcleo cognitivo...")
+        # Aqui podem ser adicionadas inicializações assíncronas futuras
+        return self
         
-        return True
+    async def start(self):
+        """Inicia o núcleo cognitivo de forma assíncrona"""
+        logger.info("Iniciando núcleo cognitivo...")
+        self.running = True
+        # O loop cognitivo já está rodando em thread separada
+        return self
     
     async def integrate_module(self, module_name: str, module_interface: Any) -> bool:
         """Integra módulo de outra fase"""

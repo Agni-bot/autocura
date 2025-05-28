@@ -21,6 +21,10 @@ import copy
 import hashlib
 import numpy as np
 from abc import ABC, abstractmethod
+import logging
+
+# Configurar logger
+logger = logging.getLogger(__name__)
 
 
 class EvolutionStrategy(Enum):
@@ -186,6 +190,15 @@ class EvolutionEngine:
         self.population: List[Genome] = []
         self.population_size = 50
         self.generation = 0
+        self.best_fitness = 0.0
+        self.average_fitness = 0.0
+        self.mutation_rate = 0.1
+        self.crossover_rate = 0.7
+        self.elite_size = 10
+        self.fitness_history = []
+        self.evolution_strategies = list(EvolutionStrategy)
+        self.security_levels = list(SafetyLevel)
+        self.genomes = {}  # Armazenar genomas por ID
         
         # Estratégias de evolução
         self.strategies = {
@@ -226,26 +239,14 @@ class EvolutionEngine:
         # Estado da evolução
         self.evolving = False
         self.evolution_task = None
+        
+        # Inicializar população
+        self._initialize_population()
     
-    async def initialize_population(self, template_genome: Genome) -> bool:
-        """Inicializa população com variações do template"""
-        print("🧬 Inicializando população evolutiva...")
-        
-        self.population = []
-        
-        # Adiciona template original
-        self.population.append(copy.deepcopy(template_genome))
-        
-        # Cria variações
-        for i in range(self.population_size - 1):
-            # Varia taxa de mutação inicial
-            mutation_rate = np.random.uniform(0.05, 0.2)
-            variant = template_genome.mutate(mutation_rate)
-            variant.genome_id = f"genome_init_{i}"
-            self.population.append(variant)
-        
-        print(f"✅ População inicializada com {len(self.population)} indivíduos")
-        return True
+    async def initialize(self):
+        """Inicializa o motor de forma assíncrona"""
+        logger.info("Inicializando motor de evolução...")
+        return self
     
     async def evolve(
         self,
@@ -878,4 +879,48 @@ class EvolutionEngine:
             except asyncio.CancelledError:
                 pass
         
-        print("✅ Motor de Evolução desligado") 
+        print("✅ Motor de Evolução desligado")
+
+    def _initialize_population(self):
+        """Inicializa população com variações do template"""
+        print("🧬 Inicializando população evolutiva...")
+        
+        self.population = []
+        
+        # Cria um template base com genes padrão
+        base_genes = [
+            self.create_gene("learning_rate", "parameter", 0.01, True, 0.001, 0.1),
+            self.create_gene("mutation_rate", "parameter", 0.1, True, 0.01, 0.5),
+            self.create_gene("population_size", "parameter", 50, True, 10, 200),
+            self.create_gene("consciousness_threshold", "parameter", 0.7, True, 0.5, 0.95),
+        ]
+        
+        # Adiciona template original
+        template = self.create_genome_template(base_genes)
+        self.population.append(template)
+        
+        # Cria variações
+        for i in range(self.population_size - 1):
+            # Varia taxa de mutação inicial
+            mutation_rate = np.random.uniform(0.05, 0.2)
+            variant = template.mutate(mutation_rate)
+            variant.genome_id = f"genome_init_{i}"
+            self.population.append(variant)
+        
+        print(f"✅ População inicializada com {len(self.population)} indivíduos")
+    
+    def get_genome(self, genome_id: str):
+        """Obtém um genoma pelo ID"""
+        return self.genomes.get(genome_id)
+        
+    async def mutate_genome(self, genome_id: str):
+        """Muta um genoma específico"""
+        genome = self.get_genome(genome_id)
+        if not genome:
+            raise ValueError(f"Genoma {genome_id} não encontrado")
+            
+        mutated = genome.mutate(self.mutation_rate)
+        mutated_id = f"mutated_{genome_id}_{self.generation}"
+        self.genomes[mutated_id] = mutated
+        
+        return type('Genome', (), {'id': mutated_id})() 

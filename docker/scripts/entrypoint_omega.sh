@@ -26,16 +26,28 @@ wait_for_service() {
 # Aguardar dependências
 if [ ! -z "$REDIS_URL" ]; then
     # Extrair host e porta do Redis URL
-    REDIS_HOST=$(echo $REDIS_URL | sed -E 's|redis://([^:]+):([0-9]+)/.*|\1|')
-    REDIS_PORT=$(echo $REDIS_URL | sed -E 's|redis://([^:]+):([0-9]+)/.*|\2|')
-    wait_for_service ${REDIS_HOST:-redis} ${REDIS_PORT:-6379} "Redis"
+    # Formato: redis://:password@host:port ou redis://host:port
+    if [[ $REDIS_URL =~ redis://([^@]+@)?([^:]+):([0-9]+) ]]; then
+        REDIS_HOST=${BASH_REMATCH[2]}
+        REDIS_PORT=${BASH_REMATCH[3]}
+    else
+        REDIS_HOST="redis"
+        REDIS_PORT="6379"
+    fi
+    wait_for_service $REDIS_HOST $REDIS_PORT "Redis"
 fi
 
-if [ ! -z "$POSTGRES_URL" ]; then
+if [ ! -z "$DATABASE_URL" ]; then
     # Extrair host e porta do PostgreSQL URL
-    PG_HOST=$(echo $POSTGRES_URL | sed -E 's|postgresql://[^@]+@([^:]+):([0-9]+)/.*|\1|')
-    PG_PORT=$(echo $POSTGRES_URL | sed -E 's|postgresql://[^@]+@([^:]+):([0-9]+)/.*|\2|')
-    wait_for_service ${PG_HOST:-postgres} ${PG_PORT:-5432} "PostgreSQL"
+    # Formato: postgresql://user:pass@host:port/db
+    if [[ $DATABASE_URL =~ postgresql://([^@]+@)?([^:]+):([0-9]+) ]]; then
+        PG_HOST=${BASH_REMATCH[2]}
+        PG_PORT=${BASH_REMATCH[3]}
+    else
+        PG_HOST="postgres"
+        PG_PORT="5432"
+    fi
+    wait_for_service $PG_HOST $PG_PORT "PostgreSQL"
 fi
 
 # Configurar ambiente
