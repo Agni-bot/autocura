@@ -63,31 +63,27 @@ if [ -f "/app/scripts/migrate.py" ]; then
 fi
 
 # Determinar modo de execução
-SERVICE_TYPE=${SERVICE_TYPE:-main}
+SERVICE_TYPE=${SERVICE_TYPE:-"main"}
 
-case $SERVICE_TYPE in
-    "consciousness_monitor")
-        echo "👁️ Iniciando Monitor de Consciência..."
-        exec python -m modulos.omega.src.consciousness.monitor_service
+case "$SERVICE_TYPE" in
+    "main")
+        echo "🚀 Iniciando Sistema AutoCura Completo..."
+        exec python -m modulos.omega.src.main
         ;;
-    "integration_orchestrator")
-        echo "🔗 Iniciando Orquestrador de Integração..."
-        exec python -m modulos.omega.src.integration.orchestrator_service
+    "consciousness_monitor")
+        echo "👁️ Iniciando Monitor de Consciência HTTP..."
+        exec python -m modulos.omega.src.consciousness.monitor_service_simple
         ;;
     "evolution_engine")
-        echo "🧬 Iniciando Motor de Evolução..."
+        echo "🧬 Iniciando Motor de Evolução HTTP..."
         exec python -m modulos.omega.src.evolution.evolution_service
         ;;
-    "training")
-        echo "🎓 Iniciando modo de treinamento..."
-        exec python -m scripts.train_omega
-        ;;
-    "demo")
-        echo "🎭 Iniciando demonstração..."
-        exec python -m modulos.omega.examples.demo_consciencia_emergente
+    "integration_orchestrator")
+        echo "🔗 Iniciando Orquestrador de Integração HTTP..."
+        exec python -m modulos.omega.src.integration.orchestrator_service
         ;;
     *)
-        echo "🚀 Iniciando Sistema AutoCura Completo..."
-        exec "$@"
+        echo "❌ Tipo de serviço desconhecido: $SERVICE_TYPE"
+        exit 1
         ;;
 esac 
