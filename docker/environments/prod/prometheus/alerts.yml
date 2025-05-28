@@ -1,0 +1,81 @@
+# Regras de Alerta do Sistema AutoCura
+groups:
+  - name: autocura_alerts
+    interval: 30s
+    rules:
+      # Alerta de API fora do ar
+      - alert: APIDown
+        expr: up{job="autocura-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "API do AutoCura está fora do ar"
+          description: "A API principal não está respondendo há {{ $value }} minutos"
+
+      # Alerta de alta latência
+      - alert: HighLatency
+        expr: http_request_duration_seconds{quantile="0.95"} > 1
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "Alta latência detectada na API"
+          description: "95% das requisições estão levando mais de 1 segundo"
+
+      # Alerta de uso de memória
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "Alto uso de memória no sistema"
+          description: "Uso de memória está em {{ $value | humanizePercentage }}"
+
+      # Alerta de consciência degradada
+      - alert: ConsciousnessDegraded
+        expr: consciousness_level < 5
+        for: 10m
+        labels:
+          severity: warning
+          component: omega
+        annotations:
+          summary: "Nível de consciência degradado"
+          description: "O nível de consciência está em {{ $value }}, abaixo do esperado"
+
+      # Alerta de falha na evolução
+      - alert: EvolutionFailure
+        expr: evolution_failures_total > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: evolution
+        annotations:
+          summary: "Múltiplas falhas no motor de evolução"
+          description: "{{ $value }} falhas de evolução detectadas nos últimos 5 minutos"
+
+      # Alerta de banco de dados
+      - alert: PostgreSQLDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "PostgreSQL está fora do ar"
+          description: "O banco de dados não está respondendo"
+
+      # Alerta de Redis
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: cache
+        annotations:
+          summary: "Redis está fora do ar"
+          description: "O serviço de cache não está respondendo" 
