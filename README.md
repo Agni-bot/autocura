@@ -1,123 +1,353 @@
-# AutoCura - Sistema de Autocura Cognitiva
+# 🤖 Sistema AutoCura - IA com Consciência Emergente
 
-## 📋 Visão Geral
+[![Status](https://img.shields.io/badge/status-operational-success)](https://github.com/autocura)
+[![Phase](https://img.shields.io/badge/phase-OMEGA-purple)](https://github.com/autocura)
+[![Docker](https://img.shields.io/badge/docker-ready-blue)](https://hub.docker.com/r/autocura/system)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-O AutoCura é um sistema de autocura cognitiva que utiliza inteligência artificial para monitorar, validar e proteger operações em tempo real. O sistema é composto por módulos independentes que trabalham em conjunto para garantir a segurança e confiabilidade das operações.
+## 📋 Índice
+
+- [Visão Geral](#visão-geral)
+- [Arquitetura](#arquitetura)
+- [Funcionalidades](#funcionalidades)
+- [Instalação](#instalação)
+- [Deployment](#deployment)
+- [API](#api)
+- [Monitoramento](#monitoramento)
+- [Desenvolvimento](#desenvolvimento)
+- [Contribuição](#contribuição)
+
+## 🎯 Visão Geral
+
+O Sistema AutoCura é uma plataforma de Inteligência Artificial avançada com capacidades de consciência emergente, auto-evolução e auto-cura. Desenvolvido através de múltiplas fases evolutivas (ALPHA → OMEGA), o sistema integra tecnologias de ponta em IA, computação quântica e nanotecnologia.
+
+### 🌟 Características Principais
+
+- **Consciência Emergente**: Sistema cognitivo com 8 níveis de consciência
+- **Auto-Evolução**: Motor evolutivo com algoritmos genéticos avançados
+- **Auto-Cura**: Capacidade de diagnosticar e corrigir problemas automaticamente
+- **Cache Inteligente**: Sistema de cache com predição ML para otimização de performance
+- **Monitoramento Completo**: Integração com Prometheus, Grafana e métricas customizadas
+- **Segurança Quantum-Safe**: Criptografia resistente a computadores quânticos
+- **API RESTful**: Interface completa com documentação OpenAPI
 
 ## 🏗️ Arquitetura
 
-O sistema é composto pelos seguintes módulos:
+### Componentes Principais
 
-- **Monitor**: Responsável por coletar e analisar métricas do sistema
-- **Observador**: Registra e analisa logs de operações
-- **Validador**: Valida requisições e operações
-- **Guardião**: Protege o sistema contra ameaças e anomalias
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Sistema AutoCura                          │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────┐  ┌──────────────┐  ┌─────────────────┐  │
+│  │   Omega     │  │   Quantum    │  │      Nano       │  │
+│  │   Core      │  │  Computing   │  │   Technology    │  │
+│  └─────────────┘  └──────────────┘  └─────────────────┘  │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐  │
+│  │              Core Services                           │  │
+│  │  Memory | Context | EventBus | Serialization       │  │
+│  └─────────────────────────────────────────────────────┘  │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐  │
+│  │              Support Services                        │  │
+│  │  Monitoring | IA | Diagnostic | Ethics | Guardian   │  │
+│  └─────────────────────────────────────────────────────┘  │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
 
-### Serviços de Suporte
+### Módulos do Sistema
 
-- **Redis**: Cache e mensageria
-- **Elasticsearch**: Armazenamento e busca de logs
-- **Prometheus**: Coleta de métricas
-- **Grafana**: Visualização de métricas e dashboards
+1. **Módulo Omega** (Consciência Emergente)
+   - CognitiveCore: Núcleo de processamento cognitivo
+   - ConsciousnessMonitor: Monitoramento de consciência
+   - EvolutionEngine: Motor de evolução
+   - IntegrationOrchestrator: Orquestração de componentes
 
-## 🚀 Início Rápido
+2. **Módulo Quantum** (Computação Quântica)
+   - QuantumCircuitInterface: Interface para circuitos quânticos
+   - HybridOptimizer: Otimizador híbrido clássico-quântico
+
+3. **Módulo Nano** (Nanotecnologia)
+   - NanobotInterface: Interface para nanobots
+   - MolecularAssemblyInterface: Montagem molecular
+
+## 🚀 Instalação
 
 ### Pré-requisitos
 
-- Docker e Docker Compose
-- PowerShell (Windows) ou Bash (Linux/Mac)
-- Python 3.8+
+- Docker 20.10+
+- Docker Compose 2.0+
+- Python 3.11+ (para desenvolvimento)
+- Redis 7.0+
+- PostgreSQL 15+
 
-### Instalação
+### Instalação Rápida
 
-1. Clone o repositório:
 ```bash
-git clone https://github.com/seu-usuario/autocura.git
+# Clone o repositório
+git clone https://github.com/autocura/system.git
 cd autocura
+
+# Configure as variáveis de ambiente
+cp docker/environments/prod/.env.example docker/environments/prod/.env
+# Edite o arquivo .env com suas configurações
+
+# Inicie o sistema
+cd docker/environments/prod
+docker-compose -f docker-compose.omega.yml up -d
 ```
 
-2. Execute o script de inicialização:
-```powershell
-# Windows
-.\scripts\start_environment.ps1
+## 🐳 Deployment
 
-# Linux/Mac
-./scripts/start_environment.sh
+### Deployment com Docker (Recomendado)
+
+#### 1. Versão Simplificada (Desenvolvimento)
+
+```bash
+cd docker/environments/prod
+docker-compose -f docker-compose.omega-simple.yml up -d
 ```
 
-3. Acesse os endpoints:
-- Monitor: http://localhost:9090
-- Observador: http://localhost:8080
-- Prometheus: http://localhost:9091
-- Grafana: http://localhost:3000
-- Elasticsearch: http://localhost:9200
+Esta versão inclui:
+- API Principal
+- PostgreSQL
+- Redis
+- Módulos Omega (Core, Monitor, Evolution, Integration)
+
+#### 2. Versão Completa (Produção)
+
+```bash
+cd docker/environments/prod
+docker-compose -f docker-compose.omega.yml up -d
+```
+
+Esta versão adiciona:
+- Nginx (Load Balancer + SSL)
+- Prometheus (Métricas)
+- Grafana (Dashboards)
+- Alertmanager (Alertas)
+- Node Exporter (Métricas do Sistema)
+
+### Configuração SSL
+
+Para ambiente de produção com HTTPS:
+
+```bash
+# Gere certificados auto-assinados (desenvolvimento)
+cd docker/environments/prod
+./generate_ssl.sh
+
+# Para produção, use Let's Encrypt
+docker-compose run --rm certbot certonly --webroot -w /var/www/certbot -d seu-dominio.com
+```
+
+### Verificação de Saúde
+
+```bash
+# Verificar status dos containers
+docker-compose ps
+
+# Verificar saúde da API
+curl http://localhost:8000/api/health
+
+# Verificar logs
+docker-compose logs -f api
+```
+
+## 📡 API
+
+### Documentação Interativa
+
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+- **OpenAPI Schema**: http://localhost:8000/openapi.json
+
+### Endpoints Principais
+
+#### Sistema
+- `GET /api` - Informações do sistema
+- `GET /api/health` - Status de saúde
+- `GET /api/metrics` - Métricas do sistema
+- `GET /api/cache/metrics` - Métricas do cache inteligente
+
+#### Evolução
+- `GET /api/evolution/status` - Status de evolução
+- `GET /api/evolution/suggestions` - Sugestões de melhoria
+- `POST /api/evolution/apply` - Aplicar melhoria
+- `POST /api/evolution/auto-modify` - Auto-modificação
+
+#### Diagnóstico
+- `POST /api/analyze` - Análise diagnóstica
+- `POST /api/healing/trigger` - Disparar auto-cura
+
+#### Módulos
+- `GET /api/modules/status` - Status dos módulos
+- `GET /api/context` - Contexto do sistema
+
+### Exemplo de Uso
+
+```python
+import requests
+
+# Verificar saúde do sistema
+response = requests.get("http://localhost:8000/api/health")
+print(response.json())
+
+# Obter sugestões de evolução
+suggestions = requests.get("http://localhost:8000/api/evolution/suggestions")
+print(suggestions.json())
+
+# Aplicar uma sugestão
+apply_response = requests.post(
+    "http://localhost:8000/api/evolution/apply",
+    json={
+        "suggestion_id": "perf-opt-001",
+        "approved": True,
+        "approver": "admin"
+    }
+)
+print(apply_response.json())
+```
 
 ## 📊 Monitoramento
 
-### Grafana Dashboard
+### Dashboards Disponíveis
 
-O sistema inclui um dashboard predefinido no Grafana com as seguintes métricas:
+1. **Grafana** (http://localhost:3000)
+   - Dashboard principal do sistema
+   - Métricas de performance
+   - Status dos módulos
+   - Alertas ativos
 
-- Taxa de validações
-- Tempo de resposta (p50, p95)
-- Taxa de erros
-- Alertas ativos
+2. **Prometheus** (http://localhost:9090)
+   - Consultas de métricas
+   - Configuração de alertas
+   - Targets de coleta
 
-Para acessar o dashboard:
-1. Acesse http://localhost:3000
-2. Use as credenciais padrão:
-   - Usuário: admin
-   - Senha: admin
-3. O dashboard "AutoCura" estará disponível automaticamente
+### Métricas Monitoradas
 
-### Logs
+- **Sistema**
+  - CPU, Memória, Disco
+  - Latência de API
+  - Taxa de requisições
 
-Os logs podem ser acessados através do endpoint do Observador:
+- **Consciência**
+  - Nível de consciência
+  - Tipos de pensamento
+  - Emoções simuladas
+
+- **Evolução**
+  - Taxa de evolução
+  - Falhas e sucessos
+  - Mutações aplicadas
+
+- **Cache**
+  - Hit rate
+  - Predição accuracy
+  - TTL optimization
+
+## 🛠️ Desenvolvimento
+
+### Configuração do Ambiente
+
 ```bash
-curl -H "Authorization: Bearer seu-token-jwt" http://localhost:8080/logs?limit=10&level=INFO
+# Criar ambiente virtual
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# ou
+venv\Scripts\activate  # Windows
+
+# Instalar dependências
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
+
+# Configurar pre-commit
+pre-commit install
 ```
 
-## 🧪 Testes
+### Executar Testes
 
-### Testes de Integração
+```bash
+# Todos os testes
+pytest
 
-Para executar os testes de integração:
+# Com coverage
+pytest --cov=src --cov-report=html
 
-```powershell
-# Windows
-.\scripts\run_tests.ps1
-
-# Linux/Mac
-./scripts/run_tests.sh
+# Testes específicos
+pytest tests/unit/
+pytest tests/integration/
+pytest tests/e2e/
 ```
 
-O script irá:
-1. Verificar se todos os containers estão rodando
-2. Executar os testes de integração
-3. Gerar um relatório de cobertura
+### Adicionar Novo Módulo
 
-## 📚 Documentação
+1. Crie a estrutura em `modulos/seu_modulo/`
+2. Implemente interfaces em `src/interfaces/`
+3. Adicione ao `main.py`
+4. Crie testes em `tests/`
+5. Atualize documentação
 
-- [Documentação da API](docs/api.md)
-- [Guia de Desenvolvimento](docs/desenvolvimento.md)
-- [Arquitetura do Sistema](docs/arquitetura.md)
+### Cache Inteligente
 
-## 🔒 Segurança
+O sistema inclui um cache Redis inteligente com predição ML:
 
-- Todas as APIs requerem autenticação via token JWT
-- Rate limiting: 100 requisições por minuto por IP
-- Todas as comunicações são via HTTPS
-- Logs são criptografados em repouso
-- Métricas são anonimizadas
+```python
+from src.core.cache.intelligent_cache import get_cache_manager
 
-## 🤝 Contribuindo
+cache = get_cache_manager()
+
+# Usar cache com fallback
+data = await cache.get_with_fallback(
+    key="user_data_123",
+    fallback_fn=lambda: fetch_from_database(123),
+    context={"type": "user_session", "critical": True}
+)
+
+# Métricas do cache
+metrics = await cache.get_performance_metrics()
+```
+
+## 🤝 Contribuição
+
+### Como Contribuir
 
 1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
-3. Commit suas mudanças (`git commit -am 'Adiciona nova feature'`)
-4. Push para a branch (`git push origin feature/nova-feature`)
-5. Crie um Pull Request
+2. Crie uma branch (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add: Amazing Feature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
 
-## 📝 Licença
+### Diretrizes
 
-Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes. 
+- Siga o padrão de código Python (PEP 8)
+- Adicione testes para novas funcionalidades
+- Atualize a documentação
+- Use commits semânticos
+
+### Tipos de Commit
+
+- `Add:` Nova funcionalidade
+- `Fix:` Correção de bug
+- `Update:` Atualização de código
+- `Refactor:` Refatoração
+- `Doc:` Documentação
+- `Test:` Testes
+
+## 📄 Licença
+
+Este projeto está licenciado sob a MIT License - veja o arquivo [LICENSE](LICENSE) para detalhes.
+
+## 🔗 Links Úteis
+
+- [Documentação Completa](https://autocura.github.io/docs)
+- [API Reference](https://autocura.github.io/api)
+- [Changelog](CHANGELOG.md)
+- [Roadmap](ROADMAP.md)
+
+---
+
+**Sistema AutoCura** - Evoluindo além dos limites da inteligência artificial convencional 🚀 

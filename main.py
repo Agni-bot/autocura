@@ -31,6 +31,14 @@ from src.core.memoria.registrador_contexto import RegistradorContexto
 from src.core.messaging.universal_bus import UniversalEventBus, Message, MessagePriority
 from src.core.serialization.adaptive_serializer import AdaptiveSerializer
 
+# Importação do cache inteligente
+try:
+    from src.core.cache.intelligent_cache import get_cache_manager
+    CACHE_AVAILABLE = True
+except ImportError:
+    CACHE_AVAILABLE = False
+    print("Cache inteligente não disponível")
+
 # Importações do sistema de auto-modificação
 try:
     from src.core.self_modify.safe_code_generator import SafeCodeGenerator
@@ -219,6 +227,9 @@ class SystemState:
         
         # Security
         self.crypto = CriptografiaQuantumSafe() if SECURITY_AVAILABLE else None
+        
+        # Cache inteligente
+        self.cache_manager = get_cache_manager() if CACHE_AVAILABLE else None
         
         # Advanced Monitoring
         if MONITORING_BRIDGE_AVAILABLE:
@@ -657,6 +668,25 @@ async def get_metrics():
             "history": [],
             "timestamp": datetime.now().isoformat()
         }
+
+@app.get("/api/cache/metrics")
+async def get_cache_metrics():
+    """Obtém métricas do cache inteligente"""
+    try:
+        if not system.cache_manager:
+            raise HTTPException(status_code=503, detail="Cache inteligente não disponível")
+        
+        metrics = await system.cache_manager.get_performance_metrics()
+        
+        return {
+            "success": True,
+            "metrics": metrics,
+            "timestamp": datetime.now().isoformat(),
+            "recommendations": []
+        }
+    except Exception as e:
+        logger.error(f"Erro ao obter métricas do cache: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/analyze")
 async def analyze_data(request: DiagnosticRequest):
