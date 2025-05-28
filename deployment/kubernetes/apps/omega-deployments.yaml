@@ -26,10 +26,12 @@ spec:
       containers:
       - name: omega-core
         image: autocura/omega-core:latest
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         env:
         - name: PYTHONPATH
           value: "/app"
+        - name: SERVICE_TYPE
+          value: "main"
         - name: CONSCIOUSNESS_THRESHOLD
           valueFrom:
             configMapKeyRef:
@@ -81,13 +83,15 @@ spec:
       containers:
       - name: consciousness-monitor
         image: autocura/consciousness-monitor:latest
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9002
           name: http
         env:
         - name: PYTHONPATH
           value: "/app"
+        - name: SERVICE_TYPE
+          value: "consciousness_monitor"
         - name: CONSCIOUSNESS_MONITOR_PORT
           valueFrom:
             configMapKeyRef:
@@ -109,14 +113,18 @@ spec:
           httpGet:
             path: /health
             port: 9002
-          initialDelaySeconds: 30
-          periodSeconds: 10
+          initialDelaySeconds: 60
+          periodSeconds: 15
+          timeoutSeconds: 10
+          failureThreshold: 5
         readinessProbe:
           httpGet:
             path: /consciousness/level
             port: 9002
-          initialDelaySeconds: 10
-          periodSeconds: 5
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
         volumeMounts:
         - name: autocura-data
           mountPath: /app/data
@@ -151,13 +159,15 @@ spec:
       containers:
       - name: evolution-engine
         image: autocura/evolution-engine:latest
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9003
           name: http
         env:
         - name: PYTHONPATH
           value: "/app"
+        - name: SERVICE_TYPE
+          value: "evolution_engine"
         - name: EVOLUTION_ENGINE_PORT
           valueFrom:
             configMapKeyRef:
@@ -179,14 +189,18 @@ spec:
           httpGet:
             path: /health
             port: 9003
-          initialDelaySeconds: 30
-          periodSeconds: 10
+          initialDelaySeconds: 60
+          periodSeconds: 15
+          timeoutSeconds: 10
+          failureThreshold: 5
         readinessProbe:
           httpGet:
             path: /population/status
             port: 9003
-          initialDelaySeconds: 10
-          periodSeconds: 5
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
         volumeMounts:
         - name: autocura-data
           mountPath: /app/data
@@ -221,13 +235,15 @@ spec:
       containers:
       - name: integration-orchestrator
         image: autocura/integration-orchestrator:latest
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9004
           name: http
         env:
         - name: PYTHONPATH
           value: "/app"
+        - name: SERVICE_TYPE
+          value: "integration_orchestrator"
         - name: INTEGRATION_ORCHESTRATOR_PORT
           valueFrom:
             configMapKeyRef:
@@ -249,14 +265,18 @@ spec:
           httpGet:
             path: /health
             port: 9004
-          initialDelaySeconds: 30
-          periodSeconds: 10
+          initialDelaySeconds: 60
+          periodSeconds: 15
+          timeoutSeconds: 10
+          failureThreshold: 5
         readinessProbe:
           httpGet:
             path: /modules/status
             port: 9004
-          initialDelaySeconds: 10
-          periodSeconds: 5
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
         volumeMounts:
         - name: autocura-data
           mountPath: /app/data
