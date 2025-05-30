@@ -1,9 +1,30 @@
+"""
+Módulo de Orquestração Kubernetes
+
+Este módulo é responsável por gerenciar a infraestrutura e deployments do sistema
+usando Kubernetes, implementando auto-scaling, auto-healing, distribuição de carga
+e monitoramento avançado.
+"""
+
 import logging
 import asyncio
 from datetime import datetime
 from typing import Dict, List, Optional, Any
+from dataclasses import dataclass
+import json
+import yaml
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
+
+@dataclass
+class EstadoCluster:
+    """Representa o estado atual do cluster Kubernetes"""
+    timestamp: datetime
+    nodes: List[Dict[str, Any]]
+    pods: List[Dict[str, Any]]
+    deployments: List[Dict[str, Any]]
+    services: List[Dict[str, Any]]
+    metricas: Dict[str, float]
 
 class KubernetesOrchestrator:
     """Módulo de orquestração Kubernetes para gerenciar deployment e escalabilidade."""
@@ -19,22 +40,38 @@ class KubernetesOrchestrator:
         
         # Carrega configuração do Kubernetes
         try:
-            config.load_kube_config()
-            self.logger.info("Configuração do Kubernetes carregada")
-        except Exception as e:
-            self.logger.error(f"Erro ao carregar configuração do Kubernetes: {e}")
-            raise
-        
+            config.load_incluster_config()  # Dentro do cluster
+        except config.ConfigException:
+            config.load_kube_config()  # Fora do cluster
+            
         # Inicializa clientes da API
         self.v1 = client.CoreV1Api()
         self.apps_v1 = client.AppsV1Api()
         self.autoscaling_v1 = client.AutoscalingV1Api()
         
         # Namespace padrão
-        self.namespace = self.config.get("namespace", "default")
+        self.namespace = self.config.get("namespace", "autocura")
         
         self.logger.info("Orquestrador Kubernetes inicializado")
-    
+        
+    async def criar_namespace(self) -> bool:
+        """Cria o namespace do sistema se não existir"""
+        try:
+            self.v1.create_namespace(
+                client.V1Namespace(
+                    metadata=client.V1ObjectMeta(name=self.namespace)
+                )
+            )
+            self.logger.info(f"Namespace {self.namespace} criado")
+            return True
+        except ApiException as e:
+            if e.status == 409:  # Já existe
+                self.logger.info(f"Namespace {self.namespace} já existe")
+                return True
+            else:
+                self.logger.error(f"Erro ao criar namespace: {e}")
+                return False
+
     async def criar_deployment(self, nome: str, imagem: str, replicas: int = 1, **kwargs) -> bool:
         """Cria um deployment no Kubernetes.
         
@@ -87,101 +124,148 @@ class KubernetesOrchestrator:
         except ApiException as e:
             self.logger.error(f"Erro ao criar deployment {nome}: {e}")
             return False
-    
-    async def atualizar_deployment(self, nome: str, **kwargs) -> bool:
-        """Atualiza um deployment existente.
-        
-        Args:
-            nome: Nome do deployment
-            **kwargs: Argumentos de atualização
-            
-        Returns:
-            True se o deployment foi atualizado com sucesso
-        """
+
+    async def aplicar_manifesto(self, manifesto: Dict[str, Any]) -> bool:
+        """Aplica um manifesto Kubernetes"""
         try:
-            # Obtém o deployment atual
-            deployment = self.apps_v1.read_namespaced_deployment(
-                name=nome,
-                namespace=self.namespace
-            )
-            
-            # Atualiza os campos especificados
-            if "replicas" in kwargs:
-                deployment.spec.replicas = kwargs["replicas"]
-            
-            if "image" in kwargs:
-                deployment.spec.template.spec.containers[0].image = kwargs["image"]
-            
-            if "resources" in kwargs:
-                deployment.spec.template.spec.containers[0].resources = client.V1ResourceRequirements(
-                    requests=kwargs["resources"].get("requests", {}),
-                    limits=kwargs["resources"].get("limits", {})
+            if manifesto["kind"] == "Deployment":
+                self.apps_v1.create_namespaced_deployment(
+                    namespace=self.namespace,
+                    body=manifesto
                 )
+            elif manifesto["kind"] == "Service":
+                self.v1.create_namespaced_service(
+                    namespace=self.namespace,
+                    body=manifesto
+                )
+            elif manifesto["kind"] == "HorizontalPodAutoscaler":
+                self.autoscaling_v1.create_namespaced_horizontal_pod_autoscaler(
+                    namespace=self.namespace,
+                    body=manifesto
+                )
+            else:
+                raise ValueError(f"Tipo de manifesto não suportado: {manifesto['kind']}")
+                
+            self.logger.info(f"Manifesto {manifesto['kind']} aplicado com sucesso")
+            return True
+        except ApiException as e:
+            self.logger.error(f"Erro ao aplicar manifesto: {str(e)}")
+            return False
+
+    async def obter_estado_cluster(self) -> EstadoCluster:
+        """Obtém o estado atual do cluster"""
+        try:
+            # Obtém nós
+            nodes = self.v1.list_node()
+            nodes_info = [
+                {
+                    "nome": node.metadata.name,
+                    "status": node.status.conditions[-1].type,
+                    "capacidade": {
+                        "cpu": node.status.capacity["cpu"],
+                        "memory": node.status.capacity["memory"]
+                    }
+                }
+                for node in nodes.items
+            ]
             
-            # Aplica a atualização
-            self.apps_v1.patch_namespaced_deployment(
-                name=nome,
-                namespace=self.namespace,
-                body=deployment
+            # Obtém pods
+            pods = self.v1.list_namespaced_pod(namespace=self.namespace)
+            pods_info = [
+                {
+                    "nome": pod.metadata.name,
+                    "status": pod.status.phase,
+                    "containers": [
+                        {
+                            "nome": container.name,
+                            "imagem": container.image,
+                            "status": container.state
+                        }
+                        for container in pod.spec.containers
+                    ]
+                }
+                for pod in pods.items
+            ]
+            
+            # Obtém deployments
+            deployments = self.apps_v1.list_namespaced_deployment(namespace=self.namespace)
+            deployments_info = [
+                {
+                    "nome": dep.metadata.name,
+                    "replicas": dep.spec.replicas,
+                    "replicas_disponiveis": dep.status.available_replicas
+                }
+                for dep in deployments.items
+            ]
+            
+            # Obtém services
+            services = self.v1.list_namespaced_service(namespace=self.namespace)
+            services_info = [
+                {
+                    "nome": svc.metadata.name,
+                    "tipo": svc.spec.type,
+                    "portas": [
+                        {
+                            "porta": port.port,
+                            "alvo": port.target_port
+                        }
+                        for port in svc.spec.ports
+                    ]
+                }
+                for svc in services.items
+            ]
+            
+            # Calcula métricas
+            metricas = await self._calcular_metricas_cluster(
+                nodes_info,
+                pods_info,
+                deployments_info
             )
             
-            self.logger.info(f"Deployment {nome} atualizado com sucesso")
-            return True
+            return EstadoCluster(
+                timestamp=datetime.now(),
+                nodes=nodes_info,
+                pods=pods_info,
+                deployments=deployments_info,
+                services=services_info,
+                metricas=metricas
+            )
             
         except ApiException as e:
-            self.logger.error(f"Erro ao atualizar deployment {nome}: {e}")
-            return False
-    
-    async def deletar_deployment(self, nome: str) -> bool:
-        """Deleta um deployment.
-        
-        Args:
-            nome: Nome do deployment
-            
-        Returns:
-            True se o deployment foi deletado com sucesso
-        """
+            self.logger.error(f"Erro ao obter estado do cluster: {str(e)}")
+            raise
+
+    async def _calcular_metricas_cluster(self,
+                                       nodes: List[Dict[str, Any]],
+                                       pods: List[Dict[str, Any]],
+                                       deployments: List[Dict[str, Any]]) -> Dict[str, float]:
+        """Calcula métricas do cluster"""
         try:
-            self.apps_v1.delete_namespaced_deployment(
-                name=nome,
-                namespace=self.namespace
-            )
-            
-            self.logger.info(f"Deployment {nome} deletado com sucesso")
-            return True
-            
-        except ApiException as e:
-            self.logger.error(f"Erro ao deletar deployment {nome}: {e}")
-            return False
-    
-    async def obter_status_deployment(self, nome: str) -> Dict[str, Any]:
-        """Obtém o status de um deployment.
-        
-        Args:
-            nome: Nome do deployment
-            
-        Returns:
-            Dicionário com status do deployment
-        """
-        try:
-            deployment = self.apps_v1.read_namespaced_deployment(
-                name=nome,
-                namespace=self.namespace
-            )
-            
-            return {
-                "nome": deployment.metadata.name,
-                "replicas": deployment.spec.replicas,
-                "replicas_disponiveis": deployment.status.available_replicas,
-                "replicas_atualizadas": deployment.status.updated_replicas,
-                "condicao": deployment.status.conditions[0].type if deployment.status.conditions else None,
-                "mensagem": deployment.status.conditions[0].message if deployment.status.conditions else None
+            # Obtém métricas de uso de recursos
+            metricas = {
+                "cpu_utilizacao": 0.0,
+                "memoria_utilizacao": 0.0,
+                "disponibilidade": 0.0,
+                "pods_ativos": len(pods),
+                "deployments_ativos": len(deployments)
             }
             
-        except ApiException as e:
-            self.logger.error(f"Erro ao obter status do deployment {nome}: {e}")
+            # Calcula disponibilidade
+            pods_rodando = sum(1 for pod in pods if pod["status"] == "Running")
+            if pods:
+                metricas["disponibilidade"] = pods_rodando / len(pods)
+            
+            # Calcula uso de recursos
+            for node in nodes:
+                # Implementar lógica de cálculo de recursos
+                pass
+                
+            return metricas
+            
+        except Exception as e:
+            self.logger.error(f"Erro ao calcular métricas: {e}")
             return {}
-    
+
     async def configurar_autoscaling(self, nome: str, min_replicas: int, max_replicas: int, target_cpu: int) -> bool:
         """Configura autoscaling para um deployment.
         
@@ -220,50 +304,7 @@ class KubernetesOrchestrator:
         except ApiException as e:
             self.logger.error(f"Erro ao configurar autoscaling para deployment {nome}: {e}")
             return False
-    
-    async def obter_metricas_deployment(self, nome: str) -> Dict[str, Any]:
-        """Obtém métricas de um deployment.
-        
-        Args:
-            nome: Nome do deployment
-            
-        Returns:
-            Dicionário com métricas do deployment
-        """
-        try:
-            # Obtém pods do deployment
-            pods = self.v1.list_namespaced_pod(
-                namespace=self.namespace,
-                label_selector=f"app={nome}"
-            )
-            
-            metricas = {
-                "pods": len(pods.items),
-                "pods_ready": 0,
-                "cpu_usage": 0,
-                "memory_usage": 0
-            }
-            
-            for pod in pods.items:
-                if pod.status.phase == "Running":
-                    metricas["pods_ready"] += 1
-                
-                # Obtém métricas do pod
-                pod_metrics = self.v1.read_namespaced_pod_metrics(
-                    name=pod.metadata.name,
-                    namespace=self.namespace
-                )
-                
-                for container in pod_metrics.containers:
-                    metricas["cpu_usage"] += float(container.usage["cpu"].replace("m", "")) / 1000
-                    metricas["memory_usage"] += float(container.usage["memory"].replace("Mi", ""))
-            
-            return metricas
-            
-        except ApiException as e:
-            self.logger.error(f"Erro ao obter métricas do deployment {nome}: {e}")
-            return {}
-    
+
     async def verificar_saude_deployment(self, nome: str) -> Dict[str, Any]:
         """Verifica a saúde de um deployment.
         
@@ -274,36 +315,52 @@ class KubernetesOrchestrator:
             Dicionário com status de saúde
         """
         try:
-            status = await self.obter_status_deployment(nome)
-            metricas = await self.obter_metricas_deployment(nome)
+            deployment = self.apps_v1.read_namespaced_deployment(
+                name=nome,
+                namespace=self.namespace
+            )
+            
+            pods = self.v1.list_namespaced_pod(
+                namespace=self.namespace,
+                label_selector=f"app={nome}"
+            )
             
             saude = {
-                "status": "ok",
-                "mensagem": "Deployment saudável",
-                "detalhes": {
-                    "status": status,
-                    "metricas": metricas
-                }
+                "nome": nome,
+                "status": "saudavel",
+                "replicas": deployment.spec.replicas,
+                "replicas_disponiveis": deployment.status.available_replicas,
+                "pods_rodando": 0,
+                "pods_falhando": 0,
+                "ultima_atualizacao": deployment.status.conditions[0].last_update_time if deployment.status.conditions else None
             }
             
-            # Verifica condições de saúde
-            if status.get("replicas_disponiveis", 0) < status.get("replicas", 0):
-                saude["status"] = "warning"
-                saude["mensagem"] = "Nem todas as réplicas estão disponíveis"
-            
-            if metricas.get("cpu_usage", 0) > 80:
-                saude["status"] = "warning"
-                saude["mensagem"] = "Alto uso de CPU"
-            
-            if metricas.get("memory_usage", 0) > 80:
-                saude["status"] = "warning"
-                saude["mensagem"] = "Alto uso de memória"
-            
+            for pod in pods.items:
+                if pod.status.phase == "Running":
+                    saude["pods_rodando"] += 1
+                else:
+                    saude["pods_falhando"] += 1
+                    
+            if saude["pods_falhando"] > 0:
+                saude["status"] = "degradado"
+            if saude["pods_rodando"] == 0:
+                saude["status"] = "falho"
+                
             return saude
             
-        except Exception as e:
+        except ApiException as e:
             self.logger.error(f"Erro ao verificar saúde do deployment {nome}: {e}")
-            return {
-                "status": "error",
-                "mensagem": str(e)
-            } 
+            return {"nome": nome, "status": "erro", "mensagem": str(e)}
+
+    async def reiniciar_pod(self, nome: str) -> bool:
+        """Reinicia um pod específico"""
+        try:
+            self.v1.delete_namespaced_pod(
+                name=nome,
+                namespace=self.namespace
+            )
+            self.logger.info(f"Pod {nome} reiniciado")
+            return True
+        except ApiException as e:
+            self.logger.error(f"Erro ao reiniciar pod: {str(e)}")
+            return False 

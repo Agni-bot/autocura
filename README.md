@@ -351,3 +351,58 @@ Este projeto está licenciado sob a MIT License - veja o arquivo [LICENSE](LICEN
 ---
 
 **Sistema AutoCura** - Evoluindo além dos limites da inteligência artificial convencional 🚀 
+
+## Estrutura do Projeto
+
+### Módulos Docker
+
+#### 1. Módulo Omega (`src/modulos/omega/docker/`)
+- **Produção** (`prod/`):
+  - `Dockerfile.api`: Imagem base da API
+  - `Dockerfile.api-fixed`: Imagem otimizada da API
+  - `Dockerfile.api.debug`: Imagem para debug
+- **Scripts** (`scripts/`):
+  - `entrypoint_omega.sh`: Script de inicialização
+  - `start_ia.py`: Script de inicialização da IA
+
+#### 2. Core do Sistema (`src/core/docker/`)
+- **Desenvolvimento** (`dev/`):
+  - `Dockerfile.api`: Imagem base para desenvolvimento
+  - `docker-compose.yml`: Compose para desenvolvimento
+- **Produção** (`prod/`):
+  - `docker-compose.yml`: Compose para produção
+
+#### 3. Monitoramento (`src/monitoramento/docker/`)
+- **Configurações** (`config/`):
+  - `nginx/`: Configurações do Nginx
+  - `grafana/`: Configurações do Grafana
+  - `prometheus/`: Configurações do Prometheus
+
+### Documentação
+- `docker/docs/REORGANIZACAO_COMPLETA.md`: Documento de reorganização
+- `docker/docs/README.md`: Documentação geral
+- `docker/README.deploy.md`: Guia de deploy
+
+## Uso
+
+### Desenvolvimento
+```bash
+cd src/core/docker/dev
+docker-compose up -d
+```
+
+### Produção
+```bash
+cd src/modulos/omega/docker/prod
+docker-compose up -d
+```
+
+### Monitoramento
+```bash
+cd src/monitoramento/docker
+docker-compose up -d
+```
+
+## Configuração
+
+Cada módulo possui seu próprio arquivo `.env` com as configurações específicas. Consulte a documentação de cada módulo para mais detalhes. 

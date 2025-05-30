@@ -1,17 +1,64 @@
-from typing import Dict, List, Optional
-import asyncio
+"""
+Sistema principal de autocura.
+"""
+
+from typing import Dict, Any, List
 import logging
-from datetime import datetime
-import statistics
-import math
+from .ia_integration import IAIntegration
+from .etica_integration import EticaIntegration
+from .memoria_integration import MemoriaIntegration
+from .diagnostico_integration import DiagnosticoIntegration
+from .guardiao_integration import GuardiaoIntegration
+
+logger = logging.getLogger(__name__)
 
 class SistemaAutocura:
-    def __init__(self):
-        self.logger = logging.getLogger(__name__)
-        self.metricas = {}
-        self.historico = []
-        self.recursos = {}
+    """Sistema principal de autocura."""
+    
+    def __init__(self, config: Dict[str, Any]):
+        """Inicializa o sistema de autocura.
         
+        Args:
+            config: Configuração do sistema
+        """
+        self.config = config
+        self.ia = IAIntegration(config)
+        self.etica = EticaIntegration(config)
+        self.memoria = MemoriaIntegration(config)
+        self.diagnostico = DiagnosticoIntegration(config)
+        self.guardiao = GuardiaoIntegration(config)
+        
+    async def processar_entrada(self, dados: Dict[str, Any]) -> Dict[str, Any]:
+        """Processa entrada do sistema.
+        
+        Args:
+            dados: Dados de entrada
+            
+        Returns:
+            Resultado do processamento
+        """
+        try:
+            # Processa usando IA
+            resultado_ia = await self.ia.processar_entrada(dados)
+            
+            # Valida eticamente
+            resultado_etica = await self.etica.validar_acao(resultado_ia)
+            
+            # Armazena na memória
+            await self.memoria.armazenar_dados(resultado_etica)
+            
+            # Realiza diagnóstico
+            diagnostico = await self.diagnostico.realizar_diagnostico(resultado_etica)
+            
+            # Protege execução
+            resultado_final = await self.guardiao.proteger_sistema(diagnostico)
+            
+            return resultado_final
+            
+        except Exception as e:
+            logger.error(f"Erro ao processar entrada: {e}")
+            raise
+
     async def monitorar_recursos(self):
         """Monitora recursos do sistema em tempo real"""
         while True:
