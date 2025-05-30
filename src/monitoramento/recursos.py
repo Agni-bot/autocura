@@ -4,10 +4,11 @@ import psutil
 import json
 from datetime import datetime
 from collections import deque
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
 from pathlib import Path
 from prometheus_client import Counter, Gauge, Histogram, CollectorRegistry
 from src.monitoramento.config import CONFIG
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -380,4 +381,95 @@ class MonitorRecursos:
             
         except Exception as e:
             self.logger.error(f"Erro ao encerrar monitoramento: {str(e)}")
-            raise 
+            raise
+
+    def obter_uso_cpu(self) -> float:
+        """Obtém o uso atual da CPU em porcentagem."""
+        try:
+            return psutil.cpu_percent(interval=1)
+        except Exception as e:
+            self.logger.error(f"Erro ao obter uso da CPU: {str(e)}")
+            return 0.0
+            
+    def obter_uso_memoria(self) -> float:
+        """Obtém o uso atual da memória em porcentagem."""
+        try:
+            return psutil.virtual_memory().percent
+        except Exception as e:
+            self.logger.error(f"Erro ao obter uso da memória: {str(e)}")
+            return 0.0
+            
+    def obter_uso_disco(self) -> float:
+        """Obtém o uso atual do disco em porcentagem."""
+        try:
+            return psutil.disk_usage('/').percent
+        except Exception as e:
+            self.logger.error(f"Erro ao obter uso do disco: {str(e)}")
+            return 0.0
+            
+    def obter_uso_rede(self) -> Tuple[float, float]:
+        """Obtém o uso atual da rede em bytes/s."""
+        try:
+            net_io = psutil.net_io_counters()
+            return net_io.bytes_sent, net_io.bytes_recv
+        except Exception as e:
+            self.logger.error(f"Erro ao obter uso da rede: {str(e)}")
+            return 0.0, 0.0
+            
+    def obter_processos(self) -> List[Dict]:
+        """Obtém lista de processos com uso de recursos."""
+        try:
+            processos = []
+            for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']):
+                try:
+                    pinfo = proc.info
+                    processos.append({
+                        'pid': pinfo['pid'],
+                        'nome': pinfo['name'],
+                        'cpu': pinfo['cpu_percent'],
+                        'memoria': pinfo['memory_percent']
+                    })
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    pass
+            return sorted(processos, key=lambda x: x['cpu'], reverse=True)
+        except Exception as e:
+            self.logger.error(f"Erro ao obter processos: {str(e)}")
+            return []
+            
+    def obter_metricas(self) -> Dict[str, float]:
+        """Obtém todas as métricas de recursos do sistema."""
+        return {
+            'cpu': self.obter_uso_cpu(),
+            'memoria': self.obter_uso_memoria(),
+            'disco': self.obter_uso_disco(),
+            'rede': {
+                'enviados': self.obter_uso_rede()[0],
+                'recebidos': self.obter_uso_rede()[1]
+            }
+        }
+        
+    def limpar_recursos(self) -> bool:
+        """Tenta liberar recursos do sistema."""
+        try:
+            # Limpa cache de memória
+            if os.name == 'posix':
+                os.system('sync')
+                os.system('echo 3 > /proc/sys/vm/drop_caches')
+                
+            # Limpa diretórios temporários
+            temp_dirs = ['/tmp', './temp', './cache']
+            for dir in temp_dirs:
+                if os.path.exists(dir):
+                    for file in os.listdir(dir):
+                        try:
+                            file_path = os.path.join(dir, file)
+                            if os.path.isfile(file_path):
+                                os.unlink(file_path)
+                        except Exception as e:
+                            self.logger.warning(f"Erro ao limpar arquivo {file_path}: {str(e)}")
+                            
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Erro ao limpar recursos: {str(e)}")
+            return False 

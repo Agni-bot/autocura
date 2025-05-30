@@ -1,72 +1,57 @@
 #!/usr/bin/env python3
 """
-Script principal para executar o monitoramento de recursos do sistema.
+Script para executar o monitoramento do sistema.
 """
 
-import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-
-import asyncio
+import sys
 import logging
-import signal
 from pathlib import Path
-from prometheus_client import start_http_server
-from src.monitoramento.recursos import MonitorRecursos
+
+# Adiciona o diretório raiz ao PYTHONPATH
+root_dir = Path(__file__).parent.parent.parent
+sys.path.append(str(root_dir))
+
+from src.monitoramento import MonitorSistema
+from src.monitoramento.config import CONFIG
 
 # Configuração de logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('logs/monitoramento.log'),
-        logging.StreamHandler()
+        logging.StreamHandler(),
+        logging.FileHandler('monitoramento.log')
     ]
 )
 
 logger = logging.getLogger(__name__)
 
-# Variáveis globais
-monitor = None
-prometheus_port = 9090
-
-def signal_handler(signum, frame):
-    """Manipulador de sinais para encerramento gracioso"""
-    logger.info(f"Recebido sinal {signum}. Encerrando monitoramento...")
-    if monitor:
-        asyncio.create_task(monitor.encerrar())
-    sys.exit(0)
-
-async def main(MonitorClass=None, prometheus_registry=None):
-    """Função principal que executa o monitoramento"""
-    global monitor
-    MonitorClass = MonitorClass or MonitorRecursos
+def main():
+    """Função principal."""
     try:
-        # Configura handlers de sinal
-        signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
+        # Inicializa o monitor
+        monitor = MonitorSistema()
         
-        # Cria diretório de logs se não existir
-        Path('logs').mkdir(exist_ok=True)
+        # Inicia o monitoramento
+        monitor.iniciar()
         
-        # Inicia servidor Prometheus
-        start_http_server(prometheus_port)
-        logger.info(f"Servidor Prometheus iniciado na porta {prometheus_port}")
+        # Mantém o script rodando
+        while True:
+            try:
+                # Aguarda input do usuário
+                comando = input("Digite 'q' para sair: ")
+                if comando.lower() == 'q':
+                    break
+            except KeyboardInterrupt:
+                break
+                
+        # Para o monitoramento
+        monitor.parar()
         
-        # Inicializa e inicia monitoramento
-        logger.info("Iniciando sistema de monitoramento de recursos")
-        monitor = MonitorClass(registry=prometheus_registry)
-        await monitor.iniciar_monitoramento()
-        
-    except KeyboardInterrupt:
-        logger.info("Monitoramento interrompido pelo usuário")
     except Exception as e:
-        logger.error(f"Erro fatal no monitoramento: {e}")
-        if monitor:
-            await monitor.encerrar()
-    finally:
-        if monitor:
-            await monitor.encerrar()
+        logger.error(f"Erro ao executar monitoramento: {str(e)}")
+        sys.exit(1)
 
 if __name__ == '__main__':
-    asyncio.run(main()) 
+    main() 

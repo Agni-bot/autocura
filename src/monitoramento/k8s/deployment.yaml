@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autocura-monitoramento
+  labels:
+    app: autocura-monitoramento
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: autocura-monitoramento
+  template:
+    metadata:
+      labels:
+        app: autocura-monitoramento
+    spec:
+      containers:
+      - name: monitoramento
+        image: autocura-monitoramento:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9090
+          name: prometheus
+        env:
+        - name: DEBUG
+          value: "false"
+        - name: HOST
+          value: "0.0.0.0"
+        - name: PORT
+          value: "8080"
+        - name: WORKERS
+          value: "4"
+        - name: PROMETHEUS_PORT
+          value: "9090"
+        - name: METRICS_INTERVAL
+          value: "15"
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: autocura-monitoramento
+spec:
+  selector:
+    app: autocura-monitoramento
+  ports:
+  - name: http
+    port: 8080
+    targetPort: http
+  - name: prometheus
+    port: 9090
+    targetPort: prometheus
+  type: ClusterIP 

@@ -10,6 +10,7 @@ import requests
 import telegram
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from .config import CONFIG
 
 from ..core.logger import Logger
 from ..core.cache import Cache
@@ -358,4 +359,94 @@ class Notificador:
             
         except Exception as e:
             self.logger.registrar_erro("notificador", "Erro ao obter notificações", e)
-            return [] 
+            return []
+
+    def enviar_alerta(self, alerta: Dict) -> bool:
+        """Envia alerta através dos canais configurados."""
+        sucesso = True
+        
+        # Envia para cada canal configurado
+        if CONFIG.NOTIFICACOES['email']['enabled']:
+            sucesso &= self._enviar_email(alerta)
+            
+        if CONFIG.NOTIFICACOES['slack']['enabled']:
+            sucesso &= self._enviar_slack(alerta)
+            
+        if CONFIG.NOTIFICACOES['webhook']['enabled']:
+            sucesso &= self._enviar_webhook(alerta)
+            
+        return sucesso
+        
+    def _enviar_email(self, alerta: Dict) -> bool:
+        """Envia alerta por email."""
+        try:
+            config = CONFIG.NOTIFICACOES['email']
+            
+            msg = MIMEMultipart()
+            msg['From'] = config['from_addr']
+            msg['To'] = ', '.join(config['to_addrs'])
+            msg['Subject'] = f"Alerta AutoCura: {alerta['tipo']}"
+            
+            corpo = f"""
+            Tipo: {alerta['tipo']}
+            Métrica: {alerta['metrica']}
+            Valor: {alerta['valor']}
+            Limite: {alerta['limite']}
+            Mensagem: {alerta['mensagem']}
+            """
+            
+            msg.attach(MIMEText(corpo, 'plain'))
+            
+            with smtplib.SMTP(config['smtp_server'], config['smtp_port']) as server:
+                server.starttls()
+                server.login(config['username'], config['password'])
+                server.send_message(msg)
+                
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Erro ao enviar email: {str(e)}")
+            return False
+            
+    def _enviar_slack(self, alerta: Dict) -> bool:
+        """Envia alerta para o Slack."""
+        try:
+            config = CONFIG.NOTIFICACOES['slack']
+            
+            mensagem = {
+                "channel": config['channel'],
+                "text": f"*Alerta AutoCura*\n"
+                       f"Tipo: {alerta['tipo']}\n"
+                       f"Métrica: {alerta['metrica']}\n"
+                       f"Valor: {alerta['valor']}\n"
+                       f"Limite: {alerta['limite']}\n"
+                       f"Mensagem: {alerta['mensagem']}"
+            }
+            
+            response = requests.post(
+                config['webhook_url'],
+                json=mensagem
+            )
+            
+            return response.status_code == 200
+            
+        except Exception as e:
+            self.logger.error(f"Erro ao enviar para Slack: {str(e)}")
+            return False
+            
+    def _enviar_webhook(self, alerta: Dict) -> bool:
+        """Envia alerta para webhook configurado."""
+        try:
+            config = CONFIG.NOTIFICACOES['webhook']
+            
+            response = requests.post(
+                config['url'],
+                json=alerta,
+                headers=config['headers']
+            )
+            
+            return response.status_code == 200
+            
+        except Exception as e:
+            self.logger.error(f"Erro ao enviar webhook: {str(e)}")
+            return False 

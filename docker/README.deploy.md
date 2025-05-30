@@ -1,17 +1,16 @@
-# Deploy dos Módulos Testados - AutoCura
+# Deploy do Sistema AutoCura no Kubernetes
 
-Este documento descreve o processo de deploy dos módulos já testados e aprovados do sistema AutoCura.
+Este documento descreve o processo de deploy do sistema AutoCura no Kubernetes.
 
-## 🚀 Módulos Disponíveis para Deploy
+## 🚀 Módulos Disponíveis
 
-1. **Monitor** (`autocura/monitor:latest`)
+1. **Monitoramento** (`autocura/monitoramento:latest`)
    - Sistema de monitoramento e métricas
-   - Porta: 9090
-   - Integração com Prometheus
+   - Integração com Prometheus, Grafana e Loki
+   - Métricas de sistema via Node Exporter e cAdvisor
 
 2. **Observador** (`autocura/observador:latest`)
    - Sistema de observabilidade e logs
-   - Porta: 8080
    - Integração com Elasticsearch
 
 3. **Validador** (`autocura/validador:latest`)
@@ -24,10 +23,11 @@ Este documento descreve o processo de deploy dos módulos já testados e aprovad
 
 ## 📋 Pré-requisitos
 
-- Docker Engine 20.10+
-- Docker Compose 2.0+
-- 4GB RAM disponível
-- 10GB espaço em disco
+- Kubernetes 1.20+
+- kubectl configurado
+- Helm 3.0+
+- 4GB RAM disponível por node
+- 10GB espaço em disco por node
 
 ## 🔧 Instalação
 
@@ -37,61 +37,62 @@ git clone https://github.com/seu-usuario/autocura.git
 cd autocura
 ```
 
-2. Execute o script de deploy:
+2. Aplique os manifests do Kubernetes:
 ```bash
-chmod +x scripts/deploy_modulos.sh
-./scripts/deploy_modulos.sh
+kubectl apply -f src/monitoramento/k8s/prometheus.yaml
 ```
 
 ## 🛠️ Configuração
 
-Os módulos podem ser configurados através de variáveis de ambiente no arquivo `docker/docker-compose.testados.yml`:
+Os módulos são configurados através de ConfigMaps e Secrets no Kubernetes:
 
-- `LOG_LEVEL`: Nível de log (INFO, DEBUG, ERROR)
-- `REDIS_HOST`: Host do Redis
-- `ELASTICSEARCH_HOSTS`: Hosts do Elasticsearch
-- `PROMETHEUS_MULTIPROC_DIR`: Diretório para métricas do Prometheus
+- `prometheus-config`: Configuração do Prometheus
+- `alertmanager-config`: Configuração do Alertmanager
+- `grafana-datasources`: Configuração das fontes de dados do Grafana
 
 ## 📊 Monitoramento
 
-- Prometheus: http://localhost:9091
-- Elasticsearch: http://localhost:9200
-- Redis: localhost:6379
+- Prometheus: http://localhost:9090 (via port-forward)
+- Grafana: http://localhost:3000 (via port-forward)
+- Loki: http://localhost:3100 (via port-forward)
+- Node Exporter: http://localhost:9100 (via port-forward)
+- cAdvisor: http://localhost:8080 (via port-forward)
+- Alertmanager: http://localhost:9093 (via port-forward)
 
 ## 🔍 Verificação do Deploy
 
-Para verificar o status dos containers:
+Para verificar o status dos pods:
 
 ```bash
-docker-compose -f docker/docker-compose.testados.yml ps
+kubectl get pods -n autocura
 ```
 
-Para ver os logs de um módulo específico:
+Para ver os logs de um pod específico:
 
 ```bash
-docker-compose -f docker/docker-compose.testados.yml logs -f [nome-do-modulo]
+kubectl logs -f <pod-name> -n autocura
 ```
 
 ## 🛡️ Segurança
 
-- Todos os módulos rodam em containers isolados
-- Comunicação via rede Docker dedicada
+- Todos os módulos rodam em namespaces isolados
+- Comunicação via rede Kubernetes dedicada
 - Volumes persistentes para dados críticos
-- Logs centralizados no Elasticsearch
+- Logs centralizados no Loki
+- Alertas configurados via Alertmanager
 
 ## 🔄 Manutenção
 
-Para atualizar um módulo específico:
+Para atualizar um deployment:
 
 ```bash
-docker-compose -f docker/docker-compose.testados.yml pull [nome-do-modulo]
-docker-compose -f docker/docker-compose.testados.yml up -d [nome-do-modulo]
+kubectl set image deployment/<deployment-name> <container-name>=<new-image> -n autocura
 ```
 
-Para parar todos os módulos:
+Para escalar um deployment:
 
 ```bash
-docker-compose -f docker/docker-compose.testados.yml down
+kubectl scale deployment <deployment-name> --replicas=<number> -n autocura
 ```
 
 ## 📝 Notas Importantes
@@ -99,4 +100,8 @@ docker-compose -f docker/docker-compose.testados.yml down
 1. Os módulos são versionados com tags específicas
 2. Backup dos volumes é recomendado antes de atualizações
 3. Monitoramento de recursos é essencial
-4. Logs devem ser rotacionados periodicamente 
+4. Logs devem ser rotacionados periodicamente
+5. Grafana dashboards devem ser exportados regularmente
+6. Alertas devem ser testados periodicamente
+7. Use port-forward para acessar os serviços localmente
+8. Configure Ingress para acesso externo quando necessário 
