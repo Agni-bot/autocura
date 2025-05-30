@@ -5,6 +5,7 @@ Módulo de configuração base do sistema de autocura.
 import os
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
+from redis import Redis, ConnectionPool
 
 def _get_default_endpoints() -> Dict[str, str]:
     """Retorna os endpoints padrão do sistema."""
@@ -14,6 +15,27 @@ def _get_default_endpoints() -> Dict[str, str]:
         "acoes": os.getenv("ENDPOINT_ACOES", "http://localhost:8000/acoes"),
         "guardiao": os.getenv("ENDPOINT_GUARDIAO", "http://localhost:8000/guardiao")
     }
+
+# Configuração do Redis
+REDIS_HOST = os.getenv('REDIS_HOST', 'autocura-redis')
+REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
+REDIS_DB = int(os.getenv('REDIS_DB', 0))
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None)
+
+# Configuração do connection pool
+redis_pool = ConnectionPool(
+    host=REDIS_HOST,
+    port=REDIS_PORT,
+    db=REDIS_DB,
+    password=REDIS_PASSWORD,
+    decode_responses=True,
+    socket_timeout=5,
+    socket_connect_timeout=5,
+    retry_on_timeout=True
+)
+
+# Cliente Redis
+redis_client = Redis(connection_pool=redis_pool)
 
 @dataclass
 class ConfiguracaoBase:

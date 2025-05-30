@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autocura-api
+  namespace: autocura-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: autocura-api
+  template:
+    metadata:
+      labels:
+        app: autocura-api
+    spec:
+      containers:
+      - name: api
+        image: autocura-api:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: autocura-config
+              key: redis_host
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: autocura-config
+              key: redis_port
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: autocura-secrets
+              key: redis_password
+        volumeMounts:
+        - name: memoria-volume
+          mountPath: /app/data
+          readOnly: false
+        - name: config-volume
+          mountPath: /app/config
+          readOnly: true
+      volumes:
+      - name: memoria-volume
+        persistentVolumeClaim:
+          claimName: autocura-data-pvc
+      - name: config-volume
+        configMap:
+          name: autocura-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: autocura-config
+  namespace: autocura-staging
+data:
+  redis_host: "autocura-redis"
+  redis_port: "6379" 
