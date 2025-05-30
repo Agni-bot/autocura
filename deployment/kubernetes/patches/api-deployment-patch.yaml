@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autocura-api
+  namespace: autocura-staging
+spec:
+  template:
+    spec:
+      volumes:
+      - name: patches
+        configMap:
+          name: module-fixes
+          defaultMode: 0755
+      containers:
+      - name: api
+        volumeMounts:
+        - name: patches
+          mountPath: /patches
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - /bin/bash
+              - -c
+              - |
+                if [ -f /patches/apply_patches.sh ]; then
+                  bash /patches/apply_patches.sh
+                fi 
