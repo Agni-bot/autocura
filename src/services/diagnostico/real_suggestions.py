@@ -20,7 +20,7 @@ import asyncio
 import threading
 import weakref
 import time
-import msgpack
+# import msgpack  # Comentando importação direta
 from typing import Dict, List, Any, Optional, Tuple, Protocol
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -41,6 +41,14 @@ try:
     OPENAI_AVAILABLE = True
 except ImportError:
     OPENAI_AVAILABLE = False
+
+# Importação do msgpack opcional
+try:
+    import msgpack
+    MSGPACK_AVAILABLE = True
+except ImportError:
+    MSGPACK_AVAILABLE = False
+    msgpack = None  # Para evitar NameError
 
 logger = logging.getLogger(__name__)
 
@@ -386,10 +394,13 @@ class SuggestionCache:
             
         try:
             # Serializar com MessagePack ou JSON
-            try:
-                packed = msgpack.packb(suggestion)
-            except:
-                packed = json.dumps(suggestion)
+            if MSGPACK_AVAILABLE and msgpack:
+                try:
+                    packed = msgpack.packb(suggestion)
+                except:
+                    packed = json.dumps(suggestion).encode('utf-8')
+            else:
+                packed = json.dumps(suggestion).encode('utf-8')
             
             # Adicionar ao stream com TTL automático
             self.redis.xadd(
@@ -413,10 +424,13 @@ class SuggestionCache:
             for message_id, data in messages:
                 try:
                     # Tentar desserializar com MessagePack primeiro
-                    try:
-                        suggestion = msgpack.unpackb(data[b'data'])
-                    except:
-                        suggestion = json.loads(data[b'data'])
+                    if MSGPACK_AVAILABLE and msgpack:
+                        try:
+                            suggestion = msgpack.unpackb(data[b'data'])
+                        except:
+                            suggestion = json.loads(data[b'data'].decode('utf-8') if isinstance(data[b'data'], bytes) else data[b'data'])
+                    else:
+                        suggestion = json.loads(data[b'data'].decode('utf-8') if isinstance(data[b'data'], bytes) else data[b'data'])
                     suggestions.append(suggestion)
                 except Exception as e:
                     logger.error(f"Erro ao desserializar sugestão: {e}")
